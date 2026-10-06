@@ -390,38 +390,3 @@ struct EinstellungenView: View {
         .tint(Theme.gelb)
     }
 }
-
-@main
-struct MatheApp: App {
-    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
-    let container: ModelContainer
-
-    init() {
-        // Geräte, die schon einen Namen eingetragen haben, brauchen den Einrichtungsassistenten nicht
-        let vorgaben = UserDefaults.standard
-        if vorgaben.object(forKey: "profilFertig") == nil {
-            let hatName = !(vorgaben.string(forKey: "kindName") ?? "").isEmpty
-            let hatIch = !(vorgaben.string(forKey: "jokerIch") ?? "").isEmpty
-            if hatName || hatIch { vorgaben.set(true, forKey: "profilFertig") }
-        }
-        let schema = Schema([Klassenarbeit.self, Uebung.self, Aufgabe.self, RundenErgebnis.self])
-        // SwiftData bleibt lokal auf dem Gerät. Ohne diese Zeile würde SwiftData
-        // nach dem Aktivieren von iCloud die Daten automatisch in die private
-        // iCloud-Datenbank spiegeln.
-        let konfiguration = ModelConfiguration(schema: schema, cloudKitDatabase: .none)
-        do {
-            container = try ModelContainer(for: schema, configurations: konfiguration)
-        } catch {
-            fatalError("Datenbank konnte nicht geöffnet werden: \(error)")
-        }
-    }
-
-    var body: some Scene {
-        WindowGroup {
-            WurzelView()
-                .tint(Theme.gelb)
-                .preferredColorScheme(.dark)
-        }
-        .modelContainer(container)
-    }
-}
