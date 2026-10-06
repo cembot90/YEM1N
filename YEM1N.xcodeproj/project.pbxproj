@@ -6,8 +6,19 @@
 	objectVersion = 90;
 	objects = {
 
+/* Begin PBXContainerItemProxy section */
+		27738EBC3075936E0020F348 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 000000000000000000000000 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 000000000000000100000000;
+			remoteInfo = YEM1N;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		000000000000000000000120 /* YEM1N.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = YEM1N.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		27738EB83075936E0020F348 /* YEM1NTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = YEM1NTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -29,10 +40,20 @@
 			path = YEM1N;
 			sourceTree = "<group>";
 		};
+		27738EB93075936E0020F348 /* YEM1NTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = YEM1NTests;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		000000000000000130000000 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+			);
+		};
+		27738EB53075936E0020F348 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			files = (
 			);
@@ -44,6 +65,7 @@
 			isa = PBXGroup;
 			children = (
 				000000000000000000000010 /* YEM1N */,
+				27738EB93075936E0020F348 /* YEM1NTests */,
 				2785730D306D745F009BAA9E /* Frameworks */,
 				000000000000000000000020 /* Products */,
 			);
@@ -53,6 +75,7 @@
 			isa = PBXGroup;
 			children = (
 				000000000000000000000120 /* YEM1N.app */,
+				27738EB83075936E0020F348 /* YEM1NTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -85,6 +108,27 @@
 			productReference = 000000000000000000000120 /* YEM1N.app */;
 			productType = "com.apple.product-type.application";
 		};
+		27738EB73075936E0020F348 /* YEM1NTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 27738EC03075936E0020F348 /* Build configuration list for PBXNativeTarget "YEM1NTests" */;
+			buildPhases = (
+				27738EB43075936E0020F348 /* Sources */,
+				27738EB53075936E0020F348 /* Frameworks */,
+				27738EB63075936E0020F348 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				27738EBD3075936E0020F348 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				27738EB93075936E0020F348 /* YEM1NTests */,
+			);
+			name = YEM1NTests;
+			productName = YEM1NTests;
+			productReference = 27738EB83075936E0020F348 /* YEM1NTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -92,11 +136,15 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 2630;
+				LastSwiftUpdateCheck = 2700;
 				LastUpgradeCheck = 2700;
 				TargetAttributes = {
 					000000000000000100000000 = {
 						CreatedOnToolsVersion = 26.3;
+					};
+					27738EB73075936E0020F348 = {
+						CreatedOnToolsVersion = 27.0;
+						TestTargetID = 000000000000000100000000;
 					};
 				};
 			};
@@ -115,12 +163,18 @@
 			projectRoot = "";
 			targets = (
 				000000000000000100000000 /* YEM1N */,
+				27738EB73075936E0020F348 /* YEM1NTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		000000000000000140000000 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+			);
+		};
+		27738EB63075936E0020F348 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			files = (
 			);
@@ -133,7 +187,20 @@
 			files = (
 			);
 		};
+		27738EB43075936E0020F348 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+			);
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		27738EBD3075936E0020F348 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 000000000000000100000000 /* YEM1N */;
+			targetProxy = 27738EBC3075936E0020F348 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		000000000000000011000000 /* Debug configuration for PBXProject "YEM1N" */ = {
@@ -362,6 +429,51 @@
 			};
 			name = Release;
 		};
+		27738EBE3075936E0020F348 /* Debug configuration for PBXNativeTarget "YEM1NTests" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = JB7WJ7R7L2;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = de.cemaras.YEM1NTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/YEM1N.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/YEM1N";
+			};
+			name = Debug;
+		};
+		27738EBF3075936E0020F348 /* Release configuration for PBXNativeTarget "YEM1NTests" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = JB7WJ7R7L2;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = de.cemaras.YEM1NTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/YEM1N.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/YEM1N";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -378,6 +490,14 @@
 			buildConfigurations = (
 				000000000000000111000000 /* Debug configuration for PBXNativeTarget "YEM1N" */,
 				000000000000000112000000 /* Release configuration for PBXNativeTarget "YEM1N" */,
+			);
+			defaultConfigurationName = Release;
+		};
+		27738EC03075936E0020F348 /* Build configuration list for PBXNativeTarget "YEM1NTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				27738EBE3075936E0020F348 /* Debug configuration for PBXNativeTarget "YEM1NTests" */,
+				27738EBF3075936E0020F348 /* Release configuration for PBXNativeTarget "YEM1NTests" */,
 			);
 			defaultConfigurationName = Release;
 		};
