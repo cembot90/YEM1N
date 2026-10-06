@@ -1,0 +1,743 @@
+<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>YEM1N Anleitung</title><style>
+:root{--navy:#002b7a;--tief:#001a4d;--gelb:#ffed00;--bg:#f5f8ff;--text:#14213d}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.55 -apple-system,"SF Pro Text","Helvetica Neue",Arial,sans-serif}
+header{background:linear-gradient(160deg,var(--tief),var(--navy));color:#fff;padding:44px 22px 36px}
+header .in,main{max-width:760px;margin:0 auto}
+.logo{font-size:44px;font-weight:900;letter-spacing:1px;color:var(--gelb);margin:0}
+.bar{width:90px;height:7px;background:var(--gelb);border-radius:4px;margin:12px 0 16px}
+header p{margin:0;color:#c9d6f5;font-size:17px}
+header p.logo{color:var(--gelb)}
+main{padding:18px 18px 60px}
+nav#inhalt{background:#fff;border:1px solid #d6def2;border-radius:16px;padding:6px 18px 12px;margin:10px 0 18px}
+nav#inhalt h2{margin:12px 0 4px;border:0;padding:0;color:var(--navy)}
+nav#inhalt ul{list-style:none;margin:0;padding:0}
+nav#inhalt li{margin:2px 0}
+nav#inhalt a{color:var(--navy);text-decoration:none;display:block;padding:6px 0;border-bottom:1px solid #edf1fa;font-weight:600}
+h1{background:var(--navy);color:var(--gelb);font-size:22px;padding:13px 18px;border-radius:14px;margin:34px 0 12px}
+h2{color:var(--navy);font-size:18px;border-left:6px solid var(--gelb);padding-left:10px;margin:24px 0 8px}
+p{margin:8px 0 10px}
+ol,ul{padding-left:24px}
+li{margin:4px 0}
+strong{color:var(--tief)}
+code{background:#e8eefb;color:var(--navy);padding:1px 6px;border-radius:6px;font:14px Menlo,Consolas,monospace}
+table{width:100%;border-collapse:separate;border-spacing:0;background:#fff;border:1px solid #cfd8ee;border-radius:12px;overflow:hidden;margin:12px 0 16px;font-size:15px}
+th{background:var(--navy);color:#fff;text-align:left;padding:9px 11px}
+td{padding:9px 11px;border-top:1px solid #e1e7f5;vertical-align:top}
+tr:nth-child(even) td{background:#f5f8ff}
+td:first-child{font-weight:700;color:var(--tief)}
+@media(max-width:560px){table{font-size:14px}th,td{padding:8px}}
+@media(prefers-color-scheme:dark){
+:root{--bg:#000b26;--text:#e6ecfa}
+nav#inhalt,table{background:#07204f;border-color:#143a7a}
+nav#inhalt a{color:var(--gelb);border-color:#143a7a}
+nav#inhalt h2,h2{color:var(--gelb)}
+strong{color:#fff}
+code{background:#0d2e6b;color:var(--gelb)}
+td{border-color:#143a7a}tr:nth-child(even) td{background:#0b2a63}td:first-child{color:#fff}
+h1{background:#0d2e6b}}
+</style></head><body>
+<header><div class="in"><p class="logo">YEM1N</p><div class="bar"></div><p>Bedienungsanleitung</p></div></header>
+<main><nav id="inhalt">
+<h2>Inhalt</h2>
+<ul>
+<li><a href="#was-ist-yem1n" id="toc-was-ist-yem1n">1. Was ist
+YEM1N?</a></li>
+<li><a href="#app-installieren-testflight"
+id="toc-app-installieren-testflight">2. App installieren
+(TestFlight)</a></li>
+<li><a href="#erste-einrichtung" id="toc-erste-einrichtung">3. Erste
+Einrichtung</a></li>
+<li><a href="#die-tabs-im-überblick" id="toc-die-tabs-im-überblick">4.
+Die Tabs im Überblick</a></li>
+<li><a href="#üben-im-tab-schule" id="toc-üben-im-tab-schule">5. Üben im
+Tab Schule</a></li>
+<li><a href="#fehlerheft-training-und-probearbeit"
+id="toc-fehlerheft-training-und-probearbeit">6. Fehlerheft, Training und
+Probearbeit</a></li>
+<li><a href="#erfolge-tagesziel-und-wochenbericht"
+id="toc-erfolge-tagesziel-und-wochenbericht">7. Erfolge, Tagesziel und
+Wochenbericht</a></li>
+<li><a href="#der-joker" id="toc-der-joker">8. Der Joker</a></li>
+<li><a href="#sprachen" id="toc-sprachen">9. Sprachen</a></li>
+<li><a href="#vorschule" id="toc-vorschule">10. Vorschule</a></li>
+<li><a href="#aufgaben-bereitstellen-eltern"
+id="toc-aufgaben-bereitstellen-eltern">11. Aufgaben bereitstellen
+(Eltern)</a></li>
+<li><a href="#klassencode-für-eine-ganze-klasse"
+id="toc-klassencode-für-eine-ganze-klasse">12. Klassencode für eine
+ganze Klasse</a></li>
+<li><a href="#einstellungen" id="toc-einstellungen">13.
+Einstellungen</a></li>
+<li><a href="#aufgaben-und-daten-löschen"
+id="toc-aufgaben-und-daten-löschen">14. Aufgaben und Daten
+löschen</a></li>
+<li><a href="#datenschutz" id="toc-datenschutz">15. Datenschutz</a></li>
+<li><a href="#probleme-und-antworten"
+id="toc-probleme-und-antworten">16. Probleme und Antworten</a></li>
+<li><a href="#kurzübersicht-für-den-alltag"
+id="toc-kurzübersicht-für-den-alltag">17. Kurzübersicht für den
+Alltag</a></li>
+</ul>
+</nav>
+<hr />
+<h1 id="was-ist-yem1n">1. Was ist YEM1N?</h1>
+<p>YEM1N ist eine Übungs-App für Kinder und ihre Eltern. Auf dem Gerät
+des Kindes übt das Kind Klassenarbeiten, Deutsch, Sprachen und
+Vorschulaufgaben. Auf dem Gerät der Eltern sehen die Eltern den
+Fortschritt, bekommen Mitteilungen und helfen über den Joker.</p>
+<p>Die App läuft auf iPhone und iPad. Sie arbeitet ohne Werbung und ohne
+Konto. Die Verbindung zwischen den Geräten entsteht nur über Codes.</p>
+<p><strong>Die drei Rollen</strong></p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Rolle</th>
+<th>Was sie macht</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Kind-Gerät</td>
+<td>Aufgaben üben, Joker nutzen, Sterne und Pokale sammeln</td>
+</tr>
+<tr class="even">
+<td>Eltern-Gerät</td>
+<td>Ergebnisse sehen, Joker beantworten, Aufgabenpakete
+bereitstellen</td>
+</tr>
+<tr class="odd">
+<td>Admin der Klasse</td>
+<td>Eltern-Gerät, das Pakete an eine ganze Klasse verteilt</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Die zwei Codes</strong></p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Code</th>
+<th>Wofür</th>
+<th>Wer sieht was</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Familiencode</td>
+<td>Ergebnisse, Joker und Aufgaben innerhalb der Familie</td>
+<td>Nur Geräte mit demselben Code</td>
+</tr>
+<tr class="even">
+<td>Klassencode</td>
+<td>Nur Aufgabenpakete für eine ganze Klasse</td>
+<td>Alle Geräte mit dem Code laden die Aufgaben, Ergebnisse und Joker
+bleiben in der Familie</td>
+</tr>
+</tbody>
+</table>
+<p>Der Familiencode ist wie ein Passwort. Gib ihn nur an
+Familienmitglieder weiter. Den Klassencode darfst du an die Klasse
+weitergeben.</p>
+<h1 id="app-installieren-testflight">2. App installieren
+(TestFlight)</h1>
+<p>Solange die App noch nicht im App Store ist, kommt sie über Apples
+Test-App TestFlight.</p>
+<ol type="1">
+<li>Lade die App <strong>TestFlight</strong> aus dem App Store.</li>
+<li>Melde dich mit der Apple-ID an, die für den Test eingeladen
+wurde.</li>
+<li>Öffne TestFlight, tippe unten auf <strong>Apps</strong> und dann bei
+YEM1N auf <strong>Installieren</strong>.</li>
+<li>Neue Versionen erscheinen in TestFlight automatisch. Tippe dort auf
+<strong>Aktualisieren</strong>.</li>
+</ol>
+<p>Beim ersten Start fragt die App, ob sie Mitteilungen senden darf.
+Erlaube das auf dem Eltern-Gerät unbedingt, sonst kommen keine
+Joker-Alarme an. Auf dem Kind-Gerät empfiehlt sich die Erlaubnis
+ebenfalls, damit Antworten der Eltern auffallen.</p>
+<h1 id="erste-einrichtung">3. Erste Einrichtung</h1>
+<p>Beim ersten Start fragt die App: <strong>Wer benutzt dieses
+Gerät?</strong> Wähle <strong>Kind</strong> oder
+<strong>Eltern</strong>.</p>
+<h2 id="eltern-gerät-einrichten">3.1 Eltern-Gerät einrichten</h2>
+<ol type="1">
+<li>Tippe auf <strong>Eltern</strong>.</li>
+<li>Die App zeigt deinen neuen <strong>Familiencode</strong> (zum
+Beispiel <code>ABCDE-FGHIJ</code>).</li>
+<li>Tippe auf <strong>Code teilen</strong>, um den Code per Nachricht an
+das Kind-Gerät oder das zweite Elternteil zu senden.</li>
+<li>Tippe auf <strong>Fertig</strong>.</li>
+<li>Ein Einrichtungsassistent fragt dich, wer du bist. Wähle deinen
+Namen aus der Liste der Familienmitglieder.</li>
+</ol>
+<p><strong>Zweites Elternteil:</strong> Wähle auf dem zweiten
+Eltern-Gerät ebenfalls <strong>Eltern</strong>, tippe auf <strong>Ich
+habe schon einen Code</strong> und gib den Familiencode vom ersten
+Eltern-Gerät ein. Tippe auf <strong>Verbinden</strong>. Dann sieht auch
+dieses Gerät dieselben Ergebnisse.</p>
+<h2 id="kind-gerät-einrichten">3.2 Kind-Gerät einrichten</h2>
+<ol type="1">
+<li>Tippe auf <strong>Kind</strong>.</li>
+<li>Gib im Feld <strong>Familiencode</strong> den Code vom Eltern-Gerät
+ein, im Feld <strong>Klassencode</strong> den Klassencode oder beide.
+Ein Code reicht. Beide Felder sind optional, über <strong>Ohne Code
+starten</strong> geht es auch ganz ohne.</li>
+<li>Tippe auf <strong>Weiter</strong>.</li>
+<li>Der Einrichtungsassistent führt durch drei Schritte:
+<ul>
+<li><strong>Name:</strong> Vorname oder Spitzname des Kindes. Der Name
+erscheint bei den Eltern.</li>
+<li><strong>Klasse:</strong> Vorschule, Klasse 1 bis 4 oder “Weiß ich
+nicht”. Danach lädt das Gerät nur Aufgabenpakete dieser Klasse.</li>
+<li><strong>Farben und Ziel:</strong> Farbwelt (Blau und Gelb oder Rosa)
+und Tagesziel (Runden pro Tag).</li>
+</ul></li>
+<li>Tippe auf <strong>Los geht’s</strong>. Mit <strong>Später
+einrichten</strong> überspringst du den Assistenten, du kannst alles
+später in den Einstellungen ändern.</li>
+</ol>
+<p><strong>Nur Klassencode, keine Familie:</strong> Das Gerät kann üben
+und Aufgaben der Klasse laden. Ohne Familiencode gibt es keine
+Ergebnisse an Eltern und keine Joker-Antworten. Im Tab Joker erscheint
+dazu ein Hinweis. Den Familiencode trägst du jederzeit in den
+Einstellungen nach, danach lädt die App bisher geübte Ergebnisse
+automatisch nach.</p>
+<h1 id="die-tabs-im-überblick">4. Die Tabs im Überblick</h1>
+<h2 id="kind-gerät">4.1 Kind-Gerät</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Tab</th>
+<th>Inhalt</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Schule</td>
+<td>Alle Klassenarbeiten, gruppiert nach Klasse und Fach (Mathe,
+Deutsch). Oben Fach-Filter, Fehlerheft, Training, Probearbeit und
+Pokale</td>
+</tr>
+<tr class="even">
+<td>Sprachen</td>
+<td>Vokabeln und Vokabeltests</td>
+</tr>
+<tr class="odd">
+<td>Vorschule</td>
+<td>Spielerische Aufgaben für die Kleinen (nur wenn aktiviert)</td>
+</tr>
+<tr class="even">
+<td>Joker</td>
+<td>Eigene Joker, Antworten der Eltern, neue Joker anfragen</td>
+</tr>
+<tr class="odd">
+<td>Einstellungen</td>
+<td>Profil, Codes, Darstellung, Datenschutz</td>
+</tr>
+</tbody>
+</table>
+<h2 id="eltern-gerät">4.2 Eltern-Gerät</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Tab</th>
+<th>Inhalt</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Übersicht</td>
+<td>Ergebnisse der Kinder, Wochenbericht, Beispieldaten zum
+Ausprobieren</td>
+</tr>
+<tr class="even">
+<td>Schule</td>
+<td>Wie beim Kind, zusätzlich Aufgaben-Editor und Cloud-Pakete im
+Menü</td>
+</tr>
+<tr class="odd">
+<td>Sprachen</td>
+<td>Vokabelkatalog</td>
+</tr>
+<tr class="even">
+<td>Vorschule</td>
+<td>Nur wenn in den Einstellungen aktiviert</td>
+</tr>
+<tr class="odd">
+<td>Joker</td>
+<td>Joker-Postfach und Liga der Eltern</td>
+</tr>
+<tr class="even">
+<td>Einstellungen</td>
+<td>Profil (“Ich bin”), Codes, Darstellung, Datenschutz,
+Cloud-Diagnose</td>
+</tr>
+</tbody>
+</table>
+<h1 id="üben-im-tab-schule">5. Üben im Tab Schule</h1>
+<h2 id="die-startseite">5.1 Die Startseite</h2>
+<p>Im Tab <strong>Schule</strong> stehen alle Arbeiten, gruppiert nach
+<strong>Klasse</strong> und <strong>Fach</strong>. Sobald es mehr als
+ein Fach gibt, erscheint oben eine Chip-Leiste (<strong>Alle</strong>,
+<strong>Deutsch</strong>, <strong>Mathe</strong>). Tippe auf einen Chip,
+um nur ein Fach zu sehen.</p>
+<p>Oben auf der Seite findest du:</p>
+<ul>
+<li><strong>Fehlerheft:</strong> Wiederholt bis zu 15 Aufgaben, die
+vorher falsch waren.</li>
+<li><strong>Training:</strong> Übt die zwei schwächsten Mathe-Übungen
+mit neuen Zahlen.</li>
+<li><strong>Probearbeit:</strong> 20 gemischte Aufgaben mit Zeitlimit
+(30 Minuten) und am Ende einer Note.</li>
+<li><strong>Pokal-Symbol:</strong> Öffnet Erfolge (nur auf dem
+Kind-Gerät).</li>
+<li><strong>Plus-Symbol (Menü):</strong> Aufgaben importieren, neue
+Aufgaben holen, Editor und Cloud-Pakete (Eltern), Einstellungen.</li>
+</ul>
+<p>Ziehe die Liste nach unten, um neue Aufgaben aus der Cloud zu
+laden.</p>
+<h2 id="eine-arbeit-starten">5.2 Eine Arbeit starten</h2>
+<ol type="1">
+<li>Tippe auf eine Arbeit, zum Beispiel “Klassenarbeit Nr. 1”.</li>
+<li>Die Arbeit besteht aus <strong>Übungen</strong> (zum Beispiel
+“Kernaufgaben”, “Einmaleins”). Der Ring zeigt, wie viel schon geschafft
+ist.</li>
+<li>Tippe auf eine Übung und rechne die Aufgaben der Reihe nach.</li>
+</ol>
+<h2 id="die-aufgabenarten">5.3 Die Aufgabenarten</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Art</th>
+<th>So antwortest du</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Zahl</td>
+<td>Ergebnis mit der Zahlentastatur eintippen</td>
+</tr>
+<tr class="even">
+<td>Teilen mit Rest</td>
+<td>Zwei Felder: Ergebnis und Rest</td>
+</tr>
+<tr class="odd">
+<td>Größer oder kleiner</td>
+<td>Auf &lt;, &gt; oder = tippen</td>
+</tr>
+<tr class="even">
+<td>Zahlenmauer</td>
+<td>Fehlende Steine ausfüllen, von unten nach oben</td>
+</tr>
+<tr class="odd">
+<td>Text (Deutsch)</td>
+<td>Wort oder Buchstaben eintippen. Zusätzliche Tasten für ä, ö, ü, ß.
+Auf <strong>Prüfen</strong> tippen. Groß- und Kleinschreibung zählt</td>
+</tr>
+</tbody>
+</table>
+<p>Bei falscher Antwort zeigt die App die richtige Lösung. Die Aufgabe
+zählt dann als falsch und kommt später ins Fehlerheft.</p>
+<h2 id="hilfen-beim-rechnen">5.4 Hilfen beim Rechnen</h2>
+<ul>
+<li><strong>Hinweis:</strong> Kleiner Tipp zur Aufgabe (zum Beispiel “Du
+weißt: 5 · 7 = 35. Also + 7”).</li>
+<li><strong>Lösung zeigen:</strong> Zeigt die Lösung. Eine angeschaute
+Lösung zählt weder als richtig noch als falsch und ist anders
+markiert.</li>
+<li><strong>Joker:</strong> Schickt die Aufgabe an die Eltern (siehe
+Kapitel 8).</li>
+<li><strong>Notizblock:</strong> Ein Blatt zum Schreiben und Zeichnen,
+auch mit dem Apple Pencil. Du findest es als Symbol in der Übung.</li>
+</ul>
+<p>In der <strong>Probearbeit</strong> sind Hinweis, Joker und Lösung
+ausgeblendet. Dort zählt nur das eigene Können.</p>
+<h2 id="sterne-und-ergebnisse">5.5 Sterne und Ergebnisse</h2>
+<p>Am Ende einer Runde zeigt die App, wie viele Aufgaben gleich richtig
+waren, und vergibt bis zu drei Sterne. Das Ergebnis wird automatisch an
+die Eltern gesendet, wenn ein Familiencode eingetragen ist.</p>
+<h1 id="fehlerheft-training-und-probearbeit">6. Fehlerheft, Training und
+Probearbeit</h1>
+<h2 id="fehlerheft">6.1 Fehlerheft</h2>
+<p>Sammelt bis zu 15 Aufgaben, die noch falsch sind, aus allen Fächern.
+Wer sie im Fehlerheft richtig löst, hat den Fehler gemeistert. Ist
+nichts offen, erscheint kein Fehlerheft.</p>
+<h2 id="training">6.2 Training</h2>
+<p>Wählt die zwei schwächsten Mathe-Übungen aus und erzeugt dazu je acht
+neue Aufgaben mit anderen Zahlen. So wird der Stoff gefestigt.</p>
+<h2 id="probearbeit">6.3 Probearbeit</h2>
+<p>Zwanzig gemischte Mathe-Aufgaben wie in einer echten Klassenarbeit.
+Die App stoppt die Zeit, schätzt am Ende eine Note und speichert das
+Ergebnis für die Eltern.</p>
+<h1 id="erfolge-tagesziel-und-wochenbericht">7. Erfolge, Tagesziel und
+Wochenbericht</h1>
+<p>Das Pokal-Symbol öffnet <strong>Erfolge</strong> (nur
+Kind-Gerät):</p>
+<ul>
+<li><strong>Serie:</strong> Wie viele Tage in Folge geübt wurde.</li>
+<li><strong>Tagesziel:</strong> Ein Ring zeigt die Runden von heute im
+Verhältnis zum Ziel. Das Ziel stellst du in den Einstellungen ein.</li>
+<li><strong>Pokale:</strong> 13 Pokale für Meilensteine.</li>
+</ul>
+<p>Auf dem Eltern-Gerät erinnert eine Mitteilung jeden <strong>Sonntag
+um 18 Uhr</strong> an den <strong>Wochenbericht</strong>. Der Bericht
+selbst steht in der Übersicht.</p>
+<h1 id="der-joker">8. Der Joker</h1>
+<p>Kommt das Kind bei einer Aufgabe nicht weiter, tippt es auf
+<strong>Joker</strong>. Die Eltern bekommen sofort eine Mitteilung und
+können antworten.</p>
+<h2 id="auf-dem-kind-gerät">8.1 Auf dem Kind-Gerät</h2>
+<ol type="1">
+<li>In einer Aufgabe oder in der Sprachübung auf <strong>Joker</strong>
+tippen.</li>
+<li>Die Aufgabe geht an die Familie. Das Kind sieht die Bestätigung. Die
+Antworten stehen im Tab <strong>Joker</strong>.</li>
+<li>Das Kind hat nur wenige Joker pro Tag (voreingestellt sind 3). Sind
+sie weg, kann es im Tab Joker <strong>Neue Joker anfragen</strong>
+tippen. Die Eltern geben dann Nachschub frei.</li>
+<li>Im Tab Joker kann das Kind mit <strong>Hat geholfen</strong>
+zurückmelden, dass die Antwort geholfen hat.</li>
+</ol>
+<p>Ohne Familiencode öffnet der Joker stattdessen das Teilen-Fenster.
+Das Kind kann die Frage dann per Nachricht an jemanden senden.</p>
+<h2 id="auf-dem-eltern-gerät">8.2 Auf dem Eltern-Gerät</h2>
+<ul>
+<li>Im Tab <strong>Joker</strong> erscheint das Joker-Postfach. Tippe
+eine Anfrage an und schreibe eine Antwort oder einen Tipp.</li>
+<li>Wer zuerst antwortet, bekommt Punkte (spielerische
+<strong>Liga</strong> unter den Eltern und größeren Geschwistern).</li>
+<li>Erledigte Anfragen wischst du nach links weg. Mit <strong>Alle
+erledigt</strong> räumst du das Postfach auf.</li>
+<li>Anfragen für <strong>Neue Joker</strong> bestätigst du dort
+ebenfalls.</li>
+<li>Wenn das Kind <strong>Hat geholfen</strong> drückt, kommt eine
+Mitteilung.</li>
+</ul>
+<h1 id="sprachen">9. Sprachen</h1>
+<p>Im Tab <strong>Sprachen</strong> lernt das Kind Wörter in Türkisch
+und Englisch. Ein kindgerechter Vokabelkatalog bietet Themen und
+Vokabeltests. Die App spricht die Wörter vor, die Stimme hängt von den
+auf dem Gerät installierten Sprachen ab. Fehlen Stimmen, zeigt die App
+einen Hinweis. Neue Stimmen lädst du in den iOS-Einstellungen unter
+<strong>Bedienungshilfen &gt; Gesprochene Inhalte &gt;
+Stimmen</strong>.</p>
+<h1 id="vorschule">10. Vorschule</h1>
+<p>Der Tab <strong>Vorschule</strong> ist für kleine Kinder, die noch
+nicht schreiben. Alle Aufgaben bestehen aus großen Knöpfen, Bildern und
+Vorlesen.</p>
+<ul>
+<li><strong>Zahlenraum</strong> (Bis 5, Bis 10, Bis 20) und
+<strong>Sprache</strong> (Deutsch oder Türkisch) stellst du oben
+ein.</li>
+<li><strong>Übungen:</strong> Zählen, Zahlen, Plus, Mehr oder weniger,
+Davor und danach, Formen und Farben, Anfangsbuchstaben, Was passt
+nicht?, Muster, Memory.</li>
+<li>Richtige Antwort: Lob und weiter. Falsche Antwort: Knopf wackelt,
+nochmal versuchen.</li>
+<li>Am Ende gibt es Sterne. Das Ergebnis geht (auf dem Kind-Gerät) an
+die Eltern.</li>
+</ul>
+<p><strong>Eigene Pakete:</strong> Importierst du ein Vorschul-Paket
+(JSON mit Klasse “Vorschule”), erscheint es im Tab Vorschule unter
+<strong>Eigene Pakete</strong>. Lange auf ein Paket drücken öffnet
+<strong>Paket löschen</strong>.</p>
+<p><strong>Tab ein- oder ausblenden:</strong> In den Einstellungen unter
+<strong>Darstellung</strong> (“Tab Vorschule anzeigen”). Auf dem
+Kind-Gerät ist der Tab standardmäßig an, wenn im Profil “Vorschule”
+gewählt ist. Auf dem Eltern-Gerät ist er standardmäßig aus.</p>
+<h1 id="aufgaben-bereitstellen-eltern">11. Aufgaben bereitstellen
+(Eltern)</h1>
+<h2 id="aufgaben-erstellen-lassen">11.1 Aufgaben erstellen lassen</h2>
+<p>Aufgaben liegen als <strong>JSON-Datei</strong> vor. Du lässt sie von
+Claude im Claude-Projekt “Yemins Schul App” erstellen:</p>
+<ul>
+<li>Mathe: “Klassenarbeit Mathe Nr. 2” schreiben, optional mit Foto
+einer echten Arbeit.</li>
+<li>Deutsch: Fotos aus dem Arbeitsheft schicken und einen Namen nennen,
+zum Beispiel “Richtig schreiben Ferien Nr.2”.</li>
+<li>Vorschule: “Vorschule Zählen Nr. 2”.</li>
+</ul>
+<p>Claude antwortet mit genau einem JSON-Block. Kopiere ihn.</p>
+<h2 id="aufgaben-in-die-app-bringen">11.2 Aufgaben in die App
+bringen</h2>
+<p>Im Tab <strong>Schule</strong> auf das <strong>Plus</strong>
+tippen:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Menüpunkt</th>
+<th>Wann</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Text einfügen</strong></td>
+<td>JSON einfügen und bestätigen</td>
+</tr>
+<tr class="even">
+<td><strong>Aus Zwischenablage einfügen</strong></td>
+<td>JSON ist schon kopiert</td>
+</tr>
+<tr class="odd">
+<td><strong>Datei importieren</strong></td>
+<td>JSON-Datei aus der Dateien-App wählen</td>
+</tr>
+</tbody>
+</table>
+<p>Die App fragt auf dem Eltern-Gerät, wohin die Arbeit soll:</p>
+<ul>
+<li><strong>An meine Familie veröffentlichen:</strong> Kind-Geräte mit
+demselben Familiencode laden sie automatisch.</li>
+<li><strong>An die Klasse veröffentlichen:</strong> Alle Geräte mit dem
+Klassencode laden sie (nur für den Admin der Klasse).</li>
+<li><strong>Nur auf diesem Gerät importieren:</strong> Bleibt
+lokal.</li>
+</ul>
+<p>Auf dem Kind-Gerät tippst du im Menü auf <strong>Neue Aufgaben
+holen</strong> oder ziehst die Liste nach unten. Beim Öffnen der App
+passiert das auch von selbst.</p>
+<p><strong>Cloud-Pakete</strong> (Eltern, Menü Plus): zeigt alle Pakete
+in der Cloud (Familie und Klasse) und erlaubt, JSON direkt einzufügen
+und zu veröffentlichen. Ein Paket entfernst du mit Wischen nach
+links.</p>
+<h2 id="aufgaben-editor">11.3 Aufgaben-Editor</h2>
+<p>Ohne Claude kannst du im <strong>Aufgaben-Editor</strong> (Eltern,
+Menü Plus) selbst Arbeiten, Übungen und Aufgaben anlegen. Auch Vokabeln
+für den Sprach-Tab lassen sich dort erstellen.</p>
+<h1 id="klassencode-für-eine-ganze-klasse">12. Klassencode für eine
+ganze Klasse</h1>
+<p>Mit dem Klassencode erhalten alle Kinder einer Klasse dieselben
+Aufgaben.</p>
+<h2 id="als-admin-einrichten">12.1 Als Admin einrichten</h2>
+<ol type="1">
+<li>Eltern-Gerät: <strong>Einstellungen &gt; Klassencode</strong>.</li>
+<li>Tippe auf <strong>Neuen Klassencode erzeugen</strong>. Dein Gerät
+wird dabei <strong>Admin</strong>. Der geheime Schlüssel bleibt im
+Schlüsselbund deines Geräts.</li>
+<li>Teile den Code mit <strong>Code teilen</strong> an die Eltern der
+Klasse.</li>
+<li>Veröffentliche Pakete über <strong>An die Klasse
+veröffentlichen</strong>.</li>
+</ol>
+<p>Hast du einen Klassencode schon ohne Schlüssel eingetragen, tippst du
+auf <strong>Admin dieses Klassencodes werden</strong>.</p>
+<h2 id="als-teilnehmer">12.2 Als Teilnehmer</h2>
+<ol type="1">
+<li>Tippe auf dem Gerät des Kindes <strong>Einstellungen &gt;
+Klassencode</strong> und trage den Code ein, dann auf
+<strong>Klassencode speichern</strong>. Das geht auch bei der
+Ersteinrichtung.</li>
+<li>Danach holt <strong>Neue Aufgaben holen</strong> die Pakete der
+Klasse.</li>
+<li><strong>Klassencode entfernen</strong> trennt das Gerät wieder von
+der Klasse.</li>
+</ol>
+<h2 id="sicherheit">12.3 Sicherheit</h2>
+<p>Pakete der Klasse sind <strong>digital signiert</strong>. Ein Gerät
+übernimmt nur Pakete, die vom Admin unterschrieben sind, und merkt sich
+beim ersten Mal dessen öffentlichen Schlüssel. Wer nur den Code kennt,
+kann keine Aufgaben einschleusen. Pakete ohne gültige Unterschrift
+werden ignoriert, die App meldet das.</p>
+<h1 id="einstellungen">13. Einstellungen</h1>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Bereich</th>
+<th>Inhalt</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Dieses Gerät</td>
+<td>Zeigt, ob das Gerät Kind- oder Eltern-Gerät ist</td>
+</tr>
+<tr class="even">
+<td>Familiencode</td>
+<td>Anzeigen, teilen, ändern. Auf dem Kind-Gerät eintragen und
+speichern</td>
+</tr>
+<tr class="odd">
+<td>Klassencode</td>
+<td>Siehe Kapitel 12</td>
+</tr>
+<tr class="even">
+<td>Profil</td>
+<td>Kind: Name, Klasse, Tagesziel, <strong>Einrichtung noch einmal
+ansehen</strong>. Eltern: <strong>Ich bin</strong> (Name im Joker)</td>
+</tr>
+<tr class="odd">
+<td>Darstellung</td>
+<td>Farbwelt (Blau und Gelb oder Rosa), Glas-Effekte, Tab Vorschule
+anzeigen</td>
+</tr>
+<tr class="even">
+<td>Datenschutz</td>
+<td>Datenschutztext, Link zur Webseite, <strong>Meine Cloud-Daten
+löschen</strong></td>
+</tr>
+<tr class="odd">
+<td>Cloud-Diagnose</td>
+<td>Status, Test, Meldungen bei Problemen</td>
+</tr>
+<tr class="even">
+<td>Modus</td>
+<td>Gerät auf Kind oder Eltern zurücksetzen (Warnung beachten)</td>
+</tr>
+</tbody>
+</table>
+<h1 id="aufgaben-und-daten-löschen">14. Aufgaben und Daten löschen</h1>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Was</th>
+<th>So</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Arbeit auf dem Gerät</td>
+<td>In der Liste <strong>nach links wischen</strong>, dann <strong>Ja,
+löschen</strong> bestätigen. Dabei gehen auch die Ergebnisse dazu
+verloren</td>
+</tr>
+<tr class="even">
+<td>Vorschul-Paket</td>
+<td><strong>Lange drücken</strong>, dann <strong>Paket
+löschen</strong></td>
+</tr>
+<tr class="odd">
+<td>Paket in der Cloud (Eltern)</td>
+<td>Menü Plus &gt; Cloud-Pakete, Eintrag nach links wischen und
+bestätigen</td>
+</tr>
+<tr class="even">
+<td>Eigene Cloud-Daten</td>
+<td>Einstellungen &gt; Datenschutz &gt; <strong>Meine Cloud-Daten
+löschen</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Ein nur auf dem Gerät gelöschtes Paket kommt bei <strong>Neue
+Aufgaben holen</strong> wieder, solange es noch in der Cloud liegt.
+Lösche es zusätzlich dort.</p>
+<h1 id="datenschutz">15. Datenschutz</h1>
+<ul>
+<li>Kein Konto, keine Werbung, kein Tracking, keine Fremd-SDKs.</li>
+<li>Gespeichert werden: Name des Kindes (freiwillig), Ergebnisse,
+Joker-Nachrichten, Aufgabenpakete und die pseudonymen Codes.</li>
+<li>Die Daten liegen in Apples iCloud (CloudKit) und lokal auf dem
+Gerät.</li>
+<li>Die vollständige Datenschutzerklärung steht in der App unter
+<strong>Einstellungen &gt; Datenschutz</strong> und im Web unter
+https://cembot90.github.io/YEM1N/ .</li>
+</ul>
+<h1 id="probleme-und-antworten">16. Probleme und Antworten</h1>
+<p><strong>Ich sehe die Deutsch-Arbeit nicht.</strong> Deutsche Arbeiten
+stehen im Tab <strong>Schule</strong> unter <strong>Klasse 3 &gt;
+Deutsch</strong>. Prüfe im Profil, ob die Klasse stimmt (nur Pakete der
+eigenen Klasse werden geholt). Nutze den Fach-Filter
+<strong>Alle</strong>.</p>
+<p><strong>Neue Aufgaben kommen nicht an.</strong> Prüfe, ob
+Familiencode oder Klassencode eingetragen ist. Tippe <strong>Neue
+Aufgaben holen</strong>. Bei Klassenpaketen: Meldung “ohne gültige
+Unterschrift”? Dann den Klassencode entfernen und neu eintragen oder den
+Admin bitten, das Paket noch einmal zu senden.</p>
+<p><strong>Ich bekomme keine Mitteilung bei einem Joker.</strong>
+iOS-Einstellungen &gt; Mitteilungen &gt; YEM1N: <strong>Mitteilungen
+erlauben</strong> aktivieren. Prüfe, dass beide Geräte denselben
+Familiencode haben. In den Einstellungen der App hilft die
+<strong>Cloud-Diagnose</strong>.</p>
+<p><strong>Der Joker reicht nicht.</strong> Im Tab Joker <strong>Neue
+Joker anfragen</strong> tippen. Die Eltern bestätigen.</p>
+<p><strong>Das Feld für den Code hängt beim Tippen.</strong> Das kann
+auf älteren Geräten beim ersten Öffnen der Tastatur kurz dauern. In der
+Version aus TestFlight läuft die App spürbar flüssiger als in
+Test-Builds.</p>
+<p><strong>Kein Ton oder eine falsche Stimme.</strong> iOS-Einstellungen
+&gt; Bedienungshilfen &gt; Gesprochene Inhalte &gt; Stimmen: gewünschte
+Sprache laden. Prüfe den Stumm-Schalter.</p>
+<p><strong>Das Kind hat versehentlich gelöscht.</strong> Die App fragt
+jetzt nach. Die Arbeit kann über <strong>Neue Aufgaben holen</strong>
+zurückkommen, wenn sie noch in der Cloud liegt. Die Ergebnisse dazu sind
+verloren.</p>
+<p><strong>Ich will das Gerät von Kind auf Eltern ändern.</strong>
+Einstellungen &gt; Modus ändern. Bestätige die Warnung. Die Einrichtung
+startet danach neu.</p>
+<h1 id="kurzübersicht-für-den-alltag">17. Kurzübersicht für den
+Alltag</h1>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Ich möchte …</th>
+<th>Dann …</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Neue Aufgaben ans Kind schicken</td>
+<td>Eltern: JSON erstellen lassen, Plus &gt; Text einfügen, “An meine
+Familie”. Kind: Neue Aufgaben holen</td>
+</tr>
+<tr class="even">
+<td>Wissen, wie es lief</td>
+<td>Eltern-Gerät: Tab Übersicht</td>
+</tr>
+<tr class="odd">
+<td>Hilfe geben</td>
+<td>Eltern-Gerät: Tab Joker, Anfrage antippen, antworten</td>
+</tr>
+<tr class="even">
+<td>Fehler wiederholen</td>
+<td>Kind: Tab Schule, Fehlerheft</td>
+</tr>
+<tr class="odd">
+<td>Für eine Klassenarbeit üben</td>
+<td>Kind: Probearbeit</td>
+</tr>
+<tr class="even">
+<td>Weitere Kinder einer Klasse versorgen</td>
+<td>Klassencode erzeugen und teilen, Pakete “An die Klasse”</td>
+</tr>
+<tr class="odd">
+<td>Farbe ändern</td>
+<td>Einstellungen &gt; Darstellung &gt; Farbwelt</td>
+</tr>
+</tbody>
+</table>
+<p><em>Stand: Oktober 2026. Funktionen können sich mit neuen Versionen
+ändern.</em></p>
+</main></body></html>
