@@ -9,6 +9,7 @@ import PencilKit
 import CryptoKit
 import Security
 import WebKit
+import CoreImage.CIFilterBuiltins
 
 // MARK: - Design (Lacivert und Sari)
 
@@ -730,6 +731,12 @@ struct ModusAuswahlView: View {
             codeFeld("Familiencode", $codeEingabe)
             codeFeld("Klassencode", $klassenEingabe)
 
+            QRScanKnopf { art, code in
+                if art == "klasse" { klassenEingabe = code } else { codeEingabe = code }
+            }
+            .font(.system(.headline, design: .rounded))
+            .foregroundStyle(Theme.gelb)
+
             GelberKnopf(titel: "Weiter") {
                 familienCode = Familiencode.bereinigt(codeEingabe)
                 klassenCode = Familiencode.bereinigt(klassenEingabe)
@@ -835,6 +842,12 @@ struct ModusAuswahlView: View {
                     if b != codeEingabe { codeEingabe = b }
                 }
 
+            QRScanKnopf { art, code in
+                if art == "familie" { codeEingabe = code }
+            }
+            .font(.system(.headline, design: .rounded))
+            .foregroundStyle(Theme.gelb)
+
             GelberKnopf(titel: "Verbinden") {
                 familienCode = Familiencode.bereinigt(codeEingabe)
                 modus = "eltern"
@@ -878,6 +891,8 @@ struct SchwaecheEintrag: Identifiable {
     let titel: String
     let anteil: Double
     let runden: Int
+    var angesehen: Int = 0
+    var trend: Int = 0
     var id: String { titel }
 }
 
@@ -914,6 +929,9 @@ struct ElternDashboardView: View {
     private var alleErgebnisse: [RundenErgebnis]
     @State private var kindFilter = ""
     @State private var zeigeEinstellungen = false
+    @State private var radarTage = 7
+    @State private var pdfURL: URL?
+    @State private var zeigePDF = false
 
     private var ergebnisse: [RundenErgebnis] {
         kindFilter.isEmpty ? alleErgebnisse : alleErgebnisse.filter { $0.kind == kindFilter }
@@ -985,6 +1003,17 @@ struct ElternDashboardView: View {
                     .font(.system(.subheadline, design: .rounded).weight(.heavy))
                     .foregroundStyle(Theme.gelb)
             }
+            Button {
+                pdfURL = BerichtPDF.erstellen(berichtText)
+                zeigePDF = pdfURL != nil
+            } label: {
+                Label("Als PDF teilen", systemImage: "doc.richtext")
+                    .font(.system(.subheadline, design: .rounded).weight(.heavy))
+                    .foregroundStyle(Theme.gelb)
+            }
+            .sheet(isPresented: $zeigePDF) {
+                if let url = pdfURL { ShareSheet(items: [url]) }
+            }
             Text("Jeden Sonntag um 18 Uhr erinnert dich eine Mitteilung daran.")
                 .font(.caption)
                 .foregroundStyle(Theme.textSanft)
@@ -1004,16 +1033,47 @@ struct ElternDashboardView: View {
         return ergebnisse.filter { $0.zeitpunkt >= grenze }
     }
 
+    private var radarBasis: [RundenErgebnis] {
+        if radarTage == 0 { return ergebnisse }
+        let kal = Calendar.current
+        let grenze = kal.date(byAdding: .day, value: -(radarTage - 1), to: kal.startOfDay(for: Date.now)) ?? Date.distantPast
+        return ergebnisse.filter { $0.zeitpunkt >= grenze }
+    }
+
     private var schwaechste: [SchwaecheEintrag] {
-        let gruppiert = Dictionary(grouping: woche, by: \.uebung)
+        let gruppiert = Dictionary(grouping: radarBasis, by: \.uebung)
         let alle = gruppiert.map { titel, liste -> SchwaecheEintrag in
             let r = liste.reduce(0) { $0 + $1.richtig }
             let g = liste.reduce(0) { $0 + $1.gesamt }
+            let angesehen = liste.reduce(0) { $0 + $1.angesehen }
+            let sortiert = liste.sorted { $0.zeitpunkt < $1.zeitpunkt }
+            var trend = 0
+            if sortiert.count >= 2, let letzte = sortiert.last, letzte.gesamt > 0 {
+                let frueher = Array(sortiert.dropLast())
+                let fr = frueher.reduce(0) { $0 + $1.richtig }
+                let fg = frueher.reduce(0) { $0 + $1.gesamt }
+                if fg > 0 {
+                    let alt = Double(fr) / Double(fg)
+                    let neu = Double(letzte.richtig) / Double(letzte.gesamt)
+                    trend = neu > alt + 0.05 ? 1 : (neu < alt - 0.05 ? -1 : 0)
+                }
+            }
             return SchwaecheEintrag(titel: titel,
                                     anteil: g > 0 ? Double(r) / Double(g) : 0,
-                                    runden: liste.count)
+                                    runden: liste.count,
+                                    angesehen: angesehen,
+                                    trend: trend)
         }
-        return Array(alle.sorted { $0.anteil < $1.anteil }.prefix(3))
+        let schwach = alle.filter { $0.anteil < 0.95 || $0.angesehen > 0 }
+        return Array(schwach.sorted { $0.anteil < $1.anteil }.prefix(5))
+    }
+
+    private func radarZeile(_ e: SchwaecheEintrag) -> String {
+        var t = "\(e.runden) \(e.runden == 1 ? "Runde" : "Runden")"
+        if e.angesehen > 0 { t += ", \(e.angesehen) Lösungen angeschaut" }
+        if e.trend > 0 { t += ", wird besser" }
+        if e.trend < 0 { t += ", zuletzt schlechter" }
+        return t
     }
 
     var body: some View {
@@ -1028,6 +1088,7 @@ struct ElternDashboardView: View {
                     } else {
                         kacheln
                         wochenbalken
+                        abzeichenKarte
                         wochenberichtKarte
                         schwaecheKarte
                         letzteRunden
@@ -1137,13 +1198,47 @@ struct ElternDashboardView: View {
         return Theme.mint
     }
 
-    private var schwaecheKarte: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text("Hier lohnt sich Üben")
+    private var abzeichenKarte: some View {
+        let liste = Erfolge.pokale(ergebnisse, ziel: 2)
+        let geschafft = liste.filter { $0.erreicht }
+        return VStack(alignment: .leading, spacing: 10) {
+            Text("Abzeichen: \(geschafft.count) von \(liste.count)")
                 .font(.system(.headline, design: .rounded).weight(.heavy))
                 .foregroundStyle(Theme.gelb)
+            if geschafft.isEmpty {
+                Text("Noch keine Abzeichen. Das erste gibt es nach der ersten Runde.")
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.textSanft)
+            } else {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 46), spacing: 8)], spacing: 8) {
+                    ForEach(geschafft) { p in
+                        Text(p.emoji)
+                            .font(.system(size: 30))
+                            .frame(width: 46, height: 46)
+                            .background(Color.white.opacity(0.1),
+                                        in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    }
+                }
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .glasKarte(radius: 26)
+    }
+
+    private var schwaecheKarte: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Schwächen-Radar")
+                .font(.system(.headline, design: .rounded).weight(.heavy))
+                .foregroundStyle(Theme.gelb)
+            Picker("Zeitraum", selection: $radarTage) {
+                Text("7 Tage").tag(7)
+                Text("30 Tage").tag(30)
+                Text("Alles").tag(0)
+            }
+            .pickerStyle(.segmented)
             if schwaechste.isEmpty {
-                Text("Noch keine Daten aus den letzten 7 Tagen.")
+                Text(radarBasis.isEmpty ? "Noch keine Daten in diesem Zeitraum." : "Keine Schwächen gefunden. Alles sitzt.")
                     .font(.subheadline)
                     .foregroundStyle(Theme.textSanft)
             } else {
@@ -1167,10 +1262,15 @@ struct ElternDashboardView: View {
                             }
                         }
                         .frame(height: 7)
-                        Text("\(eintrag.runden) \(eintrag.runden == 1 ? "Runde" : "Runden")")
+                        Text(radarZeile(eintrag))
                             .font(.caption)
                             .foregroundStyle(Theme.textSanft)
                     }
+                }
+                if let erste = schwaechste.first {
+                    Text("Tipp: Übt als Nächstes \(erste.titel). Das Training im Tab Schule wählt die schwächsten Übungen automatisch.")
+                        .font(.footnote)
+                        .foregroundStyle(Color.white)
                 }
             }
         }
@@ -1260,6 +1360,8 @@ struct EinstellungenView: View {
     @AppStorage("profilFertig") private var profilFertig = true
     @AppStorage("lernzeitAn") private var lernzeitAn = false
     @AppStorage("lernzeitMinuten") private var lernzeitMinuten = 16 * 60
+    @State private var zeigeFamilienQR = false
+    @State private var zeigeKlassenQR = false
     @State private var klassenEingabe = ""
     @State private var klassenAdmin = false
     @State private var klassenInfo = ""
@@ -1308,6 +1410,13 @@ struct EinstellungenView: View {
                                 ShareLink(item: Nachricht.familiencode(familienCode)) {
                                     Label("Code teilen", systemImage: "square.and.arrow.up")
                                 }
+                                Button { zeigeFamilienQR = true } label: {
+                                    Label("QR-Code für das Kind zeigen", systemImage: "qrcode")
+                                }
+                                .sheet(isPresented: $zeigeFamilienQR) {
+                                    QRAnzeigeSheet(titel: "Familiencode", art: "familie", code: familienCode,
+                                                   hinweis: "Nur dem Kind oder dem anderen Elternteil zeigen. Wer diesen Code scannt, sieht die Ergebnisse und Joker der Familie.")
+                                }
                             }
                             Button("Neuen Code erzeugen") { familienCode = Familiencode.neu() }
                             Text("Oder einen vorhandenen Code übernehmen, zum Beispiel vom anderen Elternteil:")
@@ -1322,6 +1431,9 @@ struct EinstellungenView: View {
                                 let b = Familiencode.bereinigt(codeEingabe)
                                 if b != codeEingabe { codeEingabe = b }
                             }
+                        QRScanKnopf { art, code in
+                            if art == "familie" { codeEingabe = code }
+                        }
                         Button("Code speichern") {
                             familienCode = Familiencode.bereinigt(codeEingabe)
                         }
@@ -1335,6 +1447,13 @@ struct EinstellungenView: View {
                                 .font(.system(.title3, design: .monospaced).weight(.bold))
                                 .foregroundStyle(Theme.gelb)
                             if !klassenCode.isEmpty {
+                                Button { zeigeKlassenQR = true } label: {
+                                    Label("QR-Code für die Klasse zeigen", systemImage: "qrcode")
+                                }
+                                .sheet(isPresented: $zeigeKlassenQR) {
+                                    QRAnzeigeSheet(titel: "Klassencode", art: "klasse", code: klassenCode,
+                                                   hinweis: "Über diesen Code kommen nur Aufgabenpakete an. Ergebnisse und Joker bleiben in der Familie.")
+                                }
                                 ShareLink(item: "📚 YEM1N Klassencode: \(klassenCode)\nIn der App unter Einstellungen > Klassencode eintragen, dann erscheinen die Aufgaben der Klasse automatisch.") {
                                     Label("Klassencode teilen", systemImage: "square.and.arrow.up")
                                 }
@@ -1380,6 +1499,9 @@ struct EinstellungenView: View {
                                 let b = Familiencode.bereinigt(klassenEingabe)
                                 if b != klassenEingabe { klassenEingabe = b }
                             }
+                        QRScanKnopf { art, code in
+                            if art == "klasse" { klassenEingabe = code }
+                        }
                         Button("Klassencode speichern") {
                             klassenCode = Familiencode.bereinigt(klassenEingabe)
                             klassenEingabe = klassenCode
@@ -2442,8 +2564,18 @@ struct UebungInhalt: View {
     @State private var probeStart = Date.now
     @State private var zeigeNotiz = false
     @State private var notiz = PKDrawing()
+    @Query(filter: #Predicate<RundenErgebnis> { $0.quelle == "lokal" })
+    private var lokaleRunden: [RundenErgebnis]
+    @AppStorage("tagesziel") private var tagesziel = 2
+    @State private var neuePokale: [Pokal] = []
 
     private var istProbe: Bool { uebung.arbeit?.spezial == "probe" }
+
+    private func pruefePokale() {
+        guard modus == "kind" else { return }
+        let neu = Erfolge.neue(lokaleRunden, ziel: tagesziel)
+        if !neu.isEmpty { neuePokale += neu }
+    }
 
     // Die nächste Übung derselben Arbeit, bevorzugt eine noch nicht fertige
     private var naechsteUebung: Uebung? {
@@ -3123,6 +3255,27 @@ struct UebungInhalt: View {
                     .foregroundStyle(Theme.textSanft)
                     .multilineTextAlignment(.center)
 
+                if !neuePokale.isEmpty {
+                    VStack(spacing: 8) {
+                        Text("Neues Abzeichen!")
+                            .font(.system(.headline, design: .rounded).weight(.heavy))
+                            .foregroundStyle(Theme.gelb)
+                        ForEach(neuePokale) { p in
+                            HStack(spacing: 10) {
+                                Text(p.emoji).font(.system(size: 38))
+                                Text(p.titel)
+                                    .font(.system(.title3, design: .rounded).weight(.heavy))
+                                    .foregroundStyle(Color.white)
+                            }
+                        }
+                    }
+                    .padding(16)
+                    .frame(maxWidth: .infinity)
+                    .glasKarte(radius: 26)
+                    .padding(.horizontal, 24)
+                    .transition(.scale.combined(with: .opacity))
+                }
+
                 if !uebung.tipp.isEmpty && gut < uebung.aufgaben.count {
                     Text("Tipp: " + uebung.tipp)
                         .font(.subheadline)
@@ -3165,8 +3318,11 @@ struct UebungInhalt: View {
                     .padding(.top, 4)
             }
             .padding(.top, 50)
+            .animation(.smooth, value: neuePokale.count)
         }
         .scrollIndicators(.hidden)
+        .onAppear { pruefePokale() }
+        .onChange(of: lokaleRunden.count) { pruefePokale() }
     }
 
     // Zusammenfassung für die Eltern (Stufe 0: manuell über das Teilen-Menü)
@@ -10153,8 +10309,47 @@ enum Erfolge {
             Pokal(id: "st50", emoji: "🌟", titel: "50 Sterne", erreicht: sterne >= 50),
             Pokal(id: "st150", emoji: "💫", titel: "150 Sterne", erreicht: sterne >= 150),
             Pokal(id: "fehlerfrei", emoji: "💯", titel: "Ohne Fehler", erreicht: fehlerfrei),
-            Pokal(id: "ziel5", emoji: "🎉", titel: "Tagesziel 5 Tage", erreicht: zielTage >= 5)
+            Pokal(id: "ziel5", emoji: "🎉", titel: "Tagesziel 5 Tage", erreicht: zielTage >= 5),
+            Pokal(id: "m_einmaleins", emoji: "🧮", titel: "Einmaleins-Meister", erreicht: meister(liste, "Einmaleins")),
+            Pokal(id: "m_kern", emoji: "🧠", titel: "Kernaufgaben-Profi", erreicht: meister(liste, "Kernaufgaben")),
+            Pokal(id: "m_nachbar", emoji: "🏘️", titel: "Nachbar-Meister", erreicht: meister(liste, "Nachbar")),
+            Pokal(id: "m_geteilt", emoji: "➗", titel: "Geteilt-Held", erreicht: meister(liste, "Geteilt")),
+            Pokal(id: "m_rest", emoji: "🧩", titel: "Rest-Experte", erreicht: meister(liste, "Rest")),
+            Pokal(id: "m_mauer", emoji: "🧱", titel: "Mauer-Baumeister", erreicht: meister(liste, "Zahlenmauern")),
+            Pokal(id: "m_raetsel", emoji: "🔍", titel: "Rätsel-Knacker", erreicht: meister(liste, "Zahlenrätsel")),
+            Pokal(id: "m_sach", emoji: "✏️", titel: "Sachaufgaben-Profi", erreicht: meister(liste, "Sachaufgaben")),
+            Pokal(id: "m_gemischt", emoji: "🎓", titel: "Alles-gemischt-Meister", erreicht: meister(liste, "Alles gemischt")),
+            Pokal(id: "m_deutsch", emoji: "📚", titel: "Deutsch-Held", erreicht: liste.contains { $0.fach == "Deutsch" && $0.gesamt > 0 && $0.richtig == $0.gesamt }),
+            Pokal(id: "frueh", emoji: "🌅", titel: "Frühstarter", erreicht: liste.contains { Calendar.current.component(.hour, from: $0.zeitpunkt) < 9 })
         ]
+    }
+
+    // Eine Übung, deren Titel das Stichwort enthält, wurde einmal komplett richtig gelöst
+    static func meister(_ liste: [RundenErgebnis], _ stichwort: String) -> Bool {
+        liste.contains {
+            $0.uebung.localizedCaseInsensitiveContains(stichwort) && $0.gesamt > 0 && $0.richtig == $0.gesamt
+        }
+    }
+
+    // Abzeichen, die seit dem letzten Mal neu dazugekommen sind
+    static func neue(_ liste: [RundenErgebnis], ziel: Int) -> [Pokal] {
+        let schluessel = "pokaleGesehen"
+        let speicher = UserDefaults.standard
+        let erreicht = pokale(liste, ziel: ziel).filter { $0.erreicht }
+        let ids = Set(erreicht.map { $0.id })
+        var gesehen = Set<String>()
+        if let alt = speicher.string(forKey: schluessel) {
+            gesehen = Set(alt.split(separator: ",").map { String($0) })
+        } else if liste.count > 1 {
+            // Bestehende Geräte: bisherige Abzeichen still übernehmen
+            speicher.set(ids.sorted().joined(separator: ","), forKey: schluessel)
+            return []
+        }
+        let neu = erreicht.filter { !gesehen.contains($0.id) }
+        if !neu.isEmpty {
+            speicher.set(gesehen.union(ids).sorted().joined(separator: ","), forKey: schluessel)
+        }
+        return neu
     }
 }
 
@@ -11402,6 +11597,259 @@ struct DatenschutzView: View {
         }
         .navigationTitle("Datenschutz")
         .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+// ============================================================
+// MARK: - QR-Codes und PDF-Bericht
+// ============================================================
+
+enum QRPaket {
+    static func inhalt(art: String, code: String) -> String {
+        "yem1n://\(art)/\(code)"
+    }
+
+    // Liefert Art ("familie" oder "klasse") und bereinigten Code, sonst nil
+    static func lese(_ text: String) -> (art: String, code: String)? {
+        let t = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        let vorsatz = "yem1n://"
+        guard t.lowercased().hasPrefix(vorsatz) else { return nil }
+        let rest = String(t.dropFirst(vorsatz.count))
+        let teile = rest.split(separator: "/").map(String.init)
+        guard teile.count == 2 else { return nil }
+        let art = teile[0].lowercased()
+        guard art == "familie" || art == "klasse" else { return nil }
+        let code = Familiencode.bereinigt(teile[1])
+        guard Familiencode.istGueltig(code) else { return nil }
+        return (art, code)
+    }
+
+    static func bild(_ text: String) -> UIImage? {
+        let filter = CIFilter.qrCodeGenerator()
+        filter.message = Data(text.utf8)
+        filter.correctionLevel = "M"
+        guard let ci = filter.outputImage else { return nil }
+        let gross = ci.transformed(by: CGAffineTransform(scaleX: 10, y: 10))
+        guard let cg = CIContext().createCGImage(gross, from: gross.extent) else { return nil }
+        return UIImage(cgImage: cg)
+    }
+}
+
+struct QRAnzeigeSheet: View {
+    let titel: String
+    let art: String
+    let code: String
+    let hinweis: String
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                HintergrundView()
+                ScrollView {
+                    VStack(spacing: 18) {
+                        if let bild = QRPaket.bild(QRPaket.inhalt(art: art, code: code)) {
+                            Image(uiImage: bild)
+                                .interpolation(.none)
+                                .resizable()
+                                .scaledToFit()
+                                .padding(16)
+                                .background(Color.white, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+                                .frame(maxWidth: 300)
+                        }
+                        Text(code)
+                            .font(.system(.title2, design: .monospaced).weight(.bold))
+                            .foregroundStyle(Theme.gelb)
+                        Text(hinweis)
+                            .font(.footnote)
+                            .multilineTextAlignment(.center)
+                            .foregroundStyle(Theme.textSanft)
+                            .padding(.horizontal, 12)
+                    }
+                    .padding(24)
+                }
+            }
+            .navigationTitle(titel)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Fertig") { dismiss() }
+                }
+            }
+        }
+    }
+}
+
+struct QRKameraAnsicht: UIViewControllerRepresentable {
+    // Gibt true zurück, wenn der Code angenommen wurde
+    let onCode: (String) -> Bool
+
+    func makeUIViewController(context: Context) -> QRKameraController {
+        let c = QRKameraController()
+        c.onCode = onCode
+        return c
+    }
+
+    func updateUIViewController(_ vc: QRKameraController, context: Context) {}
+}
+
+final class QRKameraController: UIViewController, AVCaptureMetadataOutputObjectsDelegate {
+    var onCode: ((String) -> Bool)?
+    private let session = AVCaptureSession()
+    private var vorschau: AVCaptureVideoPreviewLayer?
+    private var fertig = false
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        view.backgroundColor = .black
+        AVCaptureDevice.requestAccess(for: .video) { [weak self] erlaubt in
+            DispatchQueue.main.async {
+                if erlaubt { self?.starte() }
+            }
+        }
+    }
+
+    private func starte() {
+        guard let geraet = AVCaptureDevice.default(for: .video),
+              let eingang = try? AVCaptureDeviceInput(device: geraet),
+              session.canAddInput(eingang) else { return }
+        session.addInput(eingang)
+        let ausgang = AVCaptureMetadataOutput()
+        guard session.canAddOutput(ausgang) else { return }
+        session.addOutput(ausgang)
+        ausgang.setMetadataObjectsDelegate(self, queue: .main)
+        ausgang.metadataObjectTypes = [.qr]
+        let ebene = AVCaptureVideoPreviewLayer(session: session)
+        ebene.videoGravity = .resizeAspectFill
+        ebene.frame = view.bounds
+        view.layer.addSublayer(ebene)
+        vorschau = ebene
+        let sitzung = session
+        DispatchQueue.global(qos: .userInitiated).async { sitzung.startRunning() }
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        vorschau?.frame = view.bounds
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        if session.isRunning { session.stopRunning() }
+    }
+
+    func metadataOutput(_ output: AVCaptureMetadataOutput,
+                        didOutput metadataObjects: [AVMetadataObject],
+                        from connection: AVCaptureConnection) {
+        guard !fertig,
+              let objekt = metadataObjects.first as? AVMetadataMachineReadableCodeObject,
+              let text = objekt.stringValue else { return }
+        if onCode?(text) == true { fertig = true }
+    }
+}
+
+struct QRScanSheet: View {
+    let onErgebnis: (String, String) -> Void
+    @Environment(\.dismiss) private var dismiss
+    @State private var fehler = ""
+
+    var body: some View {
+        NavigationStack {
+            ZStack(alignment: .bottom) {
+                QRKameraAnsicht { text in
+                    if let p = QRPaket.lese(text) {
+                        onErgebnis(p.art, p.code)
+                        dismiss()
+                        return true
+                    }
+                    fehler = "Das ist kein YEM1N-Code. Versuche es noch einmal."
+                    return false
+                }
+                .ignoresSafeArea()
+                Text(fehler.isEmpty ? "Halte die Kamera auf den QR-Code." : fehler)
+                    .font(.system(.subheadline, design: .rounded).weight(.bold))
+                    .foregroundStyle(Theme.navy)
+                    .padding(.horizontal, 18)
+                    .padding(.vertical, 12)
+                    .background(Theme.gelb, in: Capsule())
+                    .padding(.bottom, 30)
+            }
+            .navigationTitle("QR-Code scannen")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Abbrechen") { dismiss() }
+                }
+            }
+        }
+    }
+}
+
+struct QRScanKnopf: View {
+    let onErgebnis: (String, String) -> Void
+    @State private var zeige = false
+
+    var body: some View {
+        Button { zeige = true } label: {
+            Label("QR-Code scannen", systemImage: "qrcode.viewfinder")
+        }
+        .sheet(isPresented: $zeige) { QRScanSheet(onErgebnis: onErgebnis) }
+    }
+}
+
+enum BerichtPDF {
+    static func erstellen(_ text: String) -> URL? {
+        let seite = CGRect(x: 0, y: 0, width: 595, height: 842)
+        let renderer = UIGraphicsPDFRenderer(bounds: seite)
+        let navy = UIColor(red: 0, green: 0.125, blue: 0.357, alpha: 1)
+        let gelb = UIColor(red: 1, green: 0.93, blue: 0, alpha: 1)
+        let zeilen = Array(text.components(separatedBy: "\n").dropFirst())
+        let datum = Date.now.formatted(date: .long, time: .omitted)
+        let daten = renderer.pdfData { ctx in
+            var y: CGFloat = 0
+            func neueSeite() {
+                ctx.beginPage()
+                navy.setFill()
+                UIBezierPath(rect: CGRect(x: 0, y: 0, width: 595, height: 96)).fill()
+                let logo: [NSAttributedString.Key: Any] = [
+                    .font: UIFont.systemFont(ofSize: 34, weight: .black),
+                    .foregroundColor: gelb]
+                ("YEM1N" as NSString).draw(at: CGPoint(x: 40, y: 20), withAttributes: logo)
+                let unter: [NSAttributedString.Key: Any] = [
+                    .font: UIFont.systemFont(ofSize: 14, weight: .semibold),
+                    .foregroundColor: UIColor.white]
+                (("Wochenbericht, " + datum) as NSString).draw(at: CGPoint(x: 40, y: 62), withAttributes: unter)
+                y = 124
+            }
+            neueSeite()
+            for zeile in zeilen {
+                if zeile.isEmpty {
+                    y += 10
+                    continue
+                }
+                let fett = zeile.hasPrefix("⭐")
+                let attribute: [NSAttributedString.Key: Any] = [
+                    .font: fett ? UIFont.systemFont(ofSize: 20, weight: .heavy) : UIFont.systemFont(ofSize: 14),
+                    .foregroundColor: fett ? navy : UIColor.black]
+                let box = (zeile as NSString).boundingRect(
+                    with: CGSize(width: 515, height: 2000),
+                    options: .usesLineFragmentOrigin,
+                    attributes: attribute,
+                    context: nil)
+                let hoehe = ceil(box.height)
+                if y + hoehe > 800 { neueSeite() }
+                (zeile as NSString).draw(in: CGRect(x: 40, y: y, width: 515, height: hoehe),
+                                         withAttributes: attribute)
+                y += hoehe + (fett ? 8 : 5)
+            }
+        }
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("YEM1N-Wochenbericht.pdf")
+        do {
+            try daten.write(to: url)
+            return url
+        } catch {
+            return nil
+        }
     }
 }
 
