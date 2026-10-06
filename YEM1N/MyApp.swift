@@ -1581,6 +1581,7 @@ struct StartView: View {
     private var alleArbeiten: [Klassenarbeit]
 
     @State private var fachFilter = "Alle"
+    @State private var zuLoeschen: [Klassenarbeit] = []
     @State private var fehler: String?
     @State private var zeigeEinfuegen = false
     @State private var zeigeDatei = false
@@ -1882,7 +1883,7 @@ struct StartView: View {
                         .listRowInsets(EdgeInsets(top: 6, leading: 20, bottom: 6, trailing: 20))
                     }
                     .onDelete { offsets in
-                        offsets.forEach { context.delete(treffer[$0]) }
+                        zuLoeschen = offsets.map { treffer[$0] }
                     }
                 }
             }
@@ -1891,6 +1892,19 @@ struct StartView: View {
         .scrollContentBackground(.hidden)
         .scrollIndicators(.hidden)
         .refreshable { await CloudSync.aktiv(context, erzwingen: true) }
+        .confirmationDialog("Möchtest du das wirklich löschen?",
+                            isPresented: Binding(get: { !zuLoeschen.isEmpty },
+                                                 set: { if !$0 { zuLoeschen = [] } }),
+                            titleVisibility: .visible) {
+            Button("Ja, löschen", role: .destructive) {
+                zuLoeschen.forEach { context.delete($0) }
+                try? context.save()
+                zuLoeschen = []
+            }
+            Button("Nein, behalten", role: .cancel) { zuLoeschen = [] }
+        } message: {
+            Text(zuLoeschen.map(\.titel).joined(separator: ", ") + "\nDabei gehen auch alle Ergebnisse dazu verloren.")
+        }
     }
 
     private var fachChips: some View {
@@ -9157,6 +9171,7 @@ struct PaketeView: View {
     @AppStorage("familienCode") private var familienCode = ""
     @State private var cloud: [CloudPaket] = []
     @State private var klassenCloud: [CloudPaket] = []
+    @State private var cloudZuLoeschen: [CloudPaket] = []
     @State private var fuerKlasse = false
     @State private var meldung = ""
     @State private var zeigeEinfuegen = false
@@ -9242,11 +9257,7 @@ struct PaketeView: View {
                         }
                     }
                     .onDelete { offsets in
-                        let ziele = offsets.map { cloud[$0] }
-                        Task {
-                            for p in ziele { try? await CloudDienst.loeschePaket(id: p.id) }
-                            await laden()
-                        }
+                        cloudZuLoeschen = offsets.map { cloud[$0] }
                     }
                 } header: {
                     Text("In der Cloud")
@@ -9269,11 +9280,7 @@ struct PaketeView: View {
                             }
                         }
                         .onDelete { offsets in
-                            let ziele = offsets.map { klassenCloud[$0] }
-                            Task {
-                                for p in ziele { try? await CloudDienst.loeschePaket(id: p.id) }
-                                await laden()
-                            }
+                            cloudZuLoeschen = offsets.map { klassenCloud[$0] }
                         }
                     } header: {
                         Text("Bei der Klasse")
@@ -9293,6 +9300,22 @@ struct PaketeView: View {
         .navigationTitle("Cloud-Pakete")
         .navigationBarTitleDisplayMode(.inline)
         .task { await laden() }
+        .confirmationDialog("Aus der Cloud wirklich löschen?",
+                            isPresented: Binding(get: { !cloudZuLoeschen.isEmpty },
+                                                 set: { if !$0 { cloudZuLoeschen = [] } }),
+                            titleVisibility: .visible) {
+            Button("Ja, löschen", role: .destructive) {
+                let ziele = cloudZuLoeschen
+                cloudZuLoeschen = []
+                Task {
+                    for p in ziele { try? await CloudDienst.loeschePaket(id: p.id) }
+                    await laden()
+                }
+            }
+            Button("Nein, behalten", role: .cancel) { cloudZuLoeschen = [] }
+        } message: {
+            Text(cloudZuLoeschen.map(\.titel).joined(separator: ", "))
+        }
         .refreshable { await laden() }
         .sheet(isPresented: $zeigeEinfuegen) { einfuegenSheet }
     }
@@ -10640,11 +10663,11 @@ struct VorschuleView: View {
             .confirmationDialog("Paket löschen?", isPresented: Binding(get: { loeschen != nil },
                                                                      set: { if !$0 { loeschen = nil } }),
                                 titleVisibility: .visible) {
-                Button("Löschen", role: .destructive) {
+                Button("Ja, löschen", role: .destructive) {
                     if let a = loeschen { context.delete(a); try? context.save() }
                     loeschen = nil
                 }
-                Button("Abbrechen", role: .cancel) { loeschen = nil }
+                Button("Nein, behalten", role: .cancel) { loeschen = nil }
             }
         }
     }
