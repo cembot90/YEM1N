@@ -1,0 +1,923 @@
+{
+  "klasse": "Klasse 3",
+  "fach": "Deutsch",
+  "arbeit": "Richtig schreiben Ferien Nr.1",
+  "uebungen": [
+    {
+      "titel": "h weiterschwingen",
+      "gruppe": "Silbentrennendes h",
+      "symbol": "h",
+      "aufgaben": [
+        {
+          "art": "text",
+          "frage": "Schwinge weiter. Schreibe das Wort mit silbentrennendem h.",
+          "rechnung": "Zeh",
+          "antwort": "Zehen",
+          "hinweis": "Mehrzahl: zwei ...",
+          "erklaerung": "Zeh, Zehen"
+        },
+        {
+          "art": "text",
+          "frage": "Schwinge weiter. Schreibe das Wort mit silbentrennendem h.",
+          "rechnung": "er sieht",
+          "antwort": "sehen",
+          "hinweis": "wir ...",
+          "erklaerung": "er sieht, wir sehen"
+        },
+        {
+          "art": "text",
+          "frage": "Schwinge weiter. Schreibe das Wort mit silbentrennendem h.",
+          "rechnung": "sie mäht",
+          "antwort": "mähen",
+          "hinweis": "wir ...",
+          "erklaerung": "sie mäht, wir mähen"
+        },
+        {
+          "art": "text",
+          "frage": "Schwinge weiter. Schreibe das Wort mit silbentrennendem h.",
+          "rechnung": "er näht",
+          "antwort": "nähen",
+          "hinweis": "wir ...",
+          "erklaerung": "er näht, wir nähen"
+        },
+        {
+          "art": "text",
+          "frage": "Schwinge weiter. Schreibe das Wort mit silbentrennendem h.",
+          "rechnung": "es weht",
+          "antwort": "wehen",
+          "hinweis": "sie ...",
+          "erklaerung": "es weht, sie wehen"
+        },
+        {
+          "art": "text",
+          "frage": "Schwinge weiter. Schreibe das Wort mit silbentrennendem h.",
+          "rechnung": "er flieht",
+          "antwort": "fliehen",
+          "hinweis": "wir ...",
+          "erklaerung": "er flieht, wir fliehen"
+        },
+        {
+          "art": "text",
+          "frage": "Schwinge weiter. Schreibe das Wort mit silbentrennendem h.",
+          "rechnung": "er ruht",
+          "antwort": "ruhen",
+          "hinweis": "wir ...",
+          "erklaerung": "er ruht, wir ruhen"
+        }
+      ]
+    },
+    {
+      "titel": "Das passende Wort",
+      "gruppe": "Silbentrennendes h",
+      "symbol": "h",
+      "aufgaben": [
+        {
+          "art": "text",
+          "frage": "Welches Wort passt in den Satz? Schreibe es auf.",
+          "rechnung": "Papa ___ den Rasen.\n(mäht, sieht, weht, flieht)",
+          "antwort": "mäht",
+          "erklaerung": "Papa mäht den Rasen."
+        },
+        {
+          "art": "text",
+          "frage": "Welches Wort passt in den Satz? Schreibe es auf.",
+          "rechnung": "Oma ___ einen Knopf an.\n(mäht, ruht, näht, weht)",
+          "antwort": "näht",
+          "erklaerung": "Oma näht einen Knopf an."
+        },
+        {
+          "art": "text",
+          "frage": "Welches Wort passt in den Satz? Schreibe es auf.",
+          "rechnung": "Der Wind ___ stark.\n(näht, weht, sieht, mäht)",
+          "antwort": "weht",
+          "erklaerung": "Der Wind weht stark."
+        },
+        {
+          "art": "text",
+          "frage": "Welches Wort passt in den Satz? Schreibe es auf.",
+          "rechnung": "Das Reh ___ in den Wald.\n(näht, weht, flieht, ruht)",
+          "antwort": "flieht",
+          "erklaerung": "Das Reh flieht in den Wald."
+        },
+        {
+          "art": "text",
+          "frage": "Welches Wort passt in den Satz? Schreibe es auf.",
+          "rechnung": "Nach dem Spiel ___ er sich aus.\n(ruht, mäht, näht, weht)",
+          "antwort": "ruht",
+          "erklaerung": "Nach dem Spiel ruht er sich aus."
+        },
+        {
+          "art": "text",
+          "frage": "Welches Wort passt in den Satz? Schreibe es auf.",
+          "rechnung": "Ich ___ einen Vogel auf dem Ast.\n(sehe, nähe, mähe, wehe)",
+          "antwort": "sehe",
+          "erklaerung": "Ich sehe einen Vogel auf dem Ast."
+        }
+      ]
+    },
+    {
+      "titel": "Zusammengesetzte Nomen",
+      "gruppe": "Silbentrennendes h",
+      "symbol": "+",
+      "aufgaben": [
+        {
+          "art": "text",
+          "frage": "Setze die Wörter zusammen. Das h bleibt.",
+          "rechnung": "Kuh + Stall",
+          "antwort": "Kuhstall",
+          "erklaerung": "Kuh + Stall = Kuhstall"
+        },
+        {
+          "art": "text",
+          "frage": "Setze die Wörter zusammen. Das h bleibt.",
+          "rechnung": "Schuh + Schrank",
+          "antwort": "Schuhschrank",
+          "erklaerung": "Schuh + Schrank = Schuhschrank"
+        },
+        {
+          "art": "text",
+          "frage": "Setze die Wörter zusammen. Das h bleibt.",
+          "rechnung": "Floh + Markt",
+          "antwort": "Flohmarkt",
+          "erklaerung": "Floh + Markt = Flohmarkt"
+        },
+        {
+          "art": "text",
+          "frage": "Setze die Wörter zusammen. Das h bleibt.",
+          "rechnung": "Reh + Braten",
+          "antwort": "Rehbraten",
+          "erklaerung": "Reh + Braten = Rehbraten"
+        },
+        {
+          "art": "text",
+          "frage": "Setze die Wörter zusammen. Das h bleibt.",
+          "rechnung": "Kuh + Glocke",
+          "antwort": "Kuhglocke",
+          "erklaerung": "Kuh + Glocke = Kuhglocke"
+        },
+        {
+          "art": "text",
+          "frage": "Setze die Wörter zusammen. Das h bleibt.",
+          "rechnung": "Stroh + Hut",
+          "antwort": "Strohhut",
+          "erklaerung": "Stroh + Hut = Strohhut"
+        },
+        {
+          "art": "text",
+          "frage": "Setze die Wörter zusammen. Das h bleibt.",
+          "rechnung": "Schuh + Löffel",
+          "antwort": "Schuhlöffel",
+          "erklaerung": "Schuh + Löffel = Schuhlöffel"
+        },
+        {
+          "art": "text",
+          "frage": "Setze die Wörter zusammen. Das h bleibt.",
+          "rechnung": "Floh + Zirkus",
+          "antwort": "Flohzirkus",
+          "erklaerung": "Floh + Zirkus = Flohzirkus"
+        }
+      ]
+    },
+    {
+      "titel": "Nomen mit r",
+      "gruppe": "Vokalisiertes r",
+      "symbol": "r",
+      "aufgaben": [
+        {
+          "art": "text",
+          "frage": "Schwinge weiter. Schreibe die Mehrzahl.",
+          "rechnung": "Ohr",
+          "antwort": "Ohren",
+          "hinweis": "Zwei ...",
+          "erklaerung": "Ohr, Ohren"
+        },
+        {
+          "art": "text",
+          "frage": "Schwinge weiter. Schreibe die Mehrzahl.",
+          "rechnung": "Bär",
+          "antwort": "Bären",
+          "hinweis": "Zwei ...",
+          "erklaerung": "Bär, Bären"
+        },
+        {
+          "art": "text",
+          "frage": "Schwinge weiter. Schreibe die Mehrzahl.",
+          "rechnung": "Haar",
+          "antwort": "Haare",
+          "hinweis": "Viele ...",
+          "erklaerung": "Haar, Haare"
+        },
+        {
+          "art": "text",
+          "frage": "Schwinge weiter. Schreibe die Mehrzahl.",
+          "rechnung": "Tor",
+          "antwort": "Tore",
+          "hinweis": "Zwei ...",
+          "erklaerung": "Tor, Tore"
+        },
+        {
+          "art": "text",
+          "frage": "Schwinge weiter. Schreibe die Mehrzahl.",
+          "rechnung": "Chor",
+          "antwort": "Chöre",
+          "hinweis": "Zwei ...",
+          "erklaerung": "Chor, Chöre"
+        },
+        {
+          "art": "text",
+          "frage": "Schwinge weiter. Schreibe die Mehrzahl.",
+          "rechnung": "Horn",
+          "antwort": "Hörner",
+          "hinweis": "Zwei ...",
+          "erklaerung": "Horn, Hörner"
+        },
+        {
+          "art": "text",
+          "frage": "Schwinge weiter. Schreibe die Mehrzahl.",
+          "rechnung": "Stern",
+          "antwort": "Sterne",
+          "hinweis": "Viele ...",
+          "erklaerung": "Stern, Sterne"
+        },
+        {
+          "art": "text",
+          "frage": "Schwinge weiter. Schreibe die Mehrzahl.",
+          "rechnung": "Wurm",
+          "antwort": "Würmer",
+          "hinweis": "Viele ...",
+          "erklaerung": "Wurm, Würmer"
+        }
+      ]
+    },
+    {
+      "titel": "Verben mit r",
+      "gruppe": "Vokalisiertes r",
+      "symbol": "r",
+      "aufgaben": [
+        {
+          "art": "text",
+          "frage": "Schwinge weiter. Schreibe das Wort mit r.",
+          "rechnung": "er fährt",
+          "antwort": "fahren",
+          "hinweis": "wir ...",
+          "erklaerung": "er fährt, wir fahren"
+        },
+        {
+          "art": "text",
+          "frage": "Schwinge weiter. Schreibe das Wort mit r.",
+          "rechnung": "sie kehrt",
+          "antwort": "kehren",
+          "hinweis": "wir ...",
+          "erklaerung": "sie kehrt, wir kehren"
+        },
+        {
+          "art": "text",
+          "frage": "Schwinge weiter. Schreibe das Wort mit r.",
+          "rechnung": "er hört",
+          "antwort": "hören",
+          "hinweis": "wir ...",
+          "erklaerung": "er hört, wir hören"
+        },
+        {
+          "art": "text",
+          "frage": "Schwinge weiter. Schreibe das Wort mit r.",
+          "rechnung": "sie wirft",
+          "antwort": "werfen",
+          "hinweis": "wir ...",
+          "erklaerung": "sie wirft, wir werfen"
+        },
+        {
+          "art": "text",
+          "frage": "Schwinge weiter. Schreibe das Wort mit r.",
+          "rechnung": "er führt",
+          "antwort": "führen",
+          "hinweis": "wir ...",
+          "erklaerung": "er führt, wir führen"
+        },
+        {
+          "art": "text",
+          "frage": "Schwinge weiter. Schreibe das Wort mit r.",
+          "rechnung": "es stört",
+          "antwort": "stören",
+          "hinweis": "sie ...",
+          "erklaerung": "es stört, sie stören"
+        }
+      ]
+    },
+    {
+      "titel": "Nomen verlängern",
+      "gruppe": "b p, d t, g k",
+      "symbol": "b/p",
+      "aufgaben": [
+        {
+          "art": "text",
+          "frage": "Welcher Buchstabe fehlt? Schwinge weiter.",
+          "rechnung": "Hun?",
+          "antwort": "d",
+          "hinweis": "d oder t?",
+          "erklaerung": "die Hunde, also Hund"
+        },
+        {
+          "art": "text",
+          "frage": "Welcher Buchstabe fehlt? Schwinge weiter.",
+          "rechnung": "Ta?",
+          "antwort": "g",
+          "hinweis": "g oder k?",
+          "erklaerung": "die Tage, also Tag"
+        },
+        {
+          "art": "text",
+          "frage": "Welcher Buchstabe fehlt? Schwinge weiter.",
+          "rechnung": "Ber?",
+          "antwort": "g",
+          "hinweis": "g oder k?",
+          "erklaerung": "die Berge, also Berg"
+        },
+        {
+          "art": "text",
+          "frage": "Welcher Buchstabe fehlt? Schwinge weiter.",
+          "rechnung": "Gra?",
+          "antwort": "b",
+          "hinweis": "b oder p?",
+          "erklaerung": "die Gräber, also Grab"
+        },
+        {
+          "art": "text",
+          "frage": "Welcher Buchstabe fehlt? Schwinge weiter.",
+          "rechnung": "Pfa?",
+          "antwort": "d",
+          "hinweis": "d oder t?",
+          "erklaerung": "die Pfade, also Pfad"
+        },
+        {
+          "art": "text",
+          "frage": "Welcher Buchstabe fehlt? Schwinge weiter.",
+          "rechnung": "Hu?",
+          "antwort": "t",
+          "hinweis": "d oder t?",
+          "erklaerung": "die Hüte, also Hut"
+        },
+        {
+          "art": "text",
+          "frage": "Welcher Buchstabe fehlt? Schwinge weiter.",
+          "rechnung": "Wal?",
+          "antwort": "d",
+          "hinweis": "d oder t?",
+          "erklaerung": "die Wälder, also Wald"
+        },
+        {
+          "art": "text",
+          "frage": "Welcher Buchstabe fehlt? Schwinge weiter.",
+          "rechnung": "Zu?",
+          "antwort": "g",
+          "hinweis": "g oder k?",
+          "erklaerung": "die Züge, also Zug"
+        }
+      ]
+    },
+    {
+      "titel": "Adjektive verlängern",
+      "gruppe": "b p, d t, g k",
+      "symbol": "d/t",
+      "aufgaben": [
+        {
+          "art": "text",
+          "frage": "Welcher Buchstabe ist richtig? Schwinge weiter.",
+          "rechnung": "Die Katze ist lie?.",
+          "antwort": "b",
+          "hinweis": "b oder p?",
+          "erklaerung": "die liebe Katze, also lieb"
+        },
+        {
+          "art": "text",
+          "frage": "Welcher Buchstabe ist richtig? Schwinge weiter.",
+          "rechnung": "Der Ball ist run?.",
+          "antwort": "d",
+          "hinweis": "d oder t?",
+          "erklaerung": "der runde Ball, also rund"
+        },
+        {
+          "art": "text",
+          "frage": "Welcher Buchstabe ist richtig? Schwinge weiter.",
+          "rechnung": "Die Blumen sind bun?.",
+          "antwort": "t",
+          "hinweis": "d oder t?",
+          "erklaerung": "die bunten Blumen, also bunt"
+        },
+        {
+          "art": "text",
+          "frage": "Welcher Buchstabe ist richtig? Schwinge weiter.",
+          "rechnung": "Der Weg ist lan?.",
+          "antwort": "g",
+          "hinweis": "g oder k?",
+          "erklaerung": "der lange Weg, also lang"
+        },
+        {
+          "art": "text",
+          "frage": "Welcher Buchstabe ist richtig? Schwinge weiter.",
+          "rechnung": "Der Hund ist kran?.",
+          "antwort": "k",
+          "hinweis": "g oder k?",
+          "erklaerung": "der kranke Hund, also krank"
+        },
+        {
+          "art": "text",
+          "frage": "Welcher Buchstabe ist richtig? Schwinge weiter.",
+          "rechnung": "Die Banane ist gel?.",
+          "antwort": "b",
+          "hinweis": "b oder p?",
+          "erklaerung": "die gelbe Banane, also gelb"
+        },
+        {
+          "art": "text",
+          "frage": "Welcher Buchstabe ist richtig? Schwinge weiter.",
+          "rechnung": "Der Wolf ist wil?.",
+          "antwort": "d",
+          "hinweis": "d oder t?",
+          "erklaerung": "der wilde Wolf, also wild"
+        },
+        {
+          "art": "text",
+          "frage": "Welcher Buchstabe ist richtig? Schwinge weiter.",
+          "rechnung": "Der Hase ist flin?.",
+          "antwort": "k",
+          "hinweis": "g oder k?",
+          "erklaerung": "der flinke Hase, also flink"
+        }
+      ]
+    },
+    {
+      "titel": "Verben verlängern",
+      "gruppe": "b p, d t, g k",
+      "symbol": "g/k",
+      "aufgaben": [
+        {
+          "art": "text",
+          "frage": "Welcher Buchstabe fehlt? Schwinge weiter.",
+          "rechnung": "er lo?t",
+          "antwort": "b",
+          "hinweis": "b oder p?",
+          "erklaerung": "wir loben, also er lobt"
+        },
+        {
+          "art": "text",
+          "frage": "Welcher Buchstabe fehlt? Schwinge weiter.",
+          "rechnung": "es pie?t",
+          "antwort": "p",
+          "hinweis": "b oder p?",
+          "erklaerung": "sie piepen, also es piept"
+        },
+        {
+          "art": "text",
+          "frage": "Welcher Buchstabe fehlt? Schwinge weiter.",
+          "rechnung": "er lie?t",
+          "antwort": "g",
+          "hinweis": "g oder k?",
+          "erklaerung": "wir liegen, also er liegt"
+        },
+        {
+          "art": "text",
+          "frage": "Welcher Buchstabe fehlt? Schwinge weiter.",
+          "rechnung": "sie zei?t",
+          "antwort": "g",
+          "hinweis": "g oder k?",
+          "erklaerung": "wir zeigen, also sie zeigt"
+        },
+        {
+          "art": "text",
+          "frage": "Welcher Buchstabe fehlt? Schwinge weiter.",
+          "rechnung": "er pum?t",
+          "antwort": "p",
+          "hinweis": "b oder p?",
+          "erklaerung": "wir pumpen, also er pumpt"
+        },
+        {
+          "art": "text",
+          "frage": "Welcher Buchstabe fehlt? Schwinge weiter.",
+          "rechnung": "er glau?t",
+          "antwort": "b",
+          "hinweis": "b oder p?",
+          "erklaerung": "wir glauben, also er glaubt"
+        },
+        {
+          "art": "text",
+          "frage": "Welcher Buchstabe fehlt? Schwinge weiter.",
+          "rechnung": "sie sin?t",
+          "antwort": "g",
+          "hinweis": "g oder k?",
+          "erklaerung": "wir singen, also sie singt"
+        },
+        {
+          "art": "text",
+          "frage": "Welcher Buchstabe fehlt? Schwinge weiter.",
+          "rechnung": "er wan?t",
+          "antwort": "k",
+          "hinweis": "g oder k?",
+          "erklaerung": "wir wanken, also er wankt"
+        }
+      ]
+    },
+    {
+      "titel": "s weiterschwingen",
+      "gruppe": "s und ß",
+      "symbol": "s",
+      "aufgaben": [
+        {
+          "art": "text",
+          "frage": "Schwinge weiter. Schreibe die Mehrzahl.",
+          "rechnung": "Maus",
+          "antwort": "Mäuse",
+          "hinweis": "Zwei ...",
+          "erklaerung": "Maus, Mäuse"
+        },
+        {
+          "art": "text",
+          "frage": "Schwinge weiter. Schreibe die Mehrzahl.",
+          "rechnung": "Haus",
+          "antwort": "Häuser",
+          "hinweis": "Viele ...",
+          "erklaerung": "Haus, Häuser"
+        },
+        {
+          "art": "text",
+          "frage": "Schwinge weiter. Schreibe die Mehrzahl.",
+          "rechnung": "Gans",
+          "antwort": "Gänse",
+          "hinweis": "Viele ...",
+          "erklaerung": "Gans, Gänse"
+        },
+        {
+          "art": "text",
+          "frage": "Schwinge weiter. Schreibe die Mehrzahl.",
+          "rechnung": "Preis",
+          "antwort": "Preise",
+          "hinweis": "Viele ...",
+          "erklaerung": "Preis, Preise"
+        },
+        {
+          "art": "text",
+          "frage": "Schwinge weiter. Schreibe die Mehrzahl.",
+          "rechnung": "Kürbis",
+          "antwort": "Kürbisse",
+          "hinweis": "Viele ...",
+          "erklaerung": "Kürbis, Kürbisse"
+        },
+        {
+          "art": "text",
+          "frage": "Schwinge weiter. Schreibe die Mehrzahl.",
+          "rechnung": "Gras",
+          "antwort": "Gräser",
+          "hinweis": "Viele ...",
+          "erklaerung": "Gras, Gräser"
+        },
+        {
+          "art": "text",
+          "frage": "Schwinge weiter. Schreibe die Mehrzahl.",
+          "rechnung": "Bus",
+          "antwort": "Busse",
+          "hinweis": "Viele ...",
+          "erklaerung": "Bus, Busse"
+        },
+        {
+          "art": "text",
+          "frage": "Schwinge weiter. Schreibe die Mehrzahl.",
+          "rechnung": "Zeugnis",
+          "antwort": "Zeugnisse",
+          "hinweis": "Viele ...",
+          "erklaerung": "Zeugnis, Zeugnisse"
+        }
+      ]
+    },
+    {
+      "titel": "Verben mit s",
+      "gruppe": "s und ß",
+      "symbol": "s",
+      "aufgaben": [
+        {
+          "art": "text",
+          "frage": "Schwinge weiter. Schreibe das Wort mit s.",
+          "rechnung": "er reist",
+          "antwort": "reisen",
+          "hinweis": "wir ...",
+          "erklaerung": "er reist, wir reisen"
+        },
+        {
+          "art": "text",
+          "frage": "Schwinge weiter. Schreibe das Wort mit s.",
+          "rechnung": "sie liest",
+          "antwort": "lesen",
+          "hinweis": "wir ...",
+          "erklaerung": "sie liest, wir lesen"
+        },
+        {
+          "art": "text",
+          "frage": "Schwinge weiter. Schreibe das Wort mit s.",
+          "rechnung": "er bläst",
+          "antwort": "blasen",
+          "hinweis": "wir ...",
+          "erklaerung": "er bläst, wir blasen"
+        },
+        {
+          "art": "text",
+          "frage": "Schwinge weiter. Schreibe das Wort mit s.",
+          "rechnung": "sie weist",
+          "antwort": "weisen",
+          "hinweis": "wir ...",
+          "erklaerung": "sie weist, wir weisen"
+        },
+        {
+          "art": "text",
+          "frage": "Schwinge weiter. Schreibe das Wort mit s.",
+          "rechnung": "er speist",
+          "antwort": "speisen",
+          "hinweis": "wir ...",
+          "erklaerung": "er speist, wir speisen"
+        },
+        {
+          "art": "text",
+          "frage": "Schwinge weiter. Schreibe das Wort mit s.",
+          "rechnung": "es braust",
+          "antwort": "brausen",
+          "hinweis": "sie ...",
+          "erklaerung": "es braust, sie brausen"
+        }
+      ]
+    },
+    {
+      "titel": "ß weiterschwingen",
+      "gruppe": "s und ß",
+      "symbol": "ß",
+      "aufgaben": [
+        {
+          "art": "text",
+          "frage": "Schwinge weiter. Schreibe das Wort mit ß.",
+          "rechnung": "Fuß",
+          "antwort": "Füße",
+          "hinweis": "Zwei ...",
+          "erklaerung": "Fuß, Füße"
+        },
+        {
+          "art": "text",
+          "frage": "Schwinge weiter. Schreibe das Wort mit ß.",
+          "rechnung": "Gruß",
+          "antwort": "Grüße",
+          "hinweis": "Viele ...",
+          "erklaerung": "Gruß, Grüße"
+        },
+        {
+          "art": "text",
+          "frage": "Schwinge weiter. Schreibe das Wort mit ß.",
+          "rechnung": "Strauß",
+          "antwort": "Sträuße",
+          "hinweis": "Viele ...",
+          "erklaerung": "Strauß, Sträuße"
+        },
+        {
+          "art": "text",
+          "frage": "Schwinge weiter. Schreibe das Wort mit ß.",
+          "rechnung": "Floß",
+          "antwort": "Flöße",
+          "hinweis": "Viele ...",
+          "erklaerung": "Floß, Flöße"
+        },
+        {
+          "art": "text",
+          "frage": "Schwinge weiter. Schreibe das Wort mit ß.",
+          "rechnung": "Spieß",
+          "antwort": "Spieße",
+          "hinweis": "Viele ...",
+          "erklaerung": "Spieß, Spieße"
+        },
+        {
+          "art": "text",
+          "frage": "Schwinge weiter. Schreibe das Wort mit ß.",
+          "rechnung": "Maß",
+          "antwort": "Maße",
+          "hinweis": "Viele ...",
+          "erklaerung": "Maß, Maße"
+        },
+        {
+          "art": "text",
+          "frage": "Schwinge weiter. Schreibe das Wort mit ß.",
+          "rechnung": "er heißt",
+          "antwort": "heißen",
+          "hinweis": "wir ...",
+          "erklaerung": "er heißt, wir heißen"
+        },
+        {
+          "art": "text",
+          "frage": "Schwinge weiter. Schreibe das Wort mit ß.",
+          "rechnung": "sie reißt",
+          "antwort": "reißen",
+          "hinweis": "wir ...",
+          "erklaerung": "sie reißt, wir reißen"
+        },
+        {
+          "art": "text",
+          "frage": "Schwinge weiter. Schreibe das Wort mit ß.",
+          "rechnung": "er schmeißt",
+          "antwort": "schmeißen",
+          "hinweis": "wir ...",
+          "erklaerung": "er schmeißt, wir schmeißen"
+        },
+        {
+          "art": "text",
+          "frage": "Schwinge weiter. Schreibe das Wort mit ß.",
+          "rechnung": "sie genießt",
+          "antwort": "genießen",
+          "hinweis": "wir ...",
+          "erklaerung": "sie genießt, wir genießen"
+        },
+        {
+          "art": "text",
+          "frage": "Schwinge weiter. Schreibe das Wort mit ß.",
+          "rechnung": "er schweißt",
+          "antwort": "schweißen",
+          "hinweis": "wir ...",
+          "erklaerung": "er schweißt, wir schweißen"
+        },
+        {
+          "art": "text",
+          "frage": "Schwinge weiter. Schreibe das Wort mit ß.",
+          "rechnung": "sie begrüßt",
+          "antwort": "begrüßen",
+          "hinweis": "wir ...",
+          "erklaerung": "sie begrüßt, wir begrüßen"
+        }
+      ]
+    },
+    {
+      "titel": "s oder ß?",
+      "gruppe": "s und ß",
+      "symbol": "s/ß",
+      "aufgaben": [
+        {
+          "art": "text",
+          "frage": "Welcher Buchstabe fehlt? Schwinge weiter.",
+          "rechnung": "Gru?",
+          "antwort": "ß",
+          "hinweis": "s oder ß?",
+          "erklaerung": "die Grüße, also Gruß"
+        },
+        {
+          "art": "text",
+          "frage": "Welcher Buchstabe fehlt? Schwinge weiter.",
+          "rechnung": "Mau?",
+          "antwort": "s",
+          "hinweis": "s oder ß?",
+          "erklaerung": "die Mäuse, also Maus"
+        },
+        {
+          "art": "text",
+          "frage": "Welcher Buchstabe fehlt? Schwinge weiter.",
+          "rechnung": "Fu?",
+          "antwort": "ß",
+          "hinweis": "s oder ß?",
+          "erklaerung": "die Füße, also Fuß"
+        },
+        {
+          "art": "text",
+          "frage": "Welcher Buchstabe fehlt? Schwinge weiter.",
+          "rechnung": "Hau?",
+          "antwort": "s",
+          "hinweis": "s oder ß?",
+          "erklaerung": "die Häuser, also Haus"
+        },
+        {
+          "art": "text",
+          "frage": "Welcher Buchstabe fehlt? Schwinge weiter.",
+          "rechnung": "Gla?",
+          "antwort": "s",
+          "hinweis": "s oder ß?",
+          "erklaerung": "die Gläser, also Glas"
+        },
+        {
+          "art": "text",
+          "frage": "Welcher Buchstabe fehlt? Schwinge weiter.",
+          "rechnung": "Stra?e",
+          "antwort": "ß",
+          "hinweis": "s oder ß?",
+          "erklaerung": "die Straße, mit ß"
+        },
+        {
+          "art": "text",
+          "frage": "Welcher Buchstabe fehlt? Schwinge weiter.",
+          "rechnung": "Prei?",
+          "antwort": "s",
+          "hinweis": "s oder ß?",
+          "erklaerung": "die Preise, also Preis"
+        },
+        {
+          "art": "text",
+          "frage": "Welcher Buchstabe fehlt? Schwinge weiter.",
+          "rechnung": "Spie?",
+          "antwort": "ß",
+          "hinweis": "s oder ß?",
+          "erklaerung": "die Spieße, also Spieß"
+        }
+      ]
+    },
+    {
+      "titel": "Alles gemischt",
+      "gruppe": "Wie in der Klassenarbeit",
+      "symbol": "★",
+      "aufgaben": [
+        {
+          "art": "text",
+          "frage": "Setze die Wörter zusammen.",
+          "rechnung": "Kuh + Milch",
+          "antwort": "Kuhmilch",
+          "erklaerung": "Kuh + Milch = Kuhmilch, das h bleibt"
+        },
+        {
+          "art": "text",
+          "frage": "Schwinge weiter. Schreibe die Mehrzahl.",
+          "rechnung": "Bart",
+          "antwort": "Bärte",
+          "hinweis": "Zwei ...",
+          "erklaerung": "Bart, zwei Bärte"
+        },
+        {
+          "art": "text",
+          "frage": "Schwinge weiter. Schreibe die Mehrzahl.",
+          "rechnung": "Turm",
+          "antwort": "Türme",
+          "hinweis": "Zwei ...",
+          "erklaerung": "Turm, zwei Türme"
+        },
+        {
+          "art": "text",
+          "frage": "Welcher Buchstabe fehlt? Schwinge weiter.",
+          "rechnung": "Die Suppe ist hei?.",
+          "antwort": "ß",
+          "hinweis": "s oder ß?",
+          "erklaerung": "die heiße Suppe, also heiß"
+        },
+        {
+          "art": "text",
+          "frage": "Welcher Buchstabe fehlt? Schwinge weiter.",
+          "rechnung": "Das Haus ist gro?.",
+          "antwort": "ß",
+          "hinweis": "s oder ß?",
+          "erklaerung": "das große Haus, also groß"
+        },
+        {
+          "art": "text",
+          "frage": "Schwinge weiter. Schreibe das Wort mit silbentrennendem h.",
+          "rechnung": "er droht",
+          "antwort": "drohen",
+          "hinweis": "wir ...",
+          "erklaerung": "er droht, wir drohen"
+        },
+        {
+          "art": "text",
+          "frage": "Welcher Buchstabe fehlt? Schwinge weiter.",
+          "rechnung": "Das Brot ist har?.",
+          "antwort": "t",
+          "hinweis": "d oder t?",
+          "erklaerung": "das harte Brot, also hart"
+        },
+        {
+          "art": "text",
+          "frage": "Welcher Buchstabe fehlt? Schwinge weiter.",
+          "rechnung": "Die Tür ist gel?.",
+          "antwort": "b",
+          "hinweis": "b oder p?",
+          "erklaerung": "die gelbe Tür, also gelb"
+        },
+        {
+          "art": "text",
+          "frage": "Welcher Buchstabe fehlt? Schwinge weiter.",
+          "rechnung": "Der Vogel schwe?t.",
+          "antwort": "b",
+          "hinweis": "b oder p?",
+          "erklaerung": "wir schweben, also er schwebt"
+        },
+        {
+          "art": "text",
+          "frage": "Schwinge weiter. Schreibe die Mehrzahl.",
+          "rechnung": "Erlebnis",
+          "antwort": "Erlebnisse",
+          "hinweis": "Viele ...",
+          "erklaerung": "Erlebnis, viele Erlebnisse"
+        },
+        {
+          "art": "text",
+          "frage": "Schwinge weiter. Schreibe die Mehrzahl.",
+          "rechnung": "Dorf",
+          "antwort": "Dörfer",
+          "hinweis": "Viele ...",
+          "erklaerung": "Dorf, viele Dörfer"
+        },
+        {
+          "art": "text",
+          "frage": "Schwinge weiter. Schreibe die Mehrzahl.",
+          "rechnung": "Schuh",
+          "antwort": "Schuhe",
+          "hinweis": "Zwei ...",
+          "erklaerung": "Schuh, zwei Schuhe, das silbentrennende h bleibt"
+        }
+      ]
+    }
+  ]
+}

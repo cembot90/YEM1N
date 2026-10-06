@@ -5,16 +5,33 @@ import UniformTypeIdentifiers
 import CloudKit
 import AVFoundation
 import UserNotifications
+import PencilKit
+import CryptoKit
+import Security
 
 // MARK: - Design (Lacivert und Sari)
 
 enum Theme {
-    static let gelb = Color(red: 1.0, green: 0.93, blue: 0.0)
-    static let navy = Color(red: 0.0, green: 0.125, blue: 0.357)
-    static let tiefNavy = Color(red: 0.0, green: 0.045, blue: 0.16)
+    // Farbwelt wird in den Einstellungen gewählt: "blau" (Standard) oder "rosa"
+    static var rosa: Bool = UserDefaults.standard.string(forKey: "farbwelt") == "rosa"
+
+    static var gelb: Color {
+        rosa ? Color(red: 1.0, green: 0.45, blue: 0.74) : Color(red: 1.0, green: 0.93, blue: 0.0)
+    }
+    static var navy: Color {
+        rosa ? Color(red: 0.36, green: 0.07, blue: 0.31) : Color(red: 0.0, green: 0.125, blue: 0.357)
+    }
+    static var tiefNavy: Color {
+        rosa ? Color(red: 0.14, green: 0.02, blue: 0.14) : Color(red: 0.0, green: 0.045, blue: 0.16)
+    }
+    static var glanz: Color {
+        rosa ? Color(red: 0.92, green: 0.30, blue: 0.66) : Color(red: 0.16, green: 0.4, blue: 0.85)
+    }
+    static var himmel: Color {
+        rosa ? Color(red: 0.80, green: 0.68, blue: 1.0) : Color(red: 0.45, green: 0.78, blue: 1.0)
+    }
     static let koralle = Color(red: 1.0, green: 0.42, blue: 0.42)
     static let mint = Color(red: 0.45, green: 0.95, blue: 0.62)
-    static let himmel = Color(red: 0.45, green: 0.78, blue: 1.0)
     static let textSanft = Color.white.opacity(0.7)
 }
 
@@ -23,8 +40,8 @@ struct HintergrundView: View {
         ZStack {
             LinearGradient(colors: [Theme.navy, Theme.tiefNavy],
                            startPoint: .top, endPoint: .bottom)
-            RadialGradient(colors: [Color(red: 0.16, green: 0.4, blue: 0.85).opacity(0.35), .clear],
-                           center: .topTrailing, startRadius: 0, endRadius: 420)
+            RadialGradient(colors: [Theme.glanz.opacity(0.35), .clear],
+                           center: .top, startRadius: 0, endRadius: 420)
         }
         .ignoresSafeArea()
     }
@@ -32,7 +49,7 @@ struct HintergrundView: View {
 
 struct GlasKarteStil: ViewModifier {
     let radius: CGFloat
-    @AppStorage("glasEffekt") private var glas = true
+    @AppStorage("glasEffekt") private var glas = false
 
     @ViewBuilder
     func body(content: Content) -> some View {
@@ -120,6 +137,55 @@ struct GelberKnopf: View {
     }
 }
 
+// Eingabe für Textaufgaben (Deutsch): normale Tastatur, Umlaute und ß als Tasten
+struct TextAntwortFeld: View {
+    @Binding var text: String
+    var onPruefen: () -> Void
+    @FocusState private var fokus: Bool
+
+    private let sonderzeichen = ["ä", "ö", "ü", "ß", "Ä", "Ö", "Ü"]
+
+    var body: some View {
+        VStack(spacing: 12) {
+            TextField("Antwort", text: $text)
+                .font(.system(size: 28, weight: .heavy, design: .rounded))
+                .foregroundStyle(Color.white)
+                .multilineTextAlignment(.center)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .submitLabel(.done)
+                .focused($fokus)
+                .onSubmit(onPruefen)
+                .frame(minHeight: 62)
+                .background(Color.white.opacity(0.08),
+                            in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        .stroke(Theme.gelb, lineWidth: 2.5)
+                )
+                .padding(.horizontal, 24)
+
+            HStack(spacing: 8) {
+                ForEach(sonderzeichen, id: \.self) { z in
+                    Button { text += z } label: {
+                        Text(z)
+                            .font(.system(size: 24, weight: .heavy, design: .rounded))
+                            .frame(maxWidth: .infinity, minHeight: 48)
+                            .foregroundStyle(Color.white)
+                            .background(Color.white.opacity(0.10),
+                                        in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    }
+                    .buttonStyle(TastenStil())
+                }
+            }
+            .padding(.horizontal, 24)
+
+            GelberKnopf(titel: "Prüfen", aktion: onPruefen)
+        }
+        .onAppear { fokus = true }
+    }
+}
+
 // MARK: - Datenmodell
 // Hierarchie: Klassenarbeit (Klasse, Fach, Titel) > Uebung > Aufgabe
 
@@ -129,6 +195,7 @@ final class Klassenarbeit {
     var fach: String = ""
     var titel: String = ""
     var erstellt: Date = Date.now
+    var spezial: String = ""          // "", "fehlerheft", "training" oder "probe"
     @Relationship(deleteRule: .cascade, inverse: \Uebung.arbeit)
     var uebungen: [Uebung] = []
 
@@ -179,7 +246,7 @@ final class Uebung {
 
 @Model
 final class Aufgabe {
-    var art: String = "zahl"          // zahl, rest, vergleich, mauer
+    var art: String = "zahl"          // zahl, rest, vergleich, mauer, text
     var frage: String = ""
     var rechnung: String = ""
     var hinweis: String = ""
@@ -190,6 +257,8 @@ final class Aufgabe {
     var reihenfolge: Int = 0
     var richtig: Bool?
     var angesehen: Bool = false       // Lösung wurde angezeigt (zählt weder richtig noch falsch)
+    var quellKey: String = ""         // bei Kopien im Fehlerheft: Verweis auf die Originalaufgabe
+    var gemeistert: Bool = false      // Fehler wurde im Fehlerheft richtig wiederholt
     var uebung: Uebung?
 
     var erledigt: Bool { richtig != nil || angesehen }
@@ -244,6 +313,7 @@ final class RundenErgebnis {
     var zeitpunkt: Date = Date.now
     var quelle: String = "lokal"
     var gesendet: Bool = false
+    var kind: String = ""
 
     init(klasse: String, fach: String, arbeit: String, uebung: String,
          richtig: Int, gesamt: Int, angesehen: Int,
@@ -258,6 +328,7 @@ final class RundenErgebnis {
         self.sterne = sterneFuer(gut: richtig, gesamt: gesamt)
         self.zeitpunkt = zeitpunkt
         self.quelle = quelle
+        self.kind = UserDefaults.standard.string(forKey: "kindName") ?? ""
     }
 
     var anteil: Double { gesamt > 0 ? Double(richtig) / Double(gesamt) : 0 }
@@ -298,9 +369,16 @@ struct AufgabePaket: Decodable {
     let antwort: String?
     let antwort2: String?
     let reihen: [[Int]]?
+    // Nur für art "wahl" (Vorschule): Bild, türkische Frage, große Zahl/Buchstabe, Folge, Antwortknöpfe
+    let bild: String?
+    let tr: String?
+    let gross: String?
+    let folge: [String]?
+    let optionen: [String]?
 
     enum CodingKeys: String, CodingKey {
         case art, frage, rechnung, hinweis, erklaerung, antwort, antwort2, reihen
+        case bild, tr, gross, folge, optionen
     }
 
     init(from decoder: Decoder) throws {
@@ -313,6 +391,11 @@ struct AufgabePaket: Decodable {
         antwort = AufgabePaket.text(c, .antwort)
         antwort2 = AufgabePaket.text(c, .antwort2)
         reihen = try c.decodeIfPresent([[Int]].self, forKey: .reihen)
+        bild = try c.decodeIfPresent(String.self, forKey: .bild)
+        tr = try c.decodeIfPresent(String.self, forKey: .tr)
+        gross = AufgabePaket.text(c, .gross)
+        folge = try? c.decodeIfPresent([String].self, forKey: .folge)
+        optionen = try? c.decodeIfPresent([String].self, forKey: .optionen)
     }
 
     // Antworten dürfen als Text oder als Zahl im JSON stehen
@@ -422,8 +505,15 @@ enum Beispieldaten {
 struct WurzelView: View {
     @AppStorage("modus") private var modus = ""
     @AppStorage("familienCode") private var familienCode = ""
+    @AppStorage("jokerIch") private var jokerIch = ""
+    @AppStorage("farbwelt") private var farbwelt = "blau"
     @Environment(\.modelContext) private var context
     @Environment(\.scenePhase) private var phase
+    @State private var offenesPaket: ArbeitPaket?
+    @State private var offenerText = ""
+    @State private var zeigeOffen = false
+    @State private var offenMeldung: String?
+    @AppStorage("profilFertig") private var profilFertig = false
 
     var body: some View {
         Group {
@@ -433,7 +523,62 @@ struct WurzelView: View {
             default: ModusAuswahlView()
             }
         }
-        .task(id: modus + "|" + familienCode) { await cloudStart() }
+        .id(farbwelt)
+        .frame(maxWidth: 760)
+        .frame(maxWidth: .infinity)
+        .background(HintergrundView())
+        .tint(Theme.gelb)
+        .onOpenURL { url in
+            guard url.isFileURL else { return }
+            let zugriff = url.startAccessingSecurityScopedResource()
+            defer { if zugriff { url.stopAccessingSecurityScopedResource() } }
+            guard let daten = try? Data(contentsOf: url),
+                  let roh = String(data: daten, encoding: .utf8),
+                  let gelesen = PaketAktion.lese(roh) else {
+                offenMeldung = "Diese Datei ist kein YEM1N-Paket."
+                return
+            }
+            offenesPaket = gelesen.paket
+            offenerText = gelesen.text
+            zeigeOffen = true
+        }
+        .confirmationDialog("\(offenesPaket?.arbeit ?? "Paket") importieren?",
+                            isPresented: $zeigeOffen, titleVisibility: .visible) {
+            if modus == "eltern" {
+                Button("An meine Familie veröffentlichen") {
+                    if let p = offenesPaket {
+                        Task { offenMeldung = await PaketAktion.veroeffentliche(p, text: offenerText, context: context) }
+                    }
+                }
+                if CloudDienst.klassenCloudCode != nil {
+                    Button("An die Klasse veröffentlichen") {
+                        if let p = offenesPaket {
+                            Task { offenMeldung = await PaketAktion.veroeffentliche(p, text: offenerText, context: context, klasse: true) }
+                        }
+                    }
+                }
+            }
+            Button("Nur auf diesem Gerät importieren") {
+                if let p = offenesPaket { offenMeldung = PaketAktion.lokal(p, context: context) }
+            }
+            Button("Abbrechen", role: .cancel) {}
+        } message: {
+            if let p = offenesPaket {
+                Text("\(p.klasse), \(p.fach): \(PaketAktion.anzahl(p)) Aufgaben")
+            }
+        }
+        .alert("Hinweis", isPresented: Binding(get: { offenMeldung != nil },
+                                              set: { if !$0 { offenMeldung = nil } })) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(offenMeldung ?? "")
+        }
+        .fullScreenCover(isPresented: Binding(get: { !modus.isEmpty && !profilFertig },
+                                              set: { _ in })) {
+            ProfilAssistent()
+                .preferredColorScheme(.dark)
+        }
+        .task(id: CloudDienst.marke(modus: modus, code: familienCode)) { await cloudStart() }
         .onChange(of: phase) {
             if phase == .active { Task { await CloudSync.aktiv(context) } }
         }
@@ -444,7 +589,7 @@ struct WurzelView: View {
 
     private func cloudStart() async {
         guard !modus.isEmpty, Familiencode.istGueltig(familienCode) else { return }
-        let marke = modus + "|" + familienCode
+        let marke = CloudDienst.marke(modus: modus, code: familienCode)
         if UserDefaults.standard.string(forKey: "cloudEingerichtet") == marke {
             CloudStatus.shared.meldung = "Cloud ist bereit. Mitteilungen sind eingerichtet."
             await CloudSync.aktiv(context)
@@ -463,8 +608,10 @@ struct WurzelView: View {
 struct ModusAuswahlView: View {
     @AppStorage("modus") private var modus = ""
     @AppStorage("familienCode") private var familienCode = ""
+    @AppStorage("klassenCode") private var klassenCode = ""
     @State private var schritt = 0          // 0 Auswahl, 1 Kind, 2 Eltern
     @State private var codeEingabe = ""
+    @State private var klassenEingabe = ""
     @State private var neuerCode = ""
 
     var body: some View {
@@ -501,8 +648,9 @@ struct ModusAuswahlView: View {
     @ViewBuilder
     private var auswahl: some View {
         VStack(spacing: 14) {
-            wahlKarte(titel: "Kind", text: "Ich übe Mathe.", symbol: "graduationcap.fill") {
+            wahlKarte(titel: "Kind", text: "Ich übe für die Schule.", symbol: "graduationcap.fill") {
                 codeEingabe = familienCode
+                klassenEingabe = klassenCode
                 schritt = 1
             }
             wahlKarte(titel: "Eltern", text: "Ich sehe den Fortschritt.", symbol: "bell.badge.fill") {
@@ -544,31 +692,26 @@ struct ModusAuswahlView: View {
 
     @ViewBuilder
     private var kindSchritt: some View {
-        let gueltig = Familiencode.istGueltig(codeEingabe)
+        let famLeer = codeEingabe.isEmpty
+        let klaLeer = klassenEingabe.isEmpty
+        let famOK = famLeer || Familiencode.istGueltig(codeEingabe)
+        let klaOK = klaLeer || Familiencode.istGueltig(klassenEingabe)
+        let gueltig = famOK && klaOK && !(famLeer && klaLeer)
         VStack(spacing: 16) {
-            Text("Familiencode eingeben")
+            Text("Code eingeben")
                 .font(.system(.title2, design: .rounded).weight(.heavy))
                 .foregroundStyle(Color.white)
-            Text("Den Code zeigt das Eltern-Gerät an. Du kannst ihn auch später in den Einstellungen eintragen.")
+            Text("Trage den Familiencode (vom Eltern-Gerät), den Klassencode oder beide ein. Ein Code reicht. Du kannst alles auch später in den Einstellungen eintragen.")
                 .font(.subheadline)
                 .foregroundStyle(Theme.textSanft)
                 .multilineTextAlignment(.center)
 
-            TextField("XXXXX-XXXXX", text: $codeEingabe)
-                .font(.system(.title2, design: .monospaced).weight(.bold))
-                .multilineTextAlignment(.center)
-                .textInputAutocapitalization(.characters)
-                .autocorrectionDisabled()
-                .padding(16)
-                .background(Color.white.opacity(0.08),
-                            in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-                .onChange(of: codeEingabe) {
-                    let b = Familiencode.bereinigt(codeEingabe)
-                    if b != codeEingabe { codeEingabe = b }
-                }
+            codeFeld("Familiencode", $codeEingabe)
+            codeFeld("Klassencode", $klassenEingabe)
 
             GelberKnopf(titel: "Weiter") {
                 familienCode = Familiencode.bereinigt(codeEingabe)
+                klassenCode = Familiencode.bereinigt(klassenEingabe)
                 modus = "kind"
             }
             .disabled(!gueltig)
@@ -580,6 +723,26 @@ struct ModusAuswahlView: View {
             Button("Zurück") { schritt = 0 }
                 .font(.system(.subheadline, design: .rounded))
                 .foregroundStyle(Theme.textSanft)
+        }
+    }
+
+    private func codeFeld(_ titel: String, _ text: Binding<String>) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(titel)
+                .font(.system(.subheadline, design: .rounded).weight(.bold))
+                .foregroundStyle(Theme.gelb)
+            TextField("XXXXX-XXXXX", text: text)
+                .font(.system(.title2, design: .monospaced).weight(.bold))
+                .multilineTextAlignment(.center)
+                .textInputAutocapitalization(.characters)
+                .autocorrectionDisabled()
+                .padding(16)
+                .background(Color.white.opacity(0.08),
+                            in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                .onChange(of: text.wrappedValue) {
+                    let b = Familiencode.bereinigt(text.wrappedValue)
+                    if b != text.wrappedValue { text.wrappedValue = b }
+                }
         }
     }
 
@@ -668,16 +831,24 @@ struct ModusAuswahlView: View {
 // MARK: - Eltern: Übersicht und Üben
 
 struct ElternTabs: View {
+    @AppStorage("vorschulTabEltern") private var vorschul = false
+
     var body: some View {
         TabView {
             ElternDashboardView()
                 .tabItem { Label("Übersicht", systemImage: "chart.bar.fill") }
             StartView()
-                .tabItem { Label("Mathe", systemImage: "plus.forwardslash.minus") }
+                .tabItem { Label("Schule", systemImage: "books.vertical.fill") }
             SprachStartView()
                 .tabItem { Label("Sprachen", systemImage: "globe") }
+            if vorschul {
+                VorschuleView()
+                    .tabItem { Label("Vorschule", systemImage: "sparkles") }
+            }
             JokerLigaView()
                 .tabItem { Label("Joker", systemImage: "suit.spade.fill") }
+            EinstellungenView(eingebettet: true)
+                .tabItem { Label("Einstellungen", systemImage: "gearshape.fill") }
         }
     }
 }
@@ -719,8 +890,88 @@ struct ElternDashboardView: View {
     @AppStorage("familienCode") private var familienCode = ""
     @Query(filter: #Predicate<RundenErgebnis> { $0.quelle != "lokal" },
            sort: \RundenErgebnis.zeitpunkt, order: .reverse)
-    private var ergebnisse: [RundenErgebnis]
+    private var alleErgebnisse: [RundenErgebnis]
+    @State private var kindFilter = ""
     @State private var zeigeEinstellungen = false
+
+    private var ergebnisse: [RundenErgebnis] {
+        kindFilter.isEmpty ? alleErgebnisse : alleErgebnisse.filter { $0.kind == kindFilter }
+    }
+
+    private var kinder: [String] {
+        Array(Set(alleErgebnisse.map { $0.kind }.filter { !$0.isEmpty })).sorted()
+    }
+
+    private var kindWahl: some View {
+        Picker("Kind", selection: $kindFilter) {
+            Text("Alle").tag("")
+            ForEach(kinder, id: \.self) { name in
+                Text(name).tag(name)
+            }
+        }
+        .pickerStyle(.segmented)
+    }
+
+    private var berichtText: String {
+        let kal = Calendar.current
+        let grenze = kal.date(byAdding: .day, value: -6, to: kal.startOfDay(for: Date.now)) ?? Date.distantPast
+        let diese = alleErgebnisse.filter { $0.zeitpunkt >= grenze }
+        let namen: [String] = kinder.isEmpty ? [""] : kinder
+        var zeilen: [String] = ["📊 YEM1N Wochenbericht"]
+        for name in namen {
+            let l = diese.filter { name.isEmpty || $0.kind == name }
+            let titel = name.isEmpty ? "Diese Woche" : name
+            if l.isEmpty {
+                zeilen.append("")
+                zeilen.append("\(titel): keine Runden")
+                continue
+            }
+            let r = l.reduce(0) { $0 + $1.richtig }
+            let g = l.reduce(0) { $0 + $1.gesamt }
+            let st = l.reduce(0) { $0 + $1.sterne }
+            var tage = Set<Date>()
+            for e in l { tage.insert(kal.startOfDay(for: e.zeitpunkt)) }
+            let prozent = g > 0 ? Int((Double(r) / Double(g) * 100).rounded()) : 0
+            zeilen.append("")
+            zeilen.append("⭐ \(titel)")
+            zeilen.append("Runden: \(l.count) an \(tage.count) Tagen")
+            zeilen.append("Richtig: \(r) von \(g) (\(prozent) %)")
+            zeilen.append("Sterne: \(st)")
+            let gruppiert = Dictionary(grouping: l, by: { $0.uebung })
+            var bereiche: [(String, Double)] = []
+            for (u, liste) in gruppiert {
+                let rr = liste.reduce(0) { $0 + $1.richtig }
+                let gg = liste.reduce(0) { $0 + $1.gesamt }
+                if gg > 0 { bereiche.append((u, Double(rr) / Double(gg))) }
+            }
+            bereiche.sort { $0.1 > $1.1 }
+            if let stark = bereiche.first { zeilen.append("💪 Stark: \(stark.0)") }
+            if bereiche.count > 1, let schwach = bereiche.last { zeilen.append("🎯 Üben: \(schwach.0)") }
+        }
+        return zeilen.joined(separator: "\n")
+    }
+
+    private var wochenberichtKarte: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Wochenbericht")
+                .font(.system(.headline, design: .rounded).weight(.heavy))
+                .foregroundStyle(Theme.gelb)
+            Text(berichtText)
+                .font(.footnote)
+                .foregroundStyle(Color.white)
+            ShareLink(item: berichtText) {
+                Label("Bericht teilen", systemImage: "square.and.arrow.up")
+                    .font(.system(.subheadline, design: .rounded).weight(.heavy))
+                    .foregroundStyle(Theme.gelb)
+            }
+            Text("Jeden Sonntag um 18 Uhr erinnert dich eine Mitteilung daran.")
+                .font(.caption)
+                .foregroundStyle(Theme.textSanft)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .glasKarte(radius: 26)
+    }
 
     private var heute: [RundenErgebnis] {
         ergebnisse.filter { Calendar.current.isDateInToday($0.zeitpunkt) }
@@ -750,11 +1001,13 @@ struct ElternDashboardView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     kopf
+                    if kinder.count > 1 { kindWahl }
                     if ergebnisse.isEmpty {
                         leer
                     } else {
                         kacheln
                         wochenbalken
+                        wochenberichtKarte
                         schwaecheKarte
                         letzteRunden
                     }
@@ -766,6 +1019,7 @@ struct ElternDashboardView: View {
             .refreshable { await CloudSync.aktiv(context, erzwingen: true) }
         }
         .task { await CloudSync.aktiv(context) }
+        .task { await Wochenbericht.planen() }
         .sheet(isPresented: $zeigeEinstellungen) { EinstellungenView() }
     }
 
@@ -915,7 +1169,7 @@ struct ElternDashboardView: View {
                         Text(e.uebung)
                             .font(.system(.subheadline, design: .rounded).weight(.bold))
                             .foregroundStyle(Color.white)
-                        Text("\(e.arbeit) · " + e.zeitpunkt.formatted(.relative(presentation: .named)))
+                        Text((e.kind.isEmpty ? "" : e.kind + " · ") + "\(e.arbeit) · " + e.zeitpunkt.formatted(.relative(presentation: .named)))
                             .font(.caption)
                             .foregroundStyle(Theme.textSanft)
                     }
@@ -972,7 +1226,29 @@ struct EinstellungenView: View {
     @Query(filter: #Predicate<RundenErgebnis> { $0.quelle == "lokal" && $0.gesendet == false })
     private var offene: [RundenErgebnis]
     @State private var codeEingabe = ""
-    @AppStorage("glasEffekt") private var glas = true
+    @State private var zeigeReset = false
+    @AppStorage("glasEffekt") private var glas = false
+    @AppStorage("farbwelt") private var farbwelt = "blau"
+    @AppStorage("kindName") private var kindName = ""
+    @AppStorage("kindKlasse") private var kindKlasse = ""
+    @AppStorage("tagesziel") private var tagesziel = 2
+    @AppStorage("klassenCode") private var klassenCode = ""
+    @AppStorage("vorschulTab") private var vorschulKind = true
+    @AppStorage("vorschulTabEltern") private var vorschulEltern = false
+    @AppStorage("jokerIch") private var jokerIch = ""
+    @AppStorage("profilFertig") private var profilFertig = true
+    @State private var klassenEingabe = ""
+    @State private var klassenAdmin = false
+    @State private var klassenInfo = ""
+    @State private var zeigeLoeschen = false
+    @State private var datenInfo = ""
+    @State private var kindNameEntwurf = ""
+    @FocusState private var fokus: String?
+    let eingebettet: Bool
+
+    init(eingebettet: Bool = false) {
+        self.eingebettet = eingebettet
+    }
 
     private let zeile = Color.white.opacity(0.08)
 
@@ -1017,6 +1293,95 @@ struct EinstellungenView: View {
                     }
                     .listRowBackground(zeile)
 
+                    Section {
+                        if modus == "eltern" {
+                            Text(klassenCode.isEmpty ? "Noch keiner" : klassenCode)
+                                .font(.system(.title3, design: .monospaced).weight(.bold))
+                                .foregroundStyle(Theme.gelb)
+                            if !klassenCode.isEmpty {
+                                ShareLink(item: "📚 YEM1N Klassencode: \(klassenCode)\nIn der App unter Einstellungen > Klassencode eintragen, dann erscheinen die Aufgaben der Klasse automatisch.") {
+                                    Label("Klassencode teilen", systemImage: "square.and.arrow.up")
+                                }
+                            }
+                            Button("Neuen Klassencode erzeugen") {
+                                let neu = Familiencode.neu()
+                                Task {
+                                    do {
+                                        try await CloudDienst.erzeugeKlassenSchluessel("K-" + neu)
+                                        klassenCode = neu
+                                        klassenInfo = "Klassencode angelegt. Dieses Gerät ist jetzt Admin der Klasse."
+                                    } catch {
+                                        klassenInfo = "Anlegen nicht möglich: \(CloudDienst.fehlertext(error))"
+                                    }
+                                    klassenAdmin = Klassensiegel.istAdmin("K-" + klassenCode)
+                                }
+                            }
+                            if !klassenCode.isEmpty {
+                                Label(klassenAdmin ? "Dieses Gerät ist Admin" : "Nur Lesen, kein Admin-Schlüssel",
+                                      systemImage: klassenAdmin ? "checkmark.seal.fill" : "lock.fill")
+                                    .font(.footnote)
+                                    .foregroundStyle(klassenAdmin ? Theme.mint : Theme.textSanft)
+                            }
+                            if !klassenCode.isEmpty && !klassenAdmin {
+                                Button("Admin dieses Klassencodes werden") {
+                                    Task {
+                                        do {
+                                            try await CloudDienst.erzeugeKlassenSchluessel("K-" + klassenCode)
+                                            klassenInfo = "Dieses Gerät ist jetzt Admin."
+                                        } catch {
+                                            klassenInfo = "Nicht möglich, der Code gehört schon einem anderen Gerät."
+                                        }
+                                        klassenAdmin = Klassensiegel.istAdmin("K-" + klassenCode)
+                                    }
+                                }
+                            }
+                        }
+                        TextField("Klassencode, XXXXX-XXXXX", text: $klassenEingabe)
+                            .font(.system(.body, design: .monospaced))
+                            .textInputAutocapitalization(.characters)
+                            .autocorrectionDisabled()
+                            .onChange(of: klassenEingabe) {
+                                let b = Familiencode.bereinigt(klassenEingabe)
+                                if b != klassenEingabe { klassenEingabe = b }
+                            }
+                        Button("Klassencode speichern") {
+                            klassenCode = Familiencode.bereinigt(klassenEingabe)
+                            klassenEingabe = ""
+                        }
+                        .disabled(!Familiencode.istGueltig(klassenEingabe) || klassenEingabe == klassenCode)
+                        if !klassenCode.isEmpty && modus != "eltern" {
+                            Button("Klassencode entfernen", role: .destructive) {
+                                UserDefaults.standard.removeObject(forKey: "klassenPin-K-" + klassenCode)
+                                klassenCode = ""
+                            }
+                        }
+                        if !klassenInfo.isEmpty {
+                            Text(klassenInfo).font(.footnote).foregroundStyle(Theme.textSanft)
+                        }
+                    } header: {
+                        Text("Klassencode (nur Aufgaben)")
+                    } footer: {
+                        Text("Über den Klassencode kommen nur Aufgabenpakete an, vom Admin digital unterschrieben. Ergebnisse und Joker bleiben in der Familie.")
+                    }
+                    .task { klassenAdmin = Klassensiegel.istAdmin("K-" + klassenCode) }
+                    .onChange(of: klassenCode) { klassenAdmin = Klassensiegel.istAdmin("K-" + klassenCode) }
+                    .listRowBackground(zeile)
+
+                    Section {
+                        NavigationLink { DatenschutzView() } label: {
+                            Label("Datenschutzhinweise", systemImage: "hand.raised.fill")
+                        }
+                        Button("Meine Cloud-Daten löschen", role: .destructive) { zeigeLoeschen = true }
+                        if !datenInfo.isEmpty {
+                            Text(datenInfo).font(.footnote).foregroundStyle(Theme.textSanft)
+                        }
+                    } header: {
+                        Text("Datenschutz")
+                    } footer: {
+                        Text("Löscht die Cloud-Einträge des Familiencodes, die dieses Gerät angelegt hat. Auf jedem Gerät der Familie einmal ausführen.")
+                    }
+                    .listRowBackground(zeile)
+
                     if modus != "eltern" {
                         Section {
                             Label("Noch nicht gesendet: \(offene.count)", systemImage: "tray.full")
@@ -1029,8 +1394,78 @@ struct EinstellungenView: View {
                         .listRowBackground(zeile)
                     }
 
+                    if modus == "eltern" {
+                        Section {
+                            NavigationLink { PaketeView() } label: {
+                                Label("Aufgaben per Cloud verteilen", systemImage: "icloud.and.arrow.up")
+                            }
+                        } footer: {
+                            Text("Klassenarbeiten und Übungssets hochladen. Die Kind-Geräte laden sie automatisch.")
+                        }
+                        .listRowBackground(zeile)
+                    }
+
                     Section {
+                        NavigationLink { CloudDiagnoseView() } label: {
+                            Label("Cloud-Diagnose", systemImage: "icloud")
+                        }
+                    } footer: {
+                        Text("Für Eltern: Verbindung testen und die Cloud neu einrichten.")
+                    }
+                    .listRowBackground(zeile)
+
+                    if modus == "kind" {
+                        Section {
+                            TextField("Name, zum Beispiel Yemin", text: $kindNameEntwurf)
+                                .focused($fokus, equals: "name")
+                            Picker("Klasse", selection: $kindKlasse) {
+                                Text("Alle").tag("")
+                                ForEach(ProfilDaten.klassen, id: \.self) { k in Text(k).tag(k) }
+                            }
+                            Stepper("Tagesziel: \(tagesziel) \(tagesziel == 1 ? "Runde" : "Runden")",
+                                    value: $tagesziel, in: 1...10)
+                            Button("Einrichtung noch einmal ansehen") { profilFertig = false }
+                        } header: {
+                            Text("Profil")
+                        } footer: {
+                            Text("Der Name erscheint bei den Eltern und in der App. Mit einer Klasse lädt das Gerät nur passende Aufgabenpakete, bei Alle bekommt es alle.")
+                        }
+                        .listRowBackground(zeile)
+                    } else if modus == "eltern" {
+                        Section {
+                            Picker("Ich bin", selection: Binding(
+                                get: {
+                                    jokerIch.isEmpty ? (JokerStand.shared.mitglieder.first?.id.uuidString ?? "") : jokerIch
+                                },
+                                set: { jokerIch = $0 })) {
+                                ForEach(JokerStand.shared.mitglieder) { m in
+                                    Text("\(m.emoji) \(m.name)").tag(m.id.uuidString)
+                                }
+                            }
+                            Button("Einrichtung noch einmal ansehen") { profilFertig = false }
+                        } header: {
+                            Text("Profil")
+                        } footer: {
+                            Text("Unter diesem Namen erscheinen deine Antworten auf Joker-Fragen. Weitere Namen legst du im Tab Joker an.")
+                        }
+                        .listRowBackground(zeile)
+                    }
+
+                    Section {
+                        Picker("Farbwelt", selection: Binding(get: { farbwelt },
+                                                              set: { neu in
+                            Theme.rosa = (neu == "rosa")
+                            farbwelt = neu
+                        })) {
+                            Text("Blau und Gelb").tag("blau")
+                            Text("Rosa").tag("rosa")
+                        }
                         Toggle("Glas-Effekte", isOn: $glas)
+                        if modus == "eltern" {
+                            Toggle("Tab Vorschule anzeigen", isOn: $vorschulEltern)
+                        } else {
+                            Toggle("Tab Vorschule anzeigen", isOn: $vorschulKind)
+                        }
                     } header: {
                         Text("Darstellung")
                     } footer: {
@@ -1039,12 +1474,11 @@ struct EinstellungenView: View {
                     .listRowBackground(zeile)
 
                     Section {
-                        Button("Modus zurücksetzen", role: .destructive) {
-                            modus = ""
-                            dismiss()
+                        Button("Gerätemodus ändern (Kind oder Eltern)", role: .destructive) {
+                            zeigeReset = true
                         }
                     } footer: {
-                        Text("Klassenarbeiten und Fortschritt bleiben erhalten.")
+                        Text("Danach erscheint wieder die Auswahl Kind oder Eltern. Familiencode, Klassenarbeiten und Fortschritt bleiben erhalten.")
                     }
                     .listRowBackground(zeile)
                 }
@@ -1053,11 +1487,47 @@ struct EinstellungenView: View {
             .navigationTitle("Einstellungen")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Fertig") { dismiss() }
+                if !eingebettet {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Fertig") { dismiss() }
+                    }
                 }
             }
-            .onAppear { codeEingabe = familienCode }
+            .confirmationDialog("Gerätemodus wirklich ändern?", isPresented: $zeigeReset,
+                                titleVisibility: .visible) {
+                Button("Ändern", role: .destructive) {
+                    modus = ""
+                    dismiss()
+                }
+                Button("Abbrechen", role: .cancel) {}
+            }
+            .confirmationDialog("Cloud-Daten wirklich löschen?", isPresented: $zeigeLoeschen,
+                                titleVisibility: .visible) {
+                Button("Löschen", role: .destructive) {
+                    guard Familiencode.istGueltig(familienCode) else {
+                        datenInfo = "Es ist kein Familiencode eingetragen."
+                        return
+                    }
+                    datenInfo = "Wird gelöscht ..."
+                    Task {
+                        let n = await CloudDienst.loescheEigeneDaten(code: familienCode)
+                        datenInfo = "\(n) Einträge in der Cloud gelöscht."
+                    }
+                }
+                Button("Abbrechen", role: .cancel) {}
+            } message: {
+                Text("Entfernt die Cloud-Einträge dieses Familiencodes, die dieses Gerät angelegt hat. Ergebnisse auf dem Gerät bleiben.")
+            }
+            .onAppear {
+                codeEingabe = familienCode
+                kindNameEntwurf = kindName
+            }
+            .onChange(of: fokus) {
+                kindName = kindNameEntwurf.trimmingCharacters(in: .whitespaces)
+            }
+            .onDisappear {
+                kindName = kindNameEntwurf.trimmingCharacters(in: .whitespaces)
+            }
         }
         .preferredColorScheme(.dark)
         .tint(Theme.gelb)
@@ -1070,6 +1540,13 @@ struct MatheApp: App {
     let container: ModelContainer
 
     init() {
+        // Geräte, die schon einen Namen eingetragen haben, brauchen den Einrichtungsassistenten nicht
+        let vorgaben = UserDefaults.standard
+        if vorgaben.object(forKey: "profilFertig") == nil {
+            let hatName = !(vorgaben.string(forKey: "kindName") ?? "").isEmpty
+            let hatIch = !(vorgaben.string(forKey: "jokerIch") ?? "").isEmpty
+            if hatName || hatIch { vorgaben.set(true, forKey: "profilFertig") }
+        }
         let schema = Schema([Klassenarbeit.self, Uebung.self, Aufgabe.self, RundenErgebnis.self])
         // SwiftData bleibt lokal auf dem Gerät. Ohne diese Zeile würde SwiftData
         // nach dem Aktivieren von iCloud die Daten automatisch in die private
@@ -1101,43 +1578,108 @@ struct StartView: View {
                   SortDescriptor(\Klassenarbeit.erstellt)])
     private var alleArbeiten: [Klassenarbeit]
 
+    @State private var fachFilter = "Alle"
     @State private var fehler: String?
     @State private var zeigeEinfuegen = false
     @State private var zeigeDatei = false
     @State private var eingabeText = ""
-    @State private var cloudKitMeldung: String?
     @State private var infoMeldung: String?
     @State private var zeigeEinstellungen = false
     @State private var zeigeEditor = false
+    @State private var zeigePakete = false
+    @State private var zeigeErfolge = false
+    @State private var pfad = NavigationPath()
+    @State private var zwischenPaket: ArbeitPaket?
+    @State private var zwischenText = ""
+    @State private var zeigeZwischen = false
     @AppStorage("modus") private var modus = ""
+    @AppStorage("kindName") private var kindName = ""
+    @Query(filter: #Predicate<RundenErgebnis> { $0.quelle == "lokal" })
+    private var lokale: [RundenErgebnis]
 
-    private var klassen: [String] { Array(Set(alleArbeiten.map(\.klasse))).sorted() }
+    private var normale: [Klassenarbeit] {
+        alleArbeiten.filter { $0.spezial.isEmpty && $0.fach != "Vorschule" }
+    }
+
+    private var alleFaecher: [String] { Array(Set(normale.map(\.fach))).sorted() }
+    private var aktuellerFilter: String { alleFaecher.contains(fachFilter) ? fachFilter : "Alle" }
+
+    private var offeneFehler: Int {
+        var n = 0
+        for k in normale {
+            for u in k.uebungen {
+                for a in u.aufgaben where a.richtig == false && !a.gemeistert { n += 1 }
+            }
+        }
+        return n
+    }
+
+    private func oeffneSpezial(_ art: String) {
+        if let offen = alleArbeiten.first(where: { $0.spezial == art && $0.fertigeUebungen < $0.uebungen.count }) {
+            pfad.append(offen)
+            return
+        }
+        let neu: Klassenarbeit?
+        switch art {
+        case "fehlerheft": neu = Spezial.fehlerheft(alle: normale, in: context)
+        case "training": neu = Spezial.training(alle: normale, ergebnisse: lokale, in: context)
+        default: neu = Spezial.probe(alle: normale, in: context)
+        }
+        guard let neu else {
+            infoMeldung = "Keine offenen Fehler. Super gemacht! 🎉"
+            return
+        }
+        for alt in alleArbeiten where alt.spezial == art { context.delete(alt) }
+        pfad.append(neu)
+    }
+
+    private func pruefeZwischenablage() {
+        guard let gelesen = PaketAktion.lese(UIPasteboard.general.string ?? "") else {
+            infoMeldung = "In der Zwischenablage liegt kein passendes JSON von Claude. Kopiere es im Chat und tippe dann noch einmal hier."
+            return
+        }
+        zwischenPaket = gelesen.paket
+        zwischenText = gelesen.text
+        zeigeZwischen = true
+    }
+
+    private func neueAufgabenHolen() async {
+        let code = UserDefaults.standard.string(forKey: "familienCode") ?? ""
+        guard Familiencode.istGueltig(code) || CloudDienst.klassenCloudCode != nil else {
+            infoMeldung = "Es fehlt noch ein Familiencode oder Klassencode. Bitte im Tab Einstellungen eintragen."
+            return
+        }
+        let n = await CloudSync.holePakete(context)
+        if n > 1 { infoMeldung = "\(n) neue Aufgabenpakete geladen." }
+        else if n == 1 { infoMeldung = "1 neues Aufgabenpaket geladen." }
+        else if n == 0 { infoMeldung = "Alles aktuell. Es gibt nichts Neues." }
+        else { infoMeldung = CloudStatus.shared.meldung }
+    }
+
+    private var gefiltert: [Klassenarbeit] {
+        aktuellerFilter == "Alle" ? normale : normale.filter { $0.fach == aktuellerFilter }
+    }
+
+    private var klassen: [String] { Array(Set(gefiltert.map(\.klasse))).sorted() }
 
     private func faecher(_ klasse: String) -> [String] {
-        Array(Set(alleArbeiten.filter { $0.klasse == klasse }.map(\.fach))).sorted()
+        Array(Set(gefiltert.filter { $0.klasse == klasse }.map(\.fach))).sorted()
     }
 
     private func arbeiten(_ klasse: String, _ fach: String) -> [Klassenarbeit] {
-        alleArbeiten.filter { $0.klasse == klasse && $0.fach == fach }
+        normale.filter { $0.klasse == klasse && $0.fach == fach }
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $pfad) {
             ZStack {
                 HintergrundView()
                 VStack(spacing: 0) {
                     kopf
-                    if alleArbeiten.isEmpty { leer } else { liste }
+                    if normale.isEmpty { leer } else { liste }
                 }
             }
             .toolbar(.hidden, for: .navigationBar)
-            .alert("CloudKit-Test",
-                   isPresented: Binding(get: { cloudKitMeldung != nil },
-                                        set: { if !$0 { cloudKitMeldung = nil } })) {
-                Button("OK", role: .cancel) {}
-            } message: {
-                Text(cloudKitMeldung ?? "")
-            }
             .alert("Hinweis",
                    isPresented: Binding(get: { infoMeldung != nil },
                                         set: { if !$0 { infoMeldung = nil } })) {
@@ -1150,6 +1692,36 @@ struct StartView: View {
                 NavigationStack { MatheEditorView() }
                     .preferredColorScheme(.dark)
                     .tint(Theme.gelb)
+            }
+            .sheet(isPresented: $zeigePakete) {
+                NavigationStack { PaketeView() }
+                    .preferredColorScheme(.dark)
+                    .tint(Theme.gelb)
+            }
+            .sheet(isPresented: $zeigeErfolge) {
+                ErfolgeView()
+                    .preferredColorScheme(.dark)
+                    .tint(Theme.gelb)
+            }
+            .confirmationDialog("\(zwischenPaket?.arbeit ?? "Paket") veröffentlichen?",
+                                isPresented: $zeigeZwischen, titleVisibility: .visible) {
+                Button("An meine Familie veröffentlichen") {
+                    if let p = zwischenPaket {
+                        Task { infoMeldung = await PaketAktion.veroeffentliche(p, text: zwischenText, context: context) }
+                    }
+                }
+                if CloudDienst.klassenCloudCode != nil {
+                    Button("An die Klasse veröffentlichen") {
+                        if let p = zwischenPaket {
+                            Task { infoMeldung = await PaketAktion.veroeffentliche(p, text: zwischenText, context: context, klasse: true) }
+                        }
+                    }
+                }
+                Button("Abbrechen", role: .cancel) {}
+            } message: {
+                if let p = zwischenPaket {
+                    Text("\(p.klasse), \(p.fach): \(PaketAktion.anzahl(p)) Aufgaben. Die Kind-Geräte laden das Paket automatisch.")
+                }
             }
             .navigationDestination(for: Klassenarbeit.self) { ArbeitView(arbeit: $0) }
             .navigationDestination(for: Uebung.self) { UebungView(uebung: $0) }
@@ -1177,17 +1749,33 @@ struct StartView: View {
 
     // MARK: Kopf
 
+    private var untertitel: String {
+        var text = kindName.isEmpty ? "Schule üben" : "Hallo \(kindName)! Schule üben"
+        let serie = Erfolge.serie(lokale)
+        if modus != "eltern" && serie > 0 { text += " · 🔥 \(serie)" }
+        return text
+    }
+
     private var kopf: some View {
         HStack(alignment: .center) {
             VStack(alignment: .leading, spacing: 2) {
                 Text("YEM1N")
                     .font(.system(size: 44, weight: .black, design: .rounded))
                     .foregroundStyle(Theme.gelb)
-                Text("Rechnen üben")
+                Text(untertitel)
                     .font(.system(.subheadline, design: .rounded).weight(.medium))
                     .foregroundStyle(Theme.textSanft)
             }
             Spacer()
+            if modus != "eltern" {
+                Button { zeigeErfolge = true } label: {
+                    Image(systemName: "trophy.fill")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundStyle(Theme.gelb)
+                        .frame(width: 48, height: 48)
+                        .background(Color.white.opacity(0.12), in: Circle())
+                }
+            }
             Menu {
                 Button("Text einfügen", systemImage: "text.cursor") {
                     fehler = nil
@@ -1197,14 +1785,17 @@ struct StartView: View {
                     importiereText(UIPasteboard.general.string)
                 }
                 Button("Datei importieren", systemImage: "folder") { zeigeDatei = true }
+                if modus == "kind" {
+                    Button("Neue Aufgaben holen", systemImage: "icloud.and.arrow.down") {
+                        Task { await neueAufgabenHolen() }
+                    }
+                }
                 if modus == "eltern" {
                     Button("Aufgaben-Editor", systemImage: "square.and.pencil") { zeigeEditor = true }
+                    Button("Cloud-Pakete", systemImage: "icloud.and.arrow.up") { zeigePakete = true }
                 }
                 Divider()
                 Button("Einstellungen", systemImage: "gearshape") { zeigeEinstellungen = true }
-                Button("CloudKit testen", systemImage: "icloud") {
-                    Task { cloudKitMeldung = await CloudKitDienst.verbindungTesten() }
-                }
             } label: {
                 Image(systemName: "plus")
                     .font(.system(size: 20, weight: .black))
@@ -1228,11 +1819,18 @@ struct StartView: View {
             Text("Noch keine Klassenarbeit")
                 .font(.system(.title2, design: .rounded).weight(.bold))
                 .foregroundStyle(Color.white)
-            Text("Tippe auf das Plus und füge das JSON von Claude ein.")
+            Text(modus == "kind"
+                 ? "Neue Aufgaben kommen automatisch von deinen Eltern."
+                 : "Tippe auf das Plus und füge das JSON von Claude ein.")
                 .font(.subheadline)
                 .foregroundStyle(Theme.textSanft)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 40)
+            if modus == "kind" {
+                GelberKnopf(titel: "Neue Aufgaben holen") {
+                    Task { await neueAufgabenHolen() }
+                }
+            }
             Spacer()
             Spacer()
         }
@@ -1243,6 +1841,18 @@ struct StartView: View {
 
     private var liste: some View {
         List {
+            extraZeile
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+                .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20))
+
+            if alleFaecher.count > 1 {
+                fachChips
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+                    .listRowInsets(EdgeInsets(top: 2, leading: 20, bottom: 2, trailing: 20))
+            }
+
             ForEach(klassen, id: \.self) { klasse in
                 Text(klasse)
                     .font(.system(.title2, design: .rounded).weight(.heavy))
@@ -1278,6 +1888,75 @@ struct StartView: View {
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
         .scrollIndicators(.hidden)
+        .refreshable { await CloudSync.aktiv(context, erzwingen: true) }
+    }
+
+    private var fachChips: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(["Alle"] + alleFaecher, id: \.self) { f in
+                    let aktiv = aktuellerFilter == f
+                    Button { fachFilter = f } label: {
+                        Text(f)
+                            .font(.system(.subheadline, design: .rounded).weight(.heavy))
+                            .foregroundStyle(aktiv ? Theme.navy : Color.white)
+                            .padding(.horizontal, 16)
+                            .frame(minHeight: 36)
+                            .background(aktiv ? Theme.gelb : Color.white.opacity(0.12), in: Capsule())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+    }
+
+    private var extraZeile: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Extra")
+                .font(.system(.headline, design: .rounded).weight(.heavy))
+                .foregroundStyle(Theme.gelb)
+            HStack(spacing: 10) {
+                extraKnopf("📓", "Fehlerheft", offeneFehler > 0 ? "\(offeneFehler) offen" : "alles gut") {
+                    oeffneSpezial("fehlerheft")
+                }
+                extraKnopf("🎯", "Training", "für heute") {
+                    oeffneSpezial("training")
+                }
+                extraKnopf("📝", "Probearbeit", "30 Minuten") {
+                    oeffneSpezial("probe")
+                }
+            }
+            if modus == "eltern" {
+                Button { pruefeZwischenablage() } label: {
+                    Label("JSON aus Zwischenablage veröffentlichen", systemImage: "icloud.and.arrow.up")
+                        .font(.system(.subheadline, design: .rounded).weight(.heavy))
+                        .foregroundStyle(Theme.navy)
+                        .frame(maxWidth: .infinity, minHeight: 46)
+                        .background(Theme.gelb, in: Capsule())
+                }
+                .buttonStyle(TastenStil())
+            }
+        }
+    }
+
+    private func extraKnopf(_ emoji: String, _ titel: String, _ untertitel: String,
+                            aktion: @escaping () -> Void) -> some View {
+        Button(action: aktion) {
+            VStack(spacing: 4) {
+                Text(emoji).font(.system(size: 28))
+                Text(titel)
+                    .font(.system(.footnote, design: .rounded).weight(.heavy))
+                    .foregroundStyle(Color.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                Text(untertitel)
+                    .font(.caption2)
+                    .foregroundStyle(Theme.textSanft)
+            }
+            .frame(maxWidth: .infinity, minHeight: 84)
+            .glasKarte(radius: 20)
+        }
+        .buttonStyle(TastenStil())
     }
 
     private var einfuegenSheet: some View {
@@ -1361,33 +2040,7 @@ struct StartView: View {
             return false
         }
 
-        let arbeit = Klassenarbeit(klasse: paket.klasse, fach: paket.fach, titel: paket.arbeit)
-        context.insert(arbeit)
-        for (i, up) in paket.uebungen.enumerated() {
-            let uebung = Uebung(titel: up.titel,
-                                gruppe: up.gruppe ?? "Aufgaben",
-                                symbol: up.symbol ?? "✎",
-                                tipp: up.tipp ?? "",
-                                reihenfolge: i)
-            context.insert(uebung)
-            uebung.arbeit = arbeit
-            for (j, ap) in up.aufgaben.enumerated() {
-                let reihenJSON = ap.reihen
-                    .flatMap { try? JSONEncoder().encode($0) }
-                    .flatMap { String(data: $0, encoding: .utf8) } ?? ""
-                let aufgabe = Aufgabe(art: ap.art ?? "zahl",
-                                      frage: ap.frage ?? "",
-                                      rechnung: ap.rechnung ?? "",
-                                      hinweis: ap.hinweis ?? "",
-                                      erklaerung: ap.erklaerung ?? "",
-                                      antwort: ap.antwort ?? "",
-                                      antwort2: ap.antwort2 ?? "",
-                                      reihenJSON: reihenJSON,
-                                      reihenfolge: j)
-                context.insert(aufgabe)
-                aufgabe.uebung = uebung
-            }
-        }
+        PaketImport.einfuegen(paket, in: context)
         return true
     }
 }
@@ -1693,6 +2346,11 @@ struct UebungView: View {
     @State private var mauerSchritt = 0
     @State private var kurzerHinweis: String?
     @State private var wackeln = 0
+    @State private var probeStart = Date.now
+    @State private var zeigeNotiz = false
+    @State private var notiz = PKDrawing()
+
+    private var istProbe: Bool { uebung.arbeit?.spezial == "probe" }
 
     private var naechste: Aufgabe? { uebung.sortierteAufgaben.first { !$0.erledigt } }
     private var aktuell: Aufgabe? { bewertet ?? naechste }
@@ -1724,6 +2382,14 @@ struct UebungView: View {
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { bereiteVor() }
         .onChange(of: aktuell?.persistentModelID) { bereiteVor() }
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button { zeigeNotiz = true } label: {
+                    Image(systemName: "pencil.tip.crop.circle")
+                }
+            }
+        }
+        .sheet(isPresented: $zeigeNotiz) { notizSheet }
         .confirmationDialog("Lösung anzeigen?",
                             isPresented: $zeigeLoesungDialog,
                             titleVisibility: .visible) {
@@ -1761,6 +2427,7 @@ struct UebungView: View {
                 Text("Aufgabe \(nummer) von \(uebung.aufgaben.count)")
                     .contentTransition(.numericText())
                 Spacer()
+                if istProbe { probeUhr }
                 Label("\(uebung.richtigAnzahl)", systemImage: "checkmark.circle.fill")
                     .foregroundStyle(Theme.gelb)
                     .contentTransition(.numericText())
@@ -1791,7 +2458,7 @@ struct UebungView: View {
             if a.art == "mauer" {
                 mauer(a)
             } else {
-                if let (x, y) = a.faktoren, a.hinweis.isEmpty {
+                if let (x, y) = a.faktoren, a.hinweis.isEmpty, !istProbe {
                     PunkteFeld(reihen: x, spalten: y)
                 }
                 Text(angezeigteRechnung(a))
@@ -1802,7 +2469,7 @@ struct UebungView: View {
                     .multilineTextAlignment(.center)
                     .minimumScaleFactor(0.6)
 
-                if !a.hinweis.isEmpty {
+                if !a.hinweis.isEmpty && !istProbe {
                     Text(a.hinweis)
                         .font(.system(.subheadline, design: .rounded).weight(.semibold))
                         .foregroundStyle(Theme.gelb)
@@ -1846,6 +2513,12 @@ struct UebungView: View {
                 feldPaar(titel: "Rest", wert: eingabe2, aktiv: aktivesFeld == 2, nummer: 2)
             }
             .modifier(Wackeln(animatableData: CGFloat(wackeln)))
+        } else if a.art == "text" {
+            // Bei Textaufgaben wird im Eingabefeld unten geschrieben, hier erscheint die Antwort erst nach dem Prüfen
+            if bewertet != nil {
+                feldPaar(titel: "", wert: eingabe, aktiv: false, nummer: 1)
+                    .modifier(Wackeln(animatableData: CGFloat(wackeln)))
+            }
         } else if a.art != "vergleich" {
             feldPaar(titel: "", wert: eingabe, aktiv: true, nummer: 1)
                 .modifier(Wackeln(animatableData: CGFloat(wackeln)))
@@ -1856,6 +2529,9 @@ struct UebungView: View {
         VStack(spacing: 6) {
             Text(wert.isEmpty ? "?" : wert)
                 .font(.system(size: 38, weight: .heavy, design: .rounded))
+                .lineLimit(1)
+                .minimumScaleFactor(0.4)
+                .padding(.horizontal, 12)
                 .foregroundStyle(wert.isEmpty ? Color.white.opacity(0.35)
                                               : (loesungAngezeigt ? Theme.himmel : Color.white))
                 .frame(minWidth: 104, minHeight: 62)
@@ -1940,9 +2616,11 @@ struct UebungView: View {
             GelberKnopf(titel: uebung.istFertig ? "Fertig" : "Weiter") { bewertet = nil }
         } else {
             eingabeBereich(a)
-            HStack(spacing: 12) {
-                loesungKnopf
-                JokerKnopf(uebrig: JokerStand.shared.uebrigHeute) { starteJoker(a) }
+            if !istProbe {
+                HStack(spacing: 12) {
+                    loesungKnopf
+                    JokerKnopf(uebrig: JokerStand.shared.uebrigHeute) { starteJoker(a) }
+                }
             }
         }
     }
@@ -1970,6 +2648,8 @@ struct UebungView: View {
                 }
             }
             .padding(.horizontal, 24)
+        } else if a.art == "text" {
+            TextAntwortFeld(text: $eingabe) { pruefen(a) }
         } else {
             ZahlenTastatur(text: aktuellerText, maxLaenge: 3) { pruefen(a) }
         }
@@ -1984,7 +2664,7 @@ struct UebungView: View {
 
     private func starteJoker(_ a: Aufgabe) {
         guard JokerStand.shared.nutze() else {
-            jokerMeldung = "Heute sind alle Joker aufgebraucht. Du schaffst das, versuch es noch einmal!"
+            jokerMeldung = "Heute sind alle Joker aufgebraucht. Versuch es noch einmal oder frag im Tab Joker nach neuen Jokern."
             return
         }
         jokerText = Nachricht.jokerMathe(a)
@@ -2077,7 +2757,39 @@ struct UebungView: View {
 
     // MARK: Logik
 
+    private var probeUhr: some View {
+        TimelineView(.periodic(from: .now, by: 1)) { ctx in
+            let rest = max(0, 30 * 60 - Int(ctx.date.timeIntervalSince(probeStart)))
+            Label(String(format: "%d:%02d", rest / 60, rest % 60), systemImage: "timer")
+                .font(.system(.subheadline, design: .rounded).weight(.heavy))
+                .foregroundStyle(rest < 300 ? Theme.koralle : Theme.gelb)
+        }
+    }
+
+    private var notizSheet: some View {
+        NavigationStack {
+            ZStack {
+                HintergrundView()
+                NotizblockView(zeichnung: $notiz)
+            }
+            .navigationTitle("Notizblock")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Löschen", role: .destructive) { notiz = PKDrawing() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Fertig") { zeigeNotiz = false }
+                }
+            }
+        }
+        .preferredColorScheme(.dark)
+        .tint(Theme.gelb)
+        .presentationDetents([.medium, .large])
+    }
+
     private func bereiteVor() {
+        notiz = PKDrawing()
         eingabe = ""
         eingabe2 = ""
         aktivesFeld = 1
@@ -2114,10 +2826,19 @@ struct UebungView: View {
             }
             melde(a, ok: gleich(eingabe, a.antwort) && gleich(eingabe2, a.antwort2),
                   erklaerung: a.erklaerung)
+        case "text":
+            let e = normalisiert(eingabe)
+            guard !e.isEmpty else { return }
+            melde(a, ok: e == normalisiert(a.antwort), erklaerung: a.erklaerung)
         default:
             guard !eingabe.isEmpty else { return }
             melde(a, ok: gleich(eingabe, a.antwort), erklaerung: a.erklaerung)
         }
+    }
+
+    // Textantworten: Leerzeichen am Rand und doppelte Leerzeichen ignorieren, Groß und Klein zählt
+    private func normalisiert(_ t: String) -> String {
+        t.split(whereSeparator: { $0.isWhitespace }).joined(separator: " ")
     }
 
     private func pruefeMauer(_ a: Aufgabe) {
@@ -2146,6 +2867,7 @@ struct UebungView: View {
 
     private func melde(_ a: Aufgabe, ok: Bool, erklaerung: String) {
         a.richtig = ok
+        if ok { Spezial.gemeistert(a, in: context) }
         bewertet = a
         bewertung = ok ? .richtig : .falsch
         kurzerHinweis = nil
@@ -2159,7 +2881,7 @@ struct UebungView: View {
         if erklaerung.isEmpty {
             erklaerungText = a.art == "zahl"
                 ? a.rechnung.replacingOccurrences(of: "\n", with: " ") + " " + a.antwort
-                : ""
+                : (a.art == "text" ? "Richtig: \(a.antwort)" : "")
         } else {
             erklaerungText = erklaerung
         }
@@ -2227,6 +2949,7 @@ struct UebungView: View {
             $0.richtig = nil
             $0.angesehen = false
         }
+        probeStart = Date.now
         bewertet = nil
     }
 
@@ -2249,6 +2972,14 @@ struct UebungView: View {
                 Text("\(gut) von \(uebung.aufgaben.count)")
                     .font(.system(size: 48, weight: .black, design: .rounded))
                     .foregroundStyle(Color.white)
+                if istProbe {
+                    Text("Note: \(Spezial.note(gut: gut, gesamt: uebung.aufgaben.count))")
+                        .font(.system(size: 30, weight: .heavy, design: .rounded))
+                        .foregroundStyle(Theme.gelb)
+                    Text("Das ist eine Schätzung wie in der Schule.")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.textSanft)
+                }
                 if uebung.angesehenAnzahl > 0 {
                     Label("\(uebung.angesehenAnzahl) Lösung\(uebung.angesehenAnzahl == 1 ? "" : "en") angeschaut",
                           systemImage: "eye.fill")
@@ -2928,14 +3659,22 @@ enum SprachErgebnis {
 // MARK: Tabs
 
 struct KindTabs: View {
+    @AppStorage("vorschulTab") private var vorschul = true
+
     var body: some View {
         TabView {
             StartView()
-                .tabItem { Label("Mathe", systemImage: "plus.forwardslash.minus") }
+                .tabItem { Label("Schule", systemImage: "books.vertical.fill") }
             SprachStartView()
                 .tabItem { Label("Sprachen", systemImage: "globe") }
+            if vorschul {
+                VorschuleView()
+                    .tabItem { Label("Vorschule", systemImage: "sparkles") }
+            }
             KindJokerView()
                 .tabItem { Label("Joker", systemImage: "suit.spade.fill") }
+            EinstellungenView(eingebettet: true)
+                .tabItem { Label("Einstellungen", systemImage: "gearshape.fill") }
         }
     }
 }
@@ -3595,7 +4334,7 @@ struct SprachFragenView: View {
 
     private func starteJoker(_ f: Frage) {
         guard JokerStand.shared.nutze() else {
-            jokerMeldung = "Heute sind alle Joker aufgebraucht. Du schaffst das, versuch es noch einmal!"
+            jokerMeldung = "Heute sind alle Joker aufgebraucht. Versuch es noch einmal oder frag im Tab Joker nach neuen Jokern."
             return
         }
         jokerText = Nachricht.jokerSprache(f, sprache: sprache)
@@ -6161,6 +6900,12 @@ final class JokerStand {
         return true
     }
 
+    // Setzt die heutigen Joker auf das volle Limit zurück
+    func auffuellen() {
+        nutzungen.removeAll { Calendar.current.isDateInToday($0) }
+        sichere()
+    }
+
     func vergib(_ art: JokerPunkteArt, an id: UUID) {
         ereignisse.append(JokerEreignis(ts: Date.now, mitgliedID: id, art: art))
         sichere()
@@ -6278,10 +7023,10 @@ struct JokerLigaView: View {
                     VStack(alignment: .leading, spacing: 16) {
                         kopf
                         JokerPostfachView()
+                        JokerNachschubView()
                         if joker.ligaAn { liga }
                         eintragen
                         einstellungen
-                        CloudStatusKarte()
                     }
                     .padding(20)
                 }
@@ -6763,17 +7508,35 @@ extension Notification.Name {
 }
 
 // Registriert das Gerät für Mitteilungen und meldet eingehende CloudKit-Pushes an die App.
-final class AppDelegate: NSObject, UIApplicationDelegate {
+final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
+        UNUserNotificationCenter.current().delegate = self
         application.registerForRemoteNotifications()
         return true
+    }
+
+    nonisolated func application(_ application: UIApplication,
+                                 didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        UserDefaults.standard.set("registriert", forKey: "pushStatus")
+    }
+
+    nonisolated func application(_ application: UIApplication,
+                                 didFailToRegisterForRemoteNotificationsWithError error: Error) {
+        UserDefaults.standard.set("Fehler: \(error.localizedDescription)", forKey: "pushStatus")
     }
 
     nonisolated func application(_ application: UIApplication,
                                  didReceiveRemoteNotification userInfo: [AnyHashable: Any]) async -> UIBackgroundFetchResult {
         NotificationCenter.default.post(name: .cloudPush, object: nil)
         return .newData
+    }
+
+    // Ohne diese Methode zeigt iOS bei geöffneter App kein Banner
+    nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                            willPresent notification: UNNotification) async -> UNNotificationPresentationOptions {
+        NotificationCenter.default.post(name: .cloudPush, object: nil)
+        return [.banner, .list, .sound, .badge]
     }
 }
 
@@ -6929,6 +7692,7 @@ enum CloudDienst {
         r["gesamt"] = e.gesamt as CKRecordValue
         r["angesehen"] = e.angesehen as CKRecordValue
         r["sterne"] = e.sterne as CKRecordValue
+        r["kind"] = e.kind as CKRecordValue
         r["zeitpunkt"] = e.zeitpunkt as CKRecordValue
         do {
             _ = try await db.save(r)
@@ -6966,6 +7730,11 @@ enum CloudDienst {
                                                    "richtig": 1 as CKRecordValue, "gesamt": 1 as CKRecordValue,
                                                    "angesehen": 0 as CKRecordValue, "sterne": 3 as CKRecordValue,
                                                    "zeitpunkt": Date() as CKRecordValue])
+        try await schemaBeispiel("JokerNachschub", ["familienCode": code, "kind": "Test" as CKRecordValue])
+        try await schemaBeispiel("JokerFreigabe", ["familienCode": code, "anzahl": 3 as CKRecordValue])
+        try await schemaBeispiel("Lernpaket", ["familienCode": code, "klasse": "Test" as CKRecordValue,
+                                               "fach": "Test" as CKRecordValue, "titel": "Test" as CKRecordValue,
+                                               "json": "{}" as CKRecordValue, "aufgaben": 0 as CKRecordValue])
     }
 
     static func abo(typ: String, code: String, text: String) async throws {
@@ -6996,9 +7765,16 @@ enum CloudDienst {
                               text: "🃏 Joker-Alarm! Dein Kind braucht Hilfe. Tippe und hilf als Erste:r!")
                 try await abo(typ: "RundenErgebnis", code: code,
                               text: "🏆 Dein Kind hat eine Runde geschafft!")
+                try await aboDaumen(code: code, name: ichName())
+                try await abo(typ: "JokerNachschub", code: code,
+                              text: "🃏 Dein Kind hat keine Joker mehr und fragt nach neuen. Tippe zum Freigeben!")
             } else {
                 try await abo(typ: "JokerAntwort", code: code,
                               text: "💡 Du hast einen Tipp bekommen! Schau im Tab Joker nach.")
+                try await abo(typ: "JokerFreigabe", code: code,
+                              text: "🎉 Neue Joker! Du hast wieder alle Joker für heute.")
+                try await abo(typ: "Lernpaket", code: code,
+                              text: "📚 Neue Aufgaben für dich sind da! Öffne YEM1N und leg los. 💪")
             }
         } catch {
             return "Mitteilungen einrichten nicht möglich: \(fehlertext(error))"
@@ -7055,6 +7831,7 @@ enum CloudSync {
                                        zeitpunkt: (r["zeitpunkt"] as? Date) ?? (r.creationDate ?? Date.now),
                                        quelle: "cloud")
                 e.eintragID = id
+                e.kind = (r["kind"] as? String) ?? ""
                 context.insert(e)
                 ids.insert(id)
             }
@@ -7064,13 +7841,87 @@ enum CloudSync {
         }
     }
 
+    // Kind-Gerät: Joker-Freigaben der Eltern anwenden (Joker wieder auf das Limit setzen)
+    static func holeFreigaben() async {
+        guard modus == "kind", Familiencode.istGueltig(code) else { return }
+        guard let liste = try? await CloudDienst.holeRecords("JokerFreigabe", code: code, limit: 100) else { return }
+        var benutzt = Set(UserDefaults.standard.stringArray(forKey: "jokerFreigaben") ?? [])
+        var neu = false
+        for r in liste where !benutzt.contains(r.recordID.recordName) {
+            benutzt.insert(r.recordID.recordName)
+            neu = true
+        }
+        if neu {
+            JokerStand.shared.auffuellen()
+            UserDefaults.standard.set(Array(benutzt), forKey: "jokerFreigaben")
+        }
+    }
+
+    // Kind-Gerät: neue Klassenarbeiten und Übungssets laden. Vorhandene bleiben mit Fortschritt unberührt.
+    // Ergebnis: Anzahl neuer Pakete, bei einem Fehler -1
+    @discardableResult
+    static func holePakete(_ context: ModelContext) async -> Int {
+        var codes: [String] = []
+        if Familiencode.istGueltig(code) { codes.append(code) }
+        if let k = CloudDienst.klassenCloudCode { codes.append(k) }
+        guard modus == "kind", !codes.isEmpty else { return 0 }
+        do {
+            var koepfe: [(paket: CloudPaket, herkunft: String)] = []
+            for c in codes {
+                for p in try await CloudDienst.ladePakete(code: c) { koepfe.append((p, c)) }
+            }
+            var neu = 0
+            var ungueltig = 0
+            let meineKlasse = (UserDefaults.standard.string(forKey: "kindKlasse") ?? "")
+                .trimmingCharacters(in: .whitespaces).lowercased()
+            for eintrag in koepfe {
+                let k = eintrag.paket
+                if !meineKlasse.isEmpty && k.klasse.lowercased() != meineKlasse { continue }
+                if PaketImport.vorhanden(klasse: k.klasse, fach: k.fach, titel: k.titel, in: context) { continue }
+                let text: String
+                if eintrag.herkunft.hasPrefix("K-") {
+                    // Pakete aus der Klasse müssen vom Admin unterschrieben sein
+                    guard let signiert = try await CloudDienst.ladePaketSigniert(id: k.id),
+                          let oeffentlich = await Klassensiegel.vertrauterSchluessel(eintrag.herkunft),
+                          Klassensiegel.pruefe(code: eintrag.herkunft, json: signiert.json,
+                                               sig: signiert.sig, oeffentlich: oeffentlich) else {
+                        ungueltig += 1
+                        continue
+                    }
+                    text = signiert.json
+                } else {
+                    guard let t = try await CloudDienst.ladePaketText(id: k.id) else { continue }
+                    text = t
+                }
+                guard let daten = text.data(using: .utf8),
+                      let paket = try? JSONDecoder().decode(ArbeitPaket.self, from: daten),
+                      !paket.uebungen.isEmpty else { continue }
+                if PaketImport.vorhanden(klasse: paket.klasse, fach: paket.fach, titel: paket.arbeit, in: context) { continue }
+                PaketImport.einfuegen(paket, in: context)
+                neu += 1
+            }
+            if neu > 0 { try? context.save() }
+            if ungueltig > 0 {
+                CloudStatus.shared.meldung = "\(ungueltig) Paket(e) der Klasse ohne gültige Unterschrift wurden ignoriert."
+            }
+            return neu
+        } catch {
+            CloudStatus.shared.meldung = "Neue Aufgaben holen nicht möglich: \(CloudDienst.fehlertext(error))"
+            return -1
+        }
+    }
+
     // Wird beim Öffnen der App, bei Mitteilungen und beim Aktualisieren aufgerufen
     nonisolated(unsafe) private static var letzterLauf = Date.distantPast
 
     static func aktiv(_ context: ModelContext, erzwingen: Bool = false) async {
         if !erzwingen && Date().timeIntervalSince(letzterLauf) < 5 { return }
         letzterLauf = Date()
-        if modus == "kind" { await sendeOffene(context) }
+        if modus == "kind" {
+            await sendeOffene(context)
+            await holeFreigaben()
+            await holePakete(context)
+        }
         if modus == "eltern" { await holeErgebnisse(context) }
         if !modus.isEmpty { await JokerCloud.shared.aktualisieren() }
     }
@@ -7082,8 +7933,24 @@ enum CloudSync {
 final class JokerCloud {
     static let shared = JokerCloud()
     var anfragen: [CloudAnfrage] = []
+    var nachschub: [CloudNachschub] = []
+    var freigaben: [Date] = []
+    var erledigt: Set<String> = Set(UserDefaults.standard.stringArray(forKey: "jokerErledigt") ?? [])
     var laedt = false
     var fehler = ""
+
+    // Was im Postfach angezeigt wird (erledigte Anfragen sind nur ausgeblendet, die Punkte bleiben)
+    var sichtbar: [CloudAnfrage] { anfragen.filter { !erledigt.contains($0.id) } }
+
+    func erledige(_ id: String) {
+        erledigt.insert(id)
+        UserDefaults.standard.set(Array(erledigt), forKey: "jokerErledigt")
+    }
+
+    func alleErledigen() {
+        for a in anfragen { erledigt.insert(a.id) }
+        UserDefaults.standard.set(Array(erledigt), forKey: "jokerErledigt")
+    }
 
     func aktualisieren() async {
         let code = UserDefaults.standard.string(forKey: "familienCode") ?? ""
@@ -7094,6 +7961,11 @@ final class JokerCloud {
         laedt = true
         do {
             anfragen = try await CloudDienst.ladeJoker(code: code)
+            nachschub = (try? await CloudDienst.ladeNachschub(code: code)) ?? []
+            freigaben = (try? await CloudDienst.ladeFreigaben(code: code)) ?? []
+            if UserDefaults.standard.string(forKey: "modus") == "kind" {
+                await CloudSync.holeFreigaben()
+            }
             fehler = ""
         } catch {
             fehler = "Laden nicht möglich: \(CloudDienst.fehlertext(error))"
@@ -7160,6 +8032,19 @@ struct JokerPostfachView: View {
                     .foregroundStyle(Theme.gelb)
                 Spacer()
                 if cloud.laedt { ProgressView().tint(Theme.gelb) }
+                if !cloud.sichtbar.isEmpty {
+                    Button {
+                        withAnimation(.snappy) { cloud.alleErledigen() }
+                    } label: {
+                        Text("Alle erledigt")
+                            .font(.system(.caption, design: .rounded).weight(.heavy))
+                            .foregroundStyle(Theme.navy)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(Theme.gelb, in: Capsule())
+                    }
+                    .buttonStyle(TastenStil())
+                }
                 Button { Task { await cloud.aktualisieren() } } label: {
                     Image(systemName: "arrow.clockwise")
                         .font(.system(size: 15, weight: .bold))
@@ -7171,19 +8056,31 @@ struct JokerPostfachView: View {
                     .font(.footnote)
                     .foregroundStyle(Theme.koralle)
             }
-            if cloud.anfragen.isEmpty && cloud.fehler.isEmpty {
-                Text("Noch keine Joker-Anfrage. Sobald dein Kind einen Joker nutzt, bekommst du eine Mitteilung und siehst sie hier.")
+            if cloud.sichtbar.isEmpty && cloud.fehler.isEmpty {
+                Text(cloud.anfragen.isEmpty
+                     ? "Noch keine Joker-Anfrage. Sobald dein Kind einen Joker nutzt, bekommst du eine Mitteilung und siehst sie hier."
+                     : "Alles erledigt. 🎉 Neue Anfragen erscheinen hier von selbst.")
                     .font(.footnote)
                     .foregroundStyle(Theme.textSanft)
+            } else if !cloud.sichtbar.isEmpty {
+                Text("Nach links oder rechts wischen blendet eine Anfrage als erledigt aus.")
+                    .font(.caption)
+                    .foregroundStyle(Theme.textSanft)
             }
-            ForEach(Array(cloud.anfragen.prefix(8))) { a in
+            ForEach(Array(cloud.sichtbar.prefix(8))) { a in
                 karte(a)
+                    .wischErledigt { cloud.erledige(a.id) }
             }
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
         .glasKarte(radius: 26)
-        .task { await cloud.aktualisieren() }
+        .task {
+            while !Task.isCancelled {
+                await cloud.aktualisieren()
+                try? await Task.sleep(for: .seconds(10))
+            }
+        }
         .onReceive(NotificationCenter.default.publisher(for: .cloudPush)) { _ in
             Task { await cloud.aktualisieren() }
         }
@@ -7204,6 +8101,14 @@ struct JokerPostfachView: View {
                 Text(a.erstellt.formatted(.relative(presentation: .named)))
                     .font(.caption)
                     .foregroundStyle(Theme.textSanft)
+                Button {
+                    withAnimation(.snappy) { cloud.erledige(a.id) }
+                } label: {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 22))
+                        .foregroundStyle(Theme.mint)
+                }
+                .buttonStyle(.plain)
             }
             Text(a.text)
                 .font(.system(.body, design: .rounded).weight(.semibold))
@@ -7359,8 +8264,26 @@ struct KindJokerView: View {
     private let joker = JokerStand.shared
     @AppStorage("kindName") private var kindName = ""
     @AppStorage("familienCode") private var familienCode = ""
+    @State private var nachschubLaeuft = false
+    @State private var nachschubInfo = ""
 
     private var meinName: String { kindName.isEmpty ? "Kind" : kindName }
+
+    private func nachschubAnfragen() async {
+        guard Familiencode.istGueltig(familienCode) else {
+            nachschubInfo = "Es fehlt noch ein Familiencode. Frag deine Eltern."
+            return
+        }
+        nachschubLaeuft = true
+        do {
+            try await CloudDienst.sendeNachschub(code: familienCode, kind: meinName)
+            Haptik.erfolg()
+            nachschubInfo = "Anfrage ist raus. Deine Eltern bekommen eine Mitteilung."
+        } catch {
+            nachschubInfo = "Das hat nicht geklappt. Bist du online?"
+        }
+        nachschubLaeuft = false
+    }
     private var meine: [CloudAnfrage] { cloud.anfragen.filter { $0.kind == meinName } }
 
     var body: some View {
@@ -7370,6 +8293,16 @@ struct KindJokerView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {
                         kopf
+                        if Familiencode.istGueltig(familienCode) {
+                            nachschubBereich
+                        } else {
+                            Text("Dieses Gerät gehört zu keiner Familie, nur zu einer Klasse. Darum gibt es hier keine Joker-Antworten von Eltern. Wenn du bei einer Aufgabe auf 🃏 Joker tippst, kannst du die Frage stattdessen per Nachricht an jemanden schicken. Einen Familiencode trägst du in den Einstellungen ein.")
+                                .font(.subheadline)
+                                .foregroundStyle(Theme.textSanft)
+                                .padding(16)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .glasKarte(radius: 22)
+                        }
                         namenFeld
                         if !cloud.fehler.isEmpty {
                             Text(cloud.fehler).font(.footnote).foregroundStyle(Theme.koralle)
@@ -7382,7 +8315,6 @@ struct KindJokerView: View {
                         ForEach(Array(meine.prefix(10))) { a in
                             karte(a)
                         }
-                        CloudStatusKarte()
                     }
                     .padding(20)
                 }
@@ -7390,7 +8322,12 @@ struct KindJokerView: View {
                 .refreshable { await cloud.aktualisieren() }
             }
             .toolbar(.hidden, for: .navigationBar)
-            .task { await cloud.aktualisieren() }
+            .task {
+                while !Task.isCancelled {
+                    await cloud.aktualisieren()
+                    try? await Task.sleep(for: .seconds(8))
+                }
+            }
             .onReceive(NotificationCenter.default.publisher(for: .cloudPush)) { _ in
                 Task { await cloud.aktualisieren() }
             }
@@ -7408,14 +8345,38 @@ struct KindJokerView: View {
         }
     }
 
+    private var nachschubBereich: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            if joker.uebrigHeute < joker.limitProTag {
+                Button {
+                    Task { await nachschubAnfragen() }
+                } label: {
+                    Text(nachschubLaeuft ? "Wird gesendet ..." : "🃏 Neue Joker anfragen")
+                        .font(.system(.subheadline, design: .rounded).weight(.heavy))
+                        .foregroundStyle(Theme.navy)
+                        .frame(maxWidth: .infinity, minHeight: 44)
+                        .background(Theme.gelb, in: Capsule())
+                }
+                .buttonStyle(TastenStil())
+                .disabled(nachschubLaeuft)
+            }
+            if !nachschubInfo.isEmpty {
+                Text(nachschubInfo)
+                    .font(.footnote)
+                    .foregroundStyle(Theme.himmel)
+            }
+        }
+    }
+
     private var namenFeld: some View {
         HStack(spacing: 10) {
-            Text("Mein Name")
+            Text("Ich bin")
                 .font(.system(.subheadline, design: .rounded).weight(.bold))
                 .foregroundStyle(Theme.textSanft)
-            TextField("zum Beispiel Yemin", text: $kindName)
-                .padding(10)
-                .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            Text(kindName.isEmpty ? "Noch kein Name (Einstellungen > Profil)" : kindName)
+                .font(.system(.subheadline, design: .rounded).weight(.heavy))
+                .foregroundStyle(kindName.isEmpty ? Theme.textSanft : Color.white)
+            Spacer()
         }
     }
 
@@ -7511,7 +8472,7 @@ struct CloudStatusKarte: View {
                     let ergebnis = await CloudDienst.einrichten(code: familienCode, rolle: modus)
                     status.meldung = ergebnis
                     if ergebnis.hasPrefix("Cloud ist bereit") {
-                        UserDefaults.standard.set(modus + "|" + familienCode, forKey: "cloudEingerichtet")
+                        UserDefaults.standard.set(CloudDienst.marke(modus: modus, code: familienCode), forKey: "cloudEingerichtet")
                     }
                     await CloudSync.aktiv(context, erzwingen: true)
                     status.arbeitet = false
@@ -7966,4 +8927,2512 @@ enum SprachKatalogDaten {
  ]
 }
 """#
+}
+
+// ============================================================
+// MARK: - Cloud-Pakete: Klassenarbeiten und Übungssets verteilen
+// ============================================================
+
+struct CloudPaket: Identifiable {
+    let id: String
+    let klasse: String
+    let fach: String
+    let titel: String
+    let erstellt: Date
+}
+
+enum PaketJSON {
+    // Eine Klassenarbeit als JSON-Text im Importformat
+    static func text(von a: Klassenarbeit) -> String? {
+        var uebungen: [[String: Any]] = []
+        for u in a.sortierteUebungen {
+            var aufgaben: [[String: Any]] = []
+            for x in u.sortierteAufgaben {
+                var d: [String: Any] = ["art": x.art, "frage": x.frage,
+                                        "rechnung": x.rechnung, "antwort": x.antwort]
+                if !x.hinweis.isEmpty { d["hinweis"] = x.hinweis }
+                if !x.erklaerung.isEmpty { d["erklaerung"] = x.erklaerung }
+                if !x.antwort2.isEmpty { d["antwort2"] = x.antwort2 }
+                if x.art == "mauer" { d["reihen"] = x.reihen }
+                aufgaben.append(d)
+            }
+            var ud: [String: Any] = ["titel": u.titel, "gruppe": u.gruppe,
+                                     "symbol": u.symbol, "aufgaben": aufgaben]
+            if !u.tipp.isEmpty { ud["tipp"] = u.tipp }
+            uebungen.append(ud)
+        }
+        let wurzel: [String: Any] = ["klasse": a.klasse, "fach": a.fach,
+                                     "arbeit": a.titel, "uebungen": uebungen]
+        guard let daten = try? JSONSerialization.data(withJSONObject: wurzel) else { return nil }
+        return String(data: daten, encoding: .utf8)
+    }
+
+    // Stabiler Name des Cloud-Datensatzes, damit erneutes Hochladen ersetzt statt verdoppelt
+    static func schluessel(klasse: String, fach: String, titel: String) -> String {
+        let erlaubt = Set("abcdefghijklmnopqrstuvwxyz0123456789")
+        var aus = ""
+        var letzterStrich = false
+        for z in (klasse + "-" + fach + "-" + titel).lowercased() {
+            if erlaubt.contains(z) {
+                aus.append(z)
+                letzterStrich = false
+            } else if !letzterStrich {
+                aus.append("-")
+                letzterStrich = true
+            }
+        }
+        return aus
+    }
+
+    // Aus eingefügtem Text das JSON-Objekt herauslösen (falls Code-Zaun oder Begleittext dabei ist)
+    static func bereinigt(_ text: String) -> String {
+        if let s = text.firstIndex(of: "{"), let e = text.lastIndex(of: "}"), s < e {
+            return String(text[s...e])
+        }
+        return text
+    }
+}
+
+enum PaketImport {
+    static func vorhanden(klasse: String, fach: String, titel: String, in context: ModelContext) -> Bool {
+        let alle = (try? context.fetch(FetchDescriptor<Klassenarbeit>())) ?? []
+        return alle.contains { $0.klasse == klasse && $0.fach == fach && $0.titel == titel }
+    }
+
+    static func einfuegen(_ paket: ArbeitPaket, in context: ModelContext) {
+        let arbeit = Klassenarbeit(klasse: paket.klasse, fach: paket.fach, titel: paket.arbeit)
+        context.insert(arbeit)
+        for (i, up) in paket.uebungen.enumerated() {
+            let uebung = Uebung(titel: up.titel,
+                                gruppe: up.gruppe ?? "Aufgaben",
+                                symbol: up.symbol ?? "✎",
+                                tipp: up.tipp ?? "",
+                                reihenfolge: i)
+            context.insert(uebung)
+            uebung.arbeit = arbeit
+            for (j, ap) in up.aufgaben.enumerated() {
+                var reihenJSON = ap.reihen
+                    .flatMap { try? JSONEncoder().encode($0) }
+                    .flatMap { String(data: $0, encoding: .utf8) } ?? ""
+                let aufgabe: Aufgabe
+                if ap.art == "wahl" {
+                    // Vorschule: rechnung = Bild, hinweis = türkische Frage, erklaerung = große Zahl,
+                    // antwort2 = Folge, reihenJSON = Antwortknöpfe
+                    reihenJSON = (try? JSONEncoder().encode(ap.optionen ?? []))
+                        .flatMap { String(data: $0, encoding: .utf8) } ?? "[]"
+                    aufgabe = Aufgabe(art: "wahl",
+                                      frage: ap.frage ?? "",
+                                      rechnung: ap.bild ?? "",
+                                      hinweis: ap.tr ?? "",
+                                      erklaerung: ap.gross ?? "",
+                                      antwort: ap.antwort ?? "",
+                                      antwort2: (ap.folge ?? []).joined(separator: " "),
+                                      reihenJSON: reihenJSON,
+                                      reihenfolge: j)
+                } else {
+                    aufgabe = Aufgabe(art: ap.art ?? "zahl",
+                                      frage: ap.frage ?? "",
+                                      rechnung: ap.rechnung ?? "",
+                                      hinweis: ap.hinweis ?? "",
+                                      erklaerung: ap.erklaerung ?? "",
+                                      antwort: ap.antwort ?? "",
+                                      antwort2: ap.antwort2 ?? "",
+                                      reihenJSON: reihenJSON,
+                                      reihenfolge: j)
+                }
+                context.insert(aufgabe)
+                aufgabe.uebung = uebung
+            }
+        }
+    }
+}
+
+extension CloudDienst {
+    // Der Klassencode wird in der Cloud mit "K-" markiert, damit er nie mit einem Familiencode verwechselt wird
+    static var klassenCloudCode: String? {
+        let c = UserDefaults.standard.string(forKey: "klassenCode") ?? ""
+        return Familiencode.istGueltig(c) ? "K-" + Familiencode.bereinigt(c) : nil
+    }
+
+    // Nur die Kopfdaten laden, der große JSON-Text kommt erst bei Bedarf
+    static func ladePakete(code: String) async throws -> [CloudPaket] {
+        let q = CKQuery(recordType: "Lernpaket",
+                        predicate: NSPredicate(format: "familienCode == %@", code))
+        let keys: [CKRecord.FieldKey] = ["klasse", "fach", "titel"]
+        let antwort = try await db.records(matching: q, desiredKeys: keys, resultsLimit: 100)
+        var liste: [CloudPaket] = []
+        for (_, ergebnis) in antwort.matchResults {
+            guard let r = try? ergebnis.get() else { continue }
+            liste.append(CloudPaket(id: r.recordID.recordName,
+                                    klasse: (r["klasse"] as? String) ?? "",
+                                    fach: (r["fach"] as? String) ?? "",
+                                    titel: (r["titel"] as? String) ?? "",
+                                    erstellt: r.creationDate ?? Date.distantPast))
+        }
+        return liste.sorted { $0.erstellt < $1.erstellt }
+    }
+
+    static func ladePaketSigniert(id: String) async throws -> (json: String, sig: String)? {
+        let r = try await db.record(for: CKRecord.ID(recordName: id))
+        guard let j = r["json"] as? String, let sg = r["sig"] as? String else { return nil }
+        return (j, sg)
+    }
+
+    // Admin-Schlüssel anlegen: der öffentliche Teil kommt in die Cloud, der private bleibt im Schlüsselbund
+    static func erzeugeKlassenSchluessel(_ code: String) async throws {
+        let k = Curve25519.Signing.PrivateKey()
+        let r = CKRecord(recordType: "KlassenSchluessel",
+                         recordID: CKRecord.ID(recordName: "klassenkey-" + code))
+        r["klassenCode"] = code as CKRecordValue
+        r["publicKey"] = k.publicKey.rawRepresentation.base64EncodedString() as CKRecordValue
+        let erg = try await db.modifyRecords(saving: [r], deleting: [], savePolicy: .allKeys)
+        for (_, e) in erg.saveResults { _ = try e.get() }
+        Schluesselbund.speichere(k.rawRepresentation, konto: Klassensiegel.konto(code))
+        UserDefaults.standard.removeObject(forKey: "klassenPin-" + code)
+    }
+
+    static func ladeKlassenSchluessel(_ code: String) async -> Data? {
+        guard let r = try? await db.record(for: CKRecord.ID(recordName: "klassenkey-" + code)),
+              let b64 = r["publicKey"] as? String else { return nil }
+        return Data(base64Encoded: b64)
+    }
+
+    // Datenschutz: löscht alle Einträge dieses Familiencodes, die dieses Gerät angelegt hat
+    static func loescheEigeneDaten(code: String) async -> Int {
+        let typen = ["RundenErgebnis", "JokerAnfrage", "JokerAntwort", "JokerDaumen",
+                     "JokerNachschub", "JokerFreigabe", "Lernpaket"]
+        var geloescht = 0
+        for typ in typen {
+            let q = CKQuery(recordType: typ, predicate: NSPredicate(format: "familienCode == %@", code))
+            guard let antwort = try? await db.records(matching: q, desiredKeys: [], resultsLimit: 400) else { continue }
+            var ids: [CKRecord.ID] = []
+            for (id, ergebnis) in antwort.matchResults {
+                if (try? ergebnis.get()) != nil { ids.append(id) }
+            }
+            if ids.isEmpty { continue }
+            guard let erg = try? await db.modifyRecords(saving: [], deleting: ids) else { continue }
+            for (_, e) in erg.deleteResults {
+                if (try? e.get()) != nil { geloescht += 1 }
+            }
+        }
+        return geloescht
+    }
+
+    static func ladePaketText(id: String) async throws -> String? {
+        let r = try await db.record(for: CKRecord.ID(recordName: id))
+        return r["json"] as? String
+    }
+
+    static func hochladen(code: String, paket: ArbeitPaket, json: String) async throws {
+        let name = "paket-" + code + "-" + PaketJSON.schluessel(klasse: paket.klasse,
+                                                              fach: paket.fach, titel: paket.arbeit)
+        let r = CKRecord(recordType: "Lernpaket", recordID: CKRecord.ID(recordName: name))
+        r["familienCode"] = code as CKRecordValue
+        r["klasse"] = paket.klasse as CKRecordValue
+        r["fach"] = paket.fach as CKRecordValue
+        r["titel"] = paket.arbeit as CKRecordValue
+        r["json"] = json as CKRecordValue
+        r["aufgaben"] = paket.uebungen.reduce(0) { $0 + $1.aufgaben.count } as CKRecordValue
+        if code.hasPrefix("K-") {
+            guard let sig = Klassensiegel.signiere(code: code, json: json) else { throw KlassenFehler.keinSchluessel }
+            r["sig"] = sig as CKRecordValue
+        }
+        let ergebnis = try await db.modifyRecords(saving: [r], deleting: [], savePolicy: .allKeys)
+        for (_, e) in ergebnis.saveResults { _ = try e.get() }
+    }
+
+    static func loeschePaket(id: String) async throws {
+        _ = try await db.deleteRecord(withID: CKRecord.ID(recordName: id))
+    }
+}
+
+// Eltern: Aufgaben in die Cloud stellen, Kind-Geräte laden sie von selbst
+struct PaketeView: View {
+    @Environment(\.modelContext) private var context
+    @Query(sort: [SortDescriptor(\Klassenarbeit.klasse), SortDescriptor(\Klassenarbeit.fach),
+                  SortDescriptor(\Klassenarbeit.erstellt)])
+    private var arbeiten: [Klassenarbeit]
+    @AppStorage("familienCode") private var familienCode = ""
+    @State private var cloud: [CloudPaket] = []
+    @State private var klassenCloud: [CloudPaket] = []
+    @State private var fuerKlasse = false
+    @State private var meldung = ""
+    @State private var zeigeEinfuegen = false
+    @State private var eingabe = ""
+    @State private var fehlerText = ""
+    @State private var arbeitet = false
+
+    private let zeile = Color.white.opacity(0.08)
+
+    private func inCloud(_ a: Klassenarbeit) -> Bool {
+        cloud.contains { $0.klasse == a.klasse && $0.fach == a.fach && $0.titel == a.titel }
+    }
+
+    private var eigene: [Klassenarbeit] { arbeiten.filter { $0.spezial.isEmpty } }
+
+    var body: some View {
+        ZStack {
+            HintergrundView()
+            List {
+                if !Familiencode.istGueltig(familienCode) && CloudDienst.klassenCloudCode == nil {
+                    Section {
+                        Text("Zuerst im Tab Einstellungen einen Familiencode eintragen.")
+                            .foregroundStyle(Theme.koralle)
+                    }
+                    .listRowBackground(zeile)
+                }
+
+                Section {
+                    Button {
+                        fehlerText = ""
+                        zeigeEinfuegen = true
+                    } label: {
+                        Label("JSON einfügen und veröffentlichen", systemImage: "doc.on.clipboard")
+                    }
+                } footer: {
+                    Text("Das JSON von Claude einfügen. Es landet direkt in der Cloud und auch hier auf dem Gerät.")
+                }
+                .listRowBackground(zeile)
+
+                Section {
+                    if eigene.isEmpty {
+                        Text("Keine Klassenarbeit auf diesem Gerät.")
+                            .foregroundStyle(Theme.textSanft)
+                    }
+                    ForEach(eigene) { a in
+                        HStack(spacing: 10) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(a.titel).font(.headline)
+                                Text("\(a.klasse), \(a.fach)")
+                                    .font(.caption)
+                                    .foregroundStyle(Theme.textSanft)
+                            }
+                            Spacer()
+                            if inCloud(a) {
+                                Image(systemName: "checkmark.icloud.fill").foregroundStyle(Theme.mint)
+                            }
+                            Menu(inCloud(a) ? "Erneut senden" : "Senden") {
+                                Button("An meine Familie") { Task { await hochladen(a, klasse: false) } }
+                                if CloudDienst.klassenCloudCode != nil {
+                                    Button("An die Klasse") { Task { await hochladen(a, klasse: true) } }
+                                }
+                            }
+                            .disabled(arbeitet)
+                        }
+                    }
+                } header: {
+                    Text("Auf diesem Gerät")
+                } footer: {
+                    Text("Kind-Geräte laden nur Pakete, die sie noch nicht haben. Vorhandene bleiben mit Fortschritt unverändert.")
+                }
+                .listRowBackground(zeile)
+
+                Section {
+                    if cloud.isEmpty {
+                        Text("Noch nichts in der Cloud.").foregroundStyle(Theme.textSanft)
+                    }
+                    ForEach(cloud) { p in
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(p.titel).font(.headline)
+                            Text("\(p.klasse), \(p.fach)")
+                                .font(.caption)
+                                .foregroundStyle(Theme.textSanft)
+                        }
+                    }
+                    .onDelete { offsets in
+                        let ziele = offsets.map { cloud[$0] }
+                        Task {
+                            for p in ziele { try? await CloudDienst.loeschePaket(id: p.id) }
+                            await laden()
+                        }
+                    }
+                } header: {
+                    Text("In der Cloud")
+                } footer: {
+                    Text("Nach links wischen entfernt ein Paket aus der Cloud. Auf den Kind-Geräten bleibt es erhalten.")
+                }
+                .listRowBackground(zeile)
+
+                if CloudDienst.klassenCloudCode != nil {
+                    Section {
+                        if klassenCloud.isEmpty {
+                            Text("Noch nichts beim Klassencode.").foregroundStyle(Theme.textSanft)
+                        }
+                        ForEach(klassenCloud) { p in
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(p.titel).font(.headline)
+                                Text("\(p.klasse), \(p.fach)")
+                                    .font(.caption)
+                                    .foregroundStyle(Theme.textSanft)
+                            }
+                        }
+                        .onDelete { offsets in
+                            let ziele = offsets.map { klassenCloud[$0] }
+                            Task {
+                                for p in ziele { try? await CloudDienst.loeschePaket(id: p.id) }
+                                await laden()
+                            }
+                        }
+                    } header: {
+                        Text("Bei der Klasse")
+                    } footer: {
+                        Text("Diese Pakete laden alle Geräte mit deinem Klassencode. Nur du kannst deine Pakete ändern oder löschen.")
+                    }
+                    .listRowBackground(zeile)
+                }
+
+                if !meldung.isEmpty {
+                    Section { Text(meldung).font(.footnote) }
+                        .listRowBackground(zeile)
+                }
+            }
+            .scrollContentBackground(.hidden)
+        }
+        .navigationTitle("Cloud-Pakete")
+        .navigationBarTitleDisplayMode(.inline)
+        .task { await laden() }
+        .refreshable { await laden() }
+        .sheet(isPresented: $zeigeEinfuegen) { einfuegenSheet }
+    }
+
+    private var einfuegenSheet: some View {
+        NavigationStack {
+            ZStack {
+                HintergrundView()
+                VStack(alignment: .leading, spacing: 10) {
+                    Button("Aus Zwischenablage einfügen") {
+                        eingabe = UIPasteboard.general.string ?? ""
+                    }
+                    .font(.system(.subheadline, design: .rounded).weight(.bold))
+                    if CloudDienst.klassenCloudCode != nil {
+                        Toggle("An die Klasse statt an meine Familie", isOn: $fuerKlasse)
+                            .font(.system(.subheadline, design: .rounded).weight(.bold))
+                    }
+                    TextEditor(text: $eingabe)
+                        .font(.system(.body, design: .monospaced))
+                        .scrollContentBackground(.hidden)
+                        .padding(12)
+                        .background(Color.white.opacity(0.08),
+                                    in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    if !fehlerText.isEmpty {
+                        Text(fehlerText)
+                            .font(.footnote)
+                            .foregroundStyle(Theme.koralle)
+                    }
+                }
+                .padding()
+            }
+            .navigationTitle("JSON veröffentlichen")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Abbrechen") { zeigeEinfuegen = false }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(arbeitet ? "Bitte warten ..." : "Veröffentlichen") {
+                        Task { await veroeffentlichen() }
+                    }
+                    .disabled(arbeitet || eingabe.isEmpty)
+                }
+            }
+        }
+        .preferredColorScheme(.dark)
+        .tint(Theme.gelb)
+    }
+
+    private func laden() async {
+        do {
+            if Familiencode.istGueltig(familienCode) {
+                cloud = try await CloudDienst.ladePakete(code: familienCode)
+            }
+            if let k = CloudDienst.klassenCloudCode {
+                klassenCloud = try await CloudDienst.ladePakete(code: k)
+            }
+        } catch {
+            meldung = CloudDienst.fehlertext(error)
+        }
+    }
+
+    // Zielcode: Klassencode oder Familiencode
+    private func zielCode(klasse: Bool) -> String? {
+        if klasse { return CloudDienst.klassenCloudCode }
+        return Familiencode.istGueltig(familienCode) ? familienCode : nil
+    }
+
+    private func hochladen(_ a: Klassenarbeit, klasse: Bool) async {
+        guard let ziel = zielCode(klasse: klasse) else {
+            meldung = klasse ? "Bitte zuerst einen Klassencode eintragen." : "Bitte zuerst einen Familiencode eintragen."
+            return
+        }
+        guard let json = PaketJSON.text(von: a),
+              let daten = json.data(using: .utf8),
+              let paket = try? JSONDecoder().decode(ArbeitPaket.self, from: daten) else {
+            meldung = "Das Paket konnte nicht erstellt werden."
+            return
+        }
+        arbeitet = true
+        meldung = "Wird hochgeladen ..."
+        do {
+            try await CloudDienst.hochladen(code: ziel, paket: paket, json: json)
+            meldung = klasse ? "\(a.titel) ist beim Klassencode. Alle Geräte mit diesem Code laden es automatisch."
+                             : "\(a.titel) ist in der Cloud. Die Kind-Geräte laden es automatisch."
+            await laden()
+        } catch {
+            meldung = "Hochladen nicht möglich: \(CloudDienst.fehlertext(error))"
+        }
+        arbeitet = false
+    }
+
+    private func veroeffentlichen() async {
+        guard let ziel = zielCode(klasse: fuerKlasse) else {
+            fehlerText = fuerKlasse ? "Bitte zuerst einen Klassencode eintragen." : "Bitte zuerst einen Familiencode eintragen."
+            return
+        }
+        let text = PaketJSON.bereinigt(eingabe)
+        guard let daten = text.data(using: .utf8),
+              let paket = try? JSONDecoder().decode(ArbeitPaket.self, from: daten),
+              !paket.uebungen.isEmpty,
+              paket.uebungen.allSatisfy({ !$0.aufgaben.isEmpty }) else {
+            fehlerText = "Das Format passt nicht. Es geht um Klassenarbeiten und Übungssets, bitte das JSON von Claude komplett kopieren."
+            return
+        }
+        fehlerText = ""
+        arbeitet = true
+        do {
+            try await CloudDienst.hochladen(code: ziel, paket: paket, json: text)
+            if !PaketImport.vorhanden(klasse: paket.klasse, fach: paket.fach, titel: paket.arbeit, in: context) {
+                PaketImport.einfuegen(paket, in: context)
+                try? context.save()
+            }
+            meldung = fuerKlasse ? "\(paket.arbeit) ist beim Klassencode. Alle Geräte mit diesem Code laden es automatisch."
+                                 : "\(paket.arbeit) ist in der Cloud. Die Kind-Geräte laden es automatisch."
+            eingabe = ""
+            zeigeEinfuegen = false
+            await laden()
+        } catch {
+            fehlerText = "Hochladen nicht möglich: \(CloudDienst.fehlertext(error))"
+        }
+        arbeitet = false
+    }
+}
+
+// ============================================================
+// MARK: - Joker-Nachschub und Cloud-Diagnose
+// ============================================================
+
+struct CloudNachschub: Identifiable {
+    let id: String
+    let kind: String
+    let erstellt: Date
+}
+
+extension CloudDienst {
+    static func sendeNachschub(code: String, kind: String) async throws {
+        let r = CKRecord(recordType: "JokerNachschub")
+        r["familienCode"] = code as CKRecordValue
+        r["kind"] = kind as CKRecordValue
+        _ = try await db.save(r)
+    }
+
+    static func sendeFreigabe(code: String) async throws {
+        let r = CKRecord(recordType: "JokerFreigabe")
+        r["familienCode"] = code as CKRecordValue
+        r["anzahl"] = 3 as CKRecordValue
+        _ = try await db.save(r)
+    }
+
+    static func ladeNachschub(code: String) async throws -> [CloudNachschub] {
+        let records = try await holeRecords("JokerNachschub", code: code, limit: 100)
+        var liste: [CloudNachschub] = []
+        for r in records {
+            liste.append(CloudNachschub(id: r.recordID.recordName,
+                                        kind: (r["kind"] as? String) ?? "Kind",
+                                        erstellt: r.creationDate ?? Date.distantPast))
+        }
+        return liste
+    }
+
+    static func ladeFreigaben(code: String) async throws -> [Date] {
+        let records = try await holeRecords("JokerFreigabe", code: code, limit: 100)
+        var liste: [Date] = []
+        for r in records {
+            liste.append(r.creationDate ?? Date.distantPast)
+        }
+        return liste
+    }
+}
+
+// Eltern: Joker des Kindes wieder auffüllen, auf Anfrage oder jederzeit
+struct JokerNachschubView: View {
+    private let cloud = JokerCloud.shared
+    @AppStorage("familienCode") private var familienCode = ""
+    @State private var info = ""
+    @State private var laeuft = false
+
+    private var offene: [CloudNachschub] {
+        let letzte = cloud.freigaben.max() ?? Date.distantPast
+        return cloud.nachschub.filter { $0.erstellt > letzte }.sorted { $0.erstellt > $1.erstellt }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Joker-Nachschub")
+                .font(.system(.headline, design: .rounded).weight(.heavy))
+                .foregroundStyle(Theme.gelb)
+            if let a = offene.first {
+                Text("\(a.kind) hat keine Joker mehr und fragt nach neuen (\(a.erstellt.formatted(.relative(presentation: .named)))).")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color.white)
+            } else {
+                Text("Keine offene Anfrage. Du kannst die Joker trotzdem jederzeit auffüllen.")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.textSanft)
+            }
+            Button {
+                Task { await freigeben() }
+            } label: {
+                Text(laeuft ? "Bitte warten ..." : "Joker wieder auf 3 auffüllen")
+                    .font(.system(.subheadline, design: .rounded).weight(.heavy))
+                    .foregroundStyle(Theme.navy)
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .background(Theme.gelb, in: Capsule())
+            }
+            .buttonStyle(TastenStil())
+            .disabled(laeuft || !Familiencode.istGueltig(familienCode))
+            if !info.isEmpty {
+                Text(info)
+                    .font(.footnote)
+                    .foregroundStyle(Theme.himmel)
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .glasKarte(radius: 26)
+    }
+
+    private func freigeben() async {
+        laeuft = true
+        do {
+            try await CloudDienst.sendeFreigabe(code: familienCode)
+            Haptik.erfolg()
+            info = "Freigegeben. Das Kind-Gerät füllt die Joker auf, sobald es online ist."
+            await cloud.aktualisieren()
+        } catch {
+            info = "Freigabe nicht möglich: \(CloudDienst.fehlertext(error))"
+        }
+        laeuft = false
+    }
+}
+
+// In den Einstellungen: Cloud prüfen und neu einrichten, damit das Kind nicht versehentlich darauf tippt
+struct CloudDiagnoseView: View {
+    @State private var testMeldung = ""
+    @State private var testet = false
+
+    var body: some View {
+        ZStack {
+            HintergrundView()
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    CloudStatusKarte()
+                    PushDiagnoseKarte()
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Verbindungstest")
+                            .font(.system(.headline, design: .rounded).weight(.heavy))
+                            .foregroundStyle(Theme.gelb)
+                        Text("Schreibt einen Test-Datensatz in die Cloud und zeigt, ob die Verbindung steht.")
+                            .font(.footnote)
+                            .foregroundStyle(Theme.textSanft)
+                        Button {
+                            Task {
+                                testet = true
+                                testMeldung = await CloudKitDienst.verbindungTesten()
+                                testet = false
+                            }
+                        } label: {
+                            Text(testet ? "Bitte warten ..." : "CloudKit testen")
+                                .font(.system(.subheadline, design: .rounded).weight(.heavy))
+                                .foregroundStyle(Theme.navy)
+                                .frame(maxWidth: .infinity, minHeight: 44)
+                                .background(Theme.gelb, in: Capsule())
+                        }
+                        .buttonStyle(TastenStil())
+                        .disabled(testet)
+                        if !testMeldung.isEmpty {
+                            Text(testMeldung)
+                                .font(.footnote)
+                                .foregroundStyle(Theme.himmel)
+                        }
+                    }
+                    .padding(16)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .glasKarte(radius: 26)
+                }
+                .padding(20)
+            }
+            .scrollIndicators(.hidden)
+        }
+        .navigationTitle("Cloud-Diagnose")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+// Zeigt, warum Mitteilungen ankommen oder nicht
+struct PushDiagnoseKarte: View {
+    @State private var erlaubnis = "wird geprüft ..."
+    @State private var registrierung = "wird geprüft ..."
+    @State private var abos = "wird geprüft ..."
+    @State private var testInfo = ""
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Mitteilungen")
+                .font(.system(.headline, design: .rounded).weight(.heavy))
+                .foregroundStyle(Theme.gelb)
+            zeile("Erlaubnis", erlaubnis)
+            zeile("Anmeldung bei Apple", registrierung)
+            zeile("Abos in der Cloud", abos)
+            HStack(spacing: 10) {
+                Button { Task { await pruefen() } } label: { knopf("Prüfen") }
+                    .buttonStyle(TastenStil())
+                Button { Task { await testSenden() } } label: { knopf("Test in 5 Sekunden") }
+                    .buttonStyle(TastenStil())
+            }
+            if !testInfo.isEmpty {
+                Text(testInfo)
+                    .font(.footnote)
+                    .foregroundStyle(Theme.himmel)
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .glasKarte(radius: 26)
+        .task { await pruefen() }
+    }
+
+    private func zeile(_ titel: String, _ wert: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(titel)
+                .font(.caption.weight(.heavy))
+                .foregroundStyle(Theme.textSanft)
+            Text(wert)
+                .font(.footnote)
+                .foregroundStyle(Color.white)
+        }
+    }
+
+    private func knopf(_ titel: String) -> some View {
+        Text(titel)
+            .font(.system(.footnote, design: .rounded).weight(.heavy))
+            .foregroundStyle(Theme.navy)
+            .frame(maxWidth: .infinity, minHeight: 40)
+            .background(Theme.gelb, in: Capsule())
+    }
+
+    private func pruefen() async {
+        let einstellungen = await UNUserNotificationCenter.current().notificationSettings()
+        switch einstellungen.authorizationStatus {
+        case .authorized: erlaubnis = "erlaubt"
+        case .denied: erlaubnis = "ABGELEHNT. Bitte in den iPhone-Einstellungen unter Mitteilungen bei YEM1N erlauben."
+        case .notDetermined: erlaubnis = "noch nicht gefragt. Bitte Cloud neu einrichten."
+        case .provisional: erlaubnis = "vorläufig erlaubt"
+        case .ephemeral: erlaubnis = "vorübergehend erlaubt"
+        @unknown default: erlaubnis = "unbekannt"
+        }
+        registrierung = UserDefaults.standard.string(forKey: "pushStatus") ?? "noch keine Rückmeldung von Apple"
+        do {
+            let alle = try await CloudDienst.db.allSubscriptions()
+            abos = alle.isEmpty ? "keine" : alle.map { $0.subscriptionID }.sorted().joined(separator: "\n")
+        } catch {
+            abos = "Fehler: \(error.localizedDescription)"
+        }
+    }
+
+    private func testSenden() async {
+        let inhalt = UNMutableNotificationContent()
+        inhalt.title = "YEM1N"
+        inhalt.body = "Test: So sieht eine Mitteilung aus."
+        inhalt.sound = .default
+        let anfrage = UNNotificationRequest(identifier: UUID().uuidString, content: inhalt,
+                                            trigger: UNTimeIntervalNotificationTrigger(timeInterval: 5, repeats: false))
+        do {
+            try await UNUserNotificationCenter.current().add(anfrage)
+            testInfo = "Kommt in 5 Sekunden. Sperre das iPhone oder bleib in der App, beides sollte ein Banner zeigen."
+        } catch {
+            testInfo = "Test nicht möglich: \(error.localizedDescription)"
+        }
+    }
+}
+
+// Wischen zum Erledigen: Karte nach links oder rechts ziehen
+struct WischErledigt: ViewModifier {
+    let aktion: () -> Void
+    @State private var versatz: CGFloat = 0
+
+    func body(content: Content) -> some View {
+        content
+            .offset(x: versatz)
+            .opacity(1 - min(abs(versatz) / 300, 0.6))
+            .simultaneousGesture(
+                DragGesture(minimumDistance: 24)
+                    .onChanged { wert in
+                        if abs(wert.translation.width) > abs(wert.translation.height) {
+                            versatz = wert.translation.width
+                        }
+                    }
+                    .onEnded { wert in
+                        let waagrecht = abs(wert.translation.width) > abs(wert.translation.height)
+                        if waagrecht && abs(wert.translation.width) > 110 {
+                            withAnimation(.easeOut(duration: 0.2)) {
+                                versatz = wert.translation.width > 0 ? 500 : -500
+                            }
+                            Task {
+                                try? await Task.sleep(for: .milliseconds(220))
+                                aktion()
+                                versatz = 0
+                            }
+                        } else {
+                            withAnimation(.snappy) { versatz = 0 }
+                        }
+                    }
+            )
+    }
+}
+
+extension View {
+    func wischErledigt(_ aktion: @escaping () -> Void) -> some View {
+        modifier(WischErledigt(aktion: aktion))
+    }
+}
+
+extension CloudDienst {
+    // Name des Elternteils auf diesem Gerät, so wie er bei Joker-Antworten verwendet wird
+    static func ichName() -> String {
+        let id = UserDefaults.standard.string(forKey: "jokerIch") ?? ""
+        let liste = JokerStand.shared.mitglieder
+        return liste.first(where: { $0.id.uuidString == id })?.name ?? liste.first?.name ?? "Papa"
+    }
+
+    // Merker, damit die Cloud neu eingerichtet wird, wenn sich Modus, Familiencode oder Elternteil ändern
+    static func marke(modus: String, code: String) -> String {
+        modus + "|" + code + "|v4|" + (modus == "eltern" ? ichName() : "")
+    }
+
+    // Mitteilung nur an den Elternteil, dessen Tipp mit 👍 bewertet wurde
+    static func aboDaumen(code: String, name: String) async throws {
+        let predicate = NSPredicate(format: "familienCode == %@ AND absender == %@", code, name)
+        let abo = CKQuerySubscription(recordType: "JokerDaumen", predicate: predicate,
+                                      subscriptionID: "JokerDaumen-\(code)-\(name)",
+                                      options: [.firesOnRecordCreation])
+        let info = CKSubscription.NotificationInfo()
+        info.alertBody = "👍 Dein Tipp hat geholfen! Das gibt Extra-Punkte in der Joker-Liga."
+        info.soundName = "default"
+        info.shouldBadge = true
+        info.shouldSendContentAvailable = true
+        abo.notificationInfo = info
+        _ = try await db.save(abo)
+    }
+}
+
+// ============================================================
+// MARK: - Fehlerheft, Training, Probearbeit
+// ============================================================
+
+@MainActor
+enum Spezial {
+    // Eindeutiger Schlüssel einer Originalaufgabe
+    static func schluessel(_ a: Aufgabe) -> String {
+        let u = a.uebung
+        let k = u?.arbeit
+        return [k?.klasse ?? "", k?.fach ?? "", k?.titel ?? "", u?.titel ?? "", String(a.reihenfolge)]
+            .joined(separator: "|")
+    }
+
+    static func kopie(_ a: Aufgabe, reihenfolge: Int) -> Aufgabe {
+        let neu = Aufgabe(art: a.art, frage: a.frage, rechnung: a.rechnung, hinweis: a.hinweis,
+                          erklaerung: a.erklaerung, antwort: a.antwort, antwort2: a.antwort2,
+                          reihenJSON: a.reihenJSON, reihenfolge: reihenfolge)
+        neu.quellKey = schluessel(a)
+        return neu
+    }
+
+    static func aufgabe(_ m: MatheAufgabe, reihenfolge: Int) -> Aufgabe {
+        var reihenJSON = ""
+        if !m.reihen.isEmpty,
+           let daten = try? JSONEncoder().encode(m.reihen),
+           let text = String(data: daten, encoding: .utf8) {
+            reihenJSON = text
+        }
+        return Aufgabe(art: m.art, frage: m.frage, rechnung: m.rechnung, hinweis: m.hinweis,
+                       erklaerung: m.erklaerung, antwort: m.antwort, antwort2: m.antwort2,
+                       reihenJSON: reihenJSON, reihenfolge: reihenfolge)
+    }
+
+    // Wird aufgerufen, wenn eine Aufgabe richtig beantwortet wurde
+    static func gemeistert(_ a: Aufgabe, in context: ModelContext) {
+        guard !a.quellKey.isEmpty else { return }
+        let alle = (try? context.fetch(FetchDescriptor<Aufgabe>())) ?? []
+        for o in alle where o.quellKey.isEmpty && schluessel(o) == a.quellKey {
+            o.gemeistert = true
+        }
+    }
+
+    static func note(gut: Int, gesamt: Int) -> Int {
+        guard gesamt > 0 else { return 6 }
+        let anteil = Double(gut) / Double(gesamt)
+        if anteil >= 0.95 { return 1 }
+        if anteil >= 0.82 { return 2 }
+        if anteil >= 0.67 { return 3 }
+        if anteil >= 0.50 { return 4 }
+        if anteil >= 0.25 { return 5 }
+        return 6
+    }
+
+    private static func neueArbeit(titel: String, art: String, klasse: String, fach: String = "Mathe",
+                                   in context: ModelContext) -> Klassenarbeit {
+        let arbeit = Klassenarbeit(klasse: klasse, fach: fach, titel: titel)
+        arbeit.spezial = art
+        context.insert(arbeit)
+        return arbeit
+    }
+
+    private static func neueUebung(_ arbeit: Klassenarbeit, titel: String, gruppe: String,
+                                   symbol: String, tipp: String, reihenfolge: Int,
+                                   in context: ModelContext) -> Uebung {
+        let u = Uebung(titel: titel, gruppe: gruppe, symbol: symbol, tipp: tipp, reihenfolge: reihenfolge)
+        context.insert(u)
+        u.arbeit = arbeit
+        return u
+    }
+
+    private static func klasseVon(_ alle: [Klassenarbeit]) -> String {
+        let eigene = (UserDefaults.standard.string(forKey: "kindKlasse") ?? "")
+            .trimmingCharacters(in: .whitespaces)
+        if !eigene.isEmpty { return eigene }
+        return alle.first?.klasse ?? "Klasse 3"
+    }
+
+    // Fehlerheft: bis zu 15 noch nicht gemeisterte Fehler als neue Runde
+    static func fehlerheft(alle: [Klassenarbeit], in context: ModelContext) -> Klassenarbeit? {
+        var fehler: [Aufgabe] = []
+        for k in alle {
+            for u in k.sortierteUebungen {
+                for a in u.sortierteAufgaben where a.richtig == false && !a.gemeistert {
+                    fehler.append(a)
+                }
+            }
+        }
+        guard !fehler.isEmpty else { return nil }
+        fehler.shuffle()
+        let auswahl = Array(fehler.prefix(15))
+        var faecher = Set<String>()
+        for a in auswahl { if let f = a.uebung?.arbeit?.fach { faecher.insert(f) } }
+        let fach = faecher.count == 1 ? (faecher.first ?? "Mathe") : "Gemischt"
+        let arbeit = neueArbeit(titel: "Fehlerheft", art: "fehlerheft", klasse: klasseVon(alle), fach: fach, in: context)
+        let u = neueUebung(arbeit, titel: "Fehlerheft", gruppe: "Nochmal versuchen", symbol: "✎",
+                           tipp: "Schau dir die Erklärung genau an.", reihenfolge: 0, in: context)
+        for (i, a) in auswahl.enumerated() {
+            let k = kopie(a, reihenfolge: i)
+            context.insert(k)
+            k.uebung = u
+        }
+        return arbeit
+    }
+
+    // Training: neue Aufgaben zu den zwei schwächsten Bereichen
+    static func training(alle: [Klassenarbeit], ergebnisse: [RundenErgebnis], in context: ModelContext) -> Klassenarbeit {
+        let gruppiert = Dictionary(grouping: ergebnisse, by: { $0.uebung })
+        var wertung: [(MatheVorlage, Double)] = []
+        for v in MatheGenerator.vorlagen where v.id != "gemischt" {
+            if let liste = gruppiert[v.name], !liste.isEmpty {
+                let r = liste.reduce(0) { $0 + $1.richtig }
+                let g = liste.reduce(0) { $0 + $1.gesamt }
+                wertung.append((v, g > 0 ? Double(r) / Double(g) : 1.0))
+            }
+        }
+        wertung.sort { $0.1 < $1.1 }
+        var picks: [MatheVorlage] = []
+        for (v, anteil) in wertung where anteil < 0.95 && picks.count < 2 {
+            picks.append(v)
+        }
+        var rest = MatheGenerator.vorlagen.filter { $0.id != "gemischt" }
+        rest.shuffle()
+        for v in rest where picks.count < 2 {
+            if !picks.contains(where: { $0.id == v.id }) { picks.append(v) }
+        }
+        let arbeit = neueArbeit(titel: "Training heute", art: "training", klasse: klasseVon(alle), in: context)
+        for (i, v) in picks.enumerated() {
+            var sperre = Set<String>()
+            let aufgaben = MatheGenerator.fuelle(v, anzahl: 8, ausschluss: &sperre)
+            let u = neueUebung(arbeit, titel: v.name, gruppe: "Training", symbol: v.symbol,
+                               tipp: v.tipp, reihenfolge: i, in: context)
+            for (j, m) in aufgaben.enumerated() {
+                let a = aufgabe(m, reihenfolge: j)
+                context.insert(a)
+                a.uebung = u
+            }
+        }
+        return arbeit
+    }
+
+    // Probearbeit: 20 neue Aufgaben quer durch alle Bereiche, mit Uhr und Note
+    static func probe(alle: [Klassenarbeit], in context: ModelContext) -> Klassenarbeit {
+        let plan: [(String, Int)] = [
+            ("minuswort", 1), ("malwort", 1), ("kern", 1), ("nachbar", 1), ("einmaleins", 3),
+            ("umkehr", 2), ("rest", 3), ("punkt", 2), ("vergleich", 2), ("mauer", 1),
+            ("raetsel", 1), ("sach", 2)
+        ]
+        var sperre = vorhandeneSchluessel(alle)
+        let arbeit = neueArbeit(titel: "Probearbeit", art: "probe", klasse: klasseVon(alle), in: context)
+        let u = neueUebung(arbeit, titel: "Probearbeit", gruppe: "Wie in der Klassenarbeit", symbol: "★",
+                           tipp: "", reihenfolge: 0, in: context)
+        var nummer = 0
+        for (id, anzahl) in plan {
+            guard let v = MatheGenerator.vorlagen.first(where: { $0.id == id }) else { continue }
+            let aufgaben = MatheGenerator.fuelle(v, anzahl: anzahl, ausschluss: &sperre)
+            for m in aufgaben {
+                let a = aufgabe(m, reihenfolge: nummer)
+                context.insert(a)
+                a.uebung = u
+                nummer += 1
+            }
+        }
+        return arbeit
+    }
+}
+
+// ============================================================
+// MARK: - Erfolge: Serie, Tagesziel, Pokale
+// ============================================================
+
+struct Pokal: Identifiable {
+    let id: String
+    let emoji: String
+    let titel: String
+    let erreicht: Bool
+}
+
+enum Erfolge {
+    static func tageMitRunde(_ liste: [RundenErgebnis]) -> Set<Date> {
+        let kal = Calendar.current
+        var tage = Set<Date>()
+        for e in liste { tage.insert(kal.startOfDay(for: e.zeitpunkt)) }
+        return tage
+    }
+
+    // Aufeinanderfolgende Tage mit mindestens einer Runde, bis heute oder gestern
+    static func serie(_ liste: [RundenErgebnis]) -> Int {
+        let kal = Calendar.current
+        let tage = tageMitRunde(liste)
+        var tag = kal.startOfDay(for: Date.now)
+        if !tage.contains(tag) {
+            tag = kal.date(byAdding: .day, value: -1, to: tag) ?? tag
+        }
+        var n = 0
+        while tage.contains(tag) {
+            n += 1
+            tag = kal.date(byAdding: .day, value: -1, to: tag) ?? tag.addingTimeInterval(-86400)
+        }
+        return n
+    }
+
+    static func besteSerie(_ liste: [RundenErgebnis]) -> Int {
+        let kal = Calendar.current
+        let tage = tageMitRunde(liste).sorted()
+        var beste = 0
+        var aktuell = 0
+        var vorher: Date?
+        for t in tage {
+            if let v = vorher, kal.date(byAdding: .day, value: 1, to: v) == t {
+                aktuell += 1
+            } else {
+                aktuell = 1
+            }
+            beste = max(beste, aktuell)
+            vorher = t
+        }
+        return beste
+    }
+
+    static func rundenHeute(_ liste: [RundenErgebnis]) -> Int {
+        liste.filter { Calendar.current.isDateInToday($0.zeitpunkt) }.count
+    }
+
+    static func zieltage(_ liste: [RundenErgebnis], ziel: Int) -> Int {
+        let kal = Calendar.current
+        var zaehler: [Date: Int] = [:]
+        for e in liste { zaehler[kal.startOfDay(for: e.zeitpunkt), default: 0] += 1 }
+        return zaehler.values.filter { $0 >= ziel }.count
+    }
+
+    static func pokale(_ liste: [RundenErgebnis], ziel: Int) -> [Pokal] {
+        let n = liste.count
+        let sterne = liste.reduce(0) { $0 + $1.sterne }
+        let beste = besteSerie(liste)
+        let dreiSterne = liste.contains { $0.sterne == 3 }
+        let fehlerfrei = liste.contains { $0.gesamt > 0 && $0.richtig == $0.gesamt && $0.angesehen == 0 }
+        let zielTage = zieltage(liste, ziel: ziel)
+        return [
+            Pokal(id: "erste", emoji: "🎯", titel: "Erste Runde", erreicht: n >= 1),
+            Pokal(id: "r10", emoji: "🥉", titel: "10 Runden", erreicht: n >= 10),
+            Pokal(id: "r50", emoji: "🥈", titel: "50 Runden", erreicht: n >= 50),
+            Pokal(id: "r100", emoji: "🥇", titel: "100 Runden", erreicht: n >= 100),
+            Pokal(id: "s3", emoji: "🔥", titel: "3 Tage in Folge", erreicht: beste >= 3),
+            Pokal(id: "s7", emoji: "⚡", titel: "7 Tage in Folge", erreicht: beste >= 7),
+            Pokal(id: "s14", emoji: "👑", titel: "14 Tage in Folge", erreicht: beste >= 14),
+            Pokal(id: "s30", emoji: "🏆", titel: "30 Tage in Folge", erreicht: beste >= 30),
+            Pokal(id: "stern", emoji: "⭐", titel: "3 Sterne", erreicht: dreiSterne),
+            Pokal(id: "st50", emoji: "🌟", titel: "50 Sterne", erreicht: sterne >= 50),
+            Pokal(id: "st150", emoji: "💫", titel: "150 Sterne", erreicht: sterne >= 150),
+            Pokal(id: "fehlerfrei", emoji: "💯", titel: "Ohne Fehler", erreicht: fehlerfrei),
+            Pokal(id: "ziel5", emoji: "🎉", titel: "Tagesziel 5 Tage", erreicht: zielTage >= 5)
+        ]
+    }
+}
+
+struct ErfolgeView: View {
+    @Environment(\.dismiss) private var dismiss
+    @Query(filter: #Predicate<RundenErgebnis> { $0.quelle == "lokal" })
+    private var lokale: [RundenErgebnis]
+    @AppStorage("tagesziel") private var ziel = 2
+    @AppStorage("kindName") private var kindName = ""
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                HintergrundView()
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
+                        serieKarte
+                        zielKarte
+                        pokaleKarte
+                    }
+                    .padding(20)
+                }
+                .scrollIndicators(.hidden)
+            }
+            .navigationTitle(kindName.isEmpty ? "Meine Erfolge" : "Erfolge von \(kindName)")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Fertig") { dismiss() }
+                }
+            }
+        }
+    }
+
+    private var serieKarte: some View {
+        let serie = Erfolge.serie(lokale)
+        return HStack(spacing: 16) {
+            Text("🔥").font(.system(size: 46))
+            VStack(alignment: .leading, spacing: 2) {
+                Text(serie == 1 ? "1 Tag in Folge" : "\(serie) Tage in Folge")
+                    .font(.system(.title3, design: .rounded).weight(.heavy))
+                    .foregroundStyle(Color.white)
+                Text("Beste Serie: \(Erfolge.besteSerie(lokale))")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.textSanft)
+            }
+            Spacer()
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .glasKarte(radius: 26)
+    }
+
+    private var zielKarte: some View {
+        let heute = Erfolge.rundenHeute(lokale)
+        let anteil = min(Double(heute) / Double(max(ziel, 1)), 1)
+        return HStack(spacing: 16) {
+            ZStack {
+                Fortschrittsring(wert: anteil, breite: 8)
+                Text("\(heute)/\(ziel)")
+                    .font(.system(.footnote, design: .rounded).weight(.heavy))
+                    .foregroundStyle(Color.white)
+            }
+            .frame(width: 64, height: 64)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Tagesziel")
+                    .font(.system(.title3, design: .rounded).weight(.heavy))
+                    .foregroundStyle(Color.white)
+                Text(heute >= ziel ? "Geschafft! 🎉" : "Noch \(ziel - heute) \(ziel - heute == 1 ? "Runde" : "Runden")")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.textSanft)
+            }
+            Spacer()
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .glasKarte(radius: 26)
+    }
+
+    private var pokaleKarte: some View {
+        let liste = Erfolge.pokale(lokale, ziel: ziel)
+        let geschafft = liste.filter { $0.erreicht }.count
+        return VStack(alignment: .leading, spacing: 12) {
+            Text("Pokale: \(geschafft) von \(liste.count)")
+                .font(.system(.headline, design: .rounded).weight(.heavy))
+                .foregroundStyle(Theme.gelb)
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 96), spacing: 10)], spacing: 10) {
+                ForEach(liste) { p in
+                    VStack(spacing: 4) {
+                        Text(p.emoji)
+                            .font(.system(size: 34))
+                            .opacity(p.erreicht ? 1 : 0.25)
+                        Text(p.titel)
+                            .font(.system(.caption, design: .rounded).weight(.heavy))
+                            .foregroundStyle(p.erreicht ? Color.white : Theme.textSanft)
+                            .multilineTextAlignment(.center)
+                    }
+                    .frame(maxWidth: .infinity, minHeight: 92)
+                    .padding(6)
+                    .background(Color.white.opacity(p.erreicht ? 0.12 : 0.05),
+                                in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                }
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .glasKarte(radius: 26)
+    }
+}
+
+// ============================================================
+// MARK: - Pakete aus Zwischenablage oder Datei, Wochenbericht, Notizblock
+// ============================================================
+
+@MainActor
+enum PaketAktion {
+    static func lese(_ roh: String) -> (paket: ArbeitPaket, text: String)? {
+        let text = PaketJSON.bereinigt(roh)
+        guard let daten = text.data(using: .utf8),
+              let p = try? JSONDecoder().decode(ArbeitPaket.self, from: daten),
+              !p.uebungen.isEmpty,
+              p.uebungen.allSatisfy({ !$0.aufgaben.isEmpty }) else { return nil }
+        // Vorschul-Aufgaben: 2 bis 4 Knöpfe, die Antwort muss einer davon sein
+        for u in p.uebungen {
+            for a in u.aufgaben where a.art == "wahl" {
+                guard let o = a.optionen, (2...4).contains(o.count),
+                      let r = a.antwort, o.contains(r),
+                      !(a.frage ?? "").isEmpty else { return nil }
+            }
+        }
+        return (p, text)
+    }
+
+    static func anzahl(_ p: ArbeitPaket) -> Int {
+        p.uebungen.reduce(0) { $0 + $1.aufgaben.count }
+    }
+
+    // Nur auf diesem Gerät importieren
+    static func lokal(_ p: ArbeitPaket, context: ModelContext) -> String {
+        if PaketImport.vorhanden(klasse: p.klasse, fach: p.fach, titel: p.arbeit, in: context) {
+            return "\(p.arbeit) ist auf diesem Gerät schon vorhanden."
+        }
+        PaketImport.einfuegen(p, in: context)
+        try? context.save()
+        return "\(p.arbeit) wurde importiert."
+    }
+
+    // Eltern: in die Cloud stellen und auch hier importieren
+    static func veroeffentliche(_ p: ArbeitPaket, text: String, context: ModelContext, klasse: Bool = false) async -> String {
+        let familie = UserDefaults.standard.string(forKey: "familienCode") ?? ""
+        let ziel: String
+        if klasse {
+            guard let k = CloudDienst.klassenCloudCode else {
+                return "Bitte zuerst im Tab Einstellungen einen Klassencode eintragen oder erzeugen."
+            }
+            ziel = k
+        } else {
+            guard Familiencode.istGueltig(familie) else {
+                return "Bitte zuerst im Tab Einstellungen einen Familiencode eintragen."
+            }
+            ziel = familie
+        }
+        do {
+            try await CloudDienst.hochladen(code: ziel, paket: p, json: text)
+            if !PaketImport.vorhanden(klasse: p.klasse, fach: p.fach, titel: p.arbeit, in: context) {
+                PaketImport.einfuegen(p, in: context)
+                try? context.save()
+            }
+            return klasse ? "\(p.arbeit) ist beim Klassencode. Alle Geräte mit diesem Code laden es automatisch."
+                          : "\(p.arbeit) ist in der Cloud. Die Kind-Geräte laden es automatisch."
+        } catch {
+            return "Hochladen nicht möglich: \(CloudDienst.fehlertext(error))"
+        }
+    }
+}
+
+enum Wochenbericht {
+    // Erinnerung jeden Sonntag um 18 Uhr, der Bericht selbst steht im Eltern-Dashboard
+    static func planen() async {
+        let zentrale = UNUserNotificationCenter.current()
+        let einstellungen = await zentrale.notificationSettings()
+        guard einstellungen.authorizationStatus == .authorized else { return }
+        let inhalt = UNMutableNotificationContent()
+        inhalt.title = "📊 Euer YEM1N-Wochenbericht"
+        inhalt.body = "Die Woche ist geschafft. Tippe, um zu sehen, wie sie gelaufen ist."
+        inhalt.sound = .default
+        var d = DateComponents()
+        d.weekday = 1
+        d.hour = 18
+        d.minute = 0
+        let ausloeser = UNCalendarNotificationTrigger(dateMatching: d, repeats: true)
+        let anfrage = UNNotificationRequest(identifier: "wochenbericht", content: inhalt, trigger: ausloeser)
+        try? await zentrale.add(anfrage)
+    }
+}
+
+// Notizblock zum Rechnen mit Finger oder Apple Pencil
+struct NotizblockView: UIViewRepresentable {
+    @Binding var zeichnung: PKDrawing
+
+    func makeUIView(context: Context) -> PKCanvasView {
+        let c = PKCanvasView()
+        c.drawingPolicy = .anyInput
+        c.backgroundColor = .clear
+        c.isOpaque = false
+        c.drawing = zeichnung
+        c.tool = PKInkingTool(.pen, color: .white, width: 4)
+        c.delegate = context.coordinator
+        return c
+    }
+
+    func updateUIView(_ uiView: PKCanvasView, context: Context) {
+        if uiView.drawing != zeichnung {
+            uiView.drawing = zeichnung
+        }
+    }
+
+    func makeCoordinator() -> Koordinator { Koordinator(self) }
+
+    final class Koordinator: NSObject, PKCanvasViewDelegate {
+        var eltern: NotizblockView
+        init(_ eltern: NotizblockView) { self.eltern = eltern }
+
+        func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
+            eltern.zeichnung = canvasView.drawing
+        }
+    }
+}
+
+// ============================================================
+// MARK: - Vorschule (Zählen, Zuordnen, Muster, Memory für die Kleinen)
+// ============================================================
+
+enum VorschulArt: String, CaseIterable, Identifiable, Hashable {
+    case mix, zaehlen, zahlen, plus, mehr, nachbar, formen, anlaut, anders, muster, memory
+
+    var id: String { rawValue }
+
+    var titel: String {
+        switch self {
+        case .mix: return "Alles gemischt"
+        case .zaehlen: return "Zählen"
+        case .zahlen: return "Zahlen"
+        case .plus: return "Plus"
+        case .mehr: return "Mehr oder weniger"
+        case .nachbar: return "Davor und danach"
+        case .formen: return "Formen und Farben"
+        case .anlaut: return "Anfangsbuchstaben"
+        case .anders: return "Was passt nicht?"
+        case .muster: return "Muster"
+        case .memory: return "Memory"
+        }
+    }
+
+    var emoji: String {
+        switch self {
+        case .mix: return "🎲"
+        case .zaehlen: return "🍎"
+        case .zahlen: return "🔢"
+        case .plus: return "➕"
+        case .mehr: return "⚖️"
+        case .nachbar: return "↔️"
+        case .formen: return "🎨"
+        case .anlaut: return "🔤"
+        case .anders: return "🧐"
+        case .muster: return "🧩"
+        case .memory: return "🃏"
+        }
+    }
+}
+
+struct VorschulText {
+    let de: String
+    let tr: String?
+}
+
+struct VorschulFrage: Identifiable {
+    let id = UUID()
+    var text: VorschulText
+    var zeige: [String] = []
+    var zeigeZwei: [String] = []
+    var plus = false
+    var gross = ""
+    var folge: [String] = []
+    var optionen: [String]
+    var richtig: Int
+    var gruppenOptionen = false
+
+    var schluessel: String {
+        text.de + "|" + zeige.joined() + "|" + zeigeZwei.joined() + "|" + gross + "|"
+            + folge.joined() + "|" + optionen.joined(separator: ",")
+    }
+}
+
+enum VorschulGenerator {
+    static let dinge = ["🍎", "⭐", "🐶", "🎈", "🚗", "🐟", "🌸", "🍪", "🐱", "🍓"]
+
+    static let formen: [(frageDe: String, frageTr: String, emoji: String)] = [
+        ("Wo ist der Kreis?", "Daire hangisi?", "🔵"),
+        ("Wo ist das Quadrat?", "Kare hangisi?", "🟩"),
+        ("Wo ist das Dreieck?", "Üçgen hangisi?", "🔺"),
+        ("Wo ist der Stern?", "Yıldız hangisi?", "⭐"),
+        ("Wo ist das Herz?", "Kalp hangisi?", "💜")
+    ]
+
+    static let farben: [(frageDe: String, frageTr: String, emoji: String)] = [
+        ("Tippe auf Rot.", "Kırmızı olanı bul.", "🔴"),
+        ("Tippe auf Blau.", "Mavi olanı bul.", "🔵"),
+        ("Tippe auf Gelb.", "Sarı olanı bul.", "🟡"),
+        ("Tippe auf Grün.", "Yeşil olanı bul.", "🟢"),
+        ("Tippe auf Lila.", "Mor olanı bul.", "🟣"),
+        ("Tippe auf Orange.", "Turuncu olanı bul.", "🟠")
+    ]
+
+    static let anlaute: [(emoji: String, wort: String, buchstabe: String)] = [
+        ("🍎", "Apfel", "A"), ("🚗", "Auto", "A"), ("🐻", "Bär", "B"), ("🍌", "Banane", "B"),
+        ("🎈", "Ballon", "B"), ("🪁", "Drachen", "D"), ("🐘", "Elefant", "E"), ("🦆", "Ente", "E"),
+        ("🐟", "Fisch", "F"), ("🐸", "Frosch", "F"), ("🐶", "Hund", "H"), ("🏠", "Haus", "H"),
+        ("🦔", "Igel", "I"), ("🐱", "Katze", "K"), ("🐄", "Kuh", "K"), ("🦁", "Löwe", "L"),
+        ("🐭", "Maus", "M"), ("🌙", "Mond", "M"), ("👃", "Nase", "N"), ("🍊", "Orange", "O"),
+        ("🐴", "Pferd", "P"), ("🐧", "Pinguin", "P"), ("🌹", "Rose", "R"), ("🌈", "Regenbogen", "R"),
+        ("🌞", "Sonne", "S"), ("🧦", "Socke", "S"), ("🐯", "Tiger", "T"), ("🍅", "Tomate", "T"),
+        ("⏰", "Uhr", "U"), ("🐳", "Wal", "W"), ("☁️", "Wolke", "W"), ("🦓", "Zebra", "Z"),
+        ("🚂", "Zug", "Z")
+    ]
+
+    static let gruppen: [[String]] = [
+        ["🐶", "🐱", "🐭", "🐰", "🐻", "🦁"],
+        ["🍎", "🍌", "🍓", "🍇", "🍊", "🍐"],
+        ["🚗", "🚌", "🚲", "✈️", "🚂", "🚢"],
+        ["🌹", "🌻", "🌷", "🌼"],
+        ["⚽", "🏀", "🎾", "🏐"]
+    ]
+
+    static func grenze(_ stufe: Int) -> Int { stufe == 1 ? 5 : (stufe == 2 ? 10 : 20) }
+
+    // Drei verschiedene Zahlen, eine davon ist richtig
+    static func zahlenOptionen(richtig: Int, von: Int, bis: Int) -> (optionen: [String], index: Int) {
+        var menge: Set<Int> = [richtig]
+        var versuche = 0
+        while menge.count < 3 && versuche < 200 {
+            versuche += 1
+            let abstand = Int.random(in: 1...3) * (Bool.random() ? 1 : -1)
+            let z = richtig + abstand
+            if z >= von && z <= bis { menge.insert(z) }
+        }
+        if menge.count < 3 {
+            for z in von...bis where menge.count < 3 { menge.insert(z) }
+        }
+        let liste = Array(menge).shuffled()
+        let idx = liste.firstIndex(of: richtig) ?? 0
+        return (liste.map { String($0) }, idx)
+    }
+
+    // Emoji-Gruppe als Text, nach fünf Stück ein Zeilenumbruch
+    static func gruppe(_ n: Int, _ emoji: String) -> String {
+        var teile: [String] = []
+        for i in 0..<n {
+            teile.append(emoji)
+            if (i + 1) % 5 == 0 && i + 1 < n { teile.append("\n") }
+        }
+        return teile.joined()
+    }
+
+    static func fragen(_ art: VorschulArt, stufe: Int, anzahl: Int = 8) -> [VorschulFrage] {
+        let arten = VorschulArt.allCases.filter { $0 != .mix && $0 != .memory }
+        var liste: [VorschulFrage] = []
+        var gesehen = Set<String>()
+        for _ in 0..<anzahl {
+            var f = eine(art == .mix ? (arten.randomElement() ?? .zaehlen) : art, stufe: stufe)
+            var versuche = 0
+            while gesehen.contains(f.schluessel) && versuche < 10 {
+                versuche += 1
+                f = eine(art == .mix ? (arten.randomElement() ?? .zaehlen) : art, stufe: stufe)
+            }
+            gesehen.insert(f.schluessel)
+            liste.append(f)
+        }
+        return liste
+    }
+
+    static func eine(_ art: VorschulArt, stufe: Int) -> VorschulFrage {
+        switch art {
+        case .zaehlen:
+            let m = stufe == 1 ? 5 : 10
+            let n = Int.random(in: 1...m)
+            let e = dinge.randomElement() ?? "⭐"
+            let o = zahlenOptionen(richtig: n, von: 1, bis: m)
+            return VorschulFrage(text: VorschulText(de: "Wie viele siehst du?", tr: "Kaç tane görüyorsun?"),
+                                 zeige: Array(repeating: e, count: n),
+                                 optionen: o.optionen, richtig: o.index)
+
+        case .zahlen:
+            let m = grenze(stufe)
+            let n = Int.random(in: 1...m)
+            let o = zahlenOptionen(richtig: n, von: 1, bis: m)
+            return VorschulFrage(text: VorschulText(de: "Tippe auf die \(n).", tr: "\(n) sayısına dokun."),
+                                 optionen: o.optionen, richtig: o.index)
+
+        case .plus:
+            let m = grenze(stufe)
+            var x = 1
+            var y = 1
+            if stufe == 3 {
+                x = Int.random(in: 2...10)
+                y = Int.random(in: 1...min(10, m - x))
+            } else {
+                x = Int.random(in: 1...(m - 1))
+                y = Int.random(in: 1...(m - x))
+            }
+            let paar = dinge.shuffled()
+            let o = zahlenOptionen(richtig: x + y, von: 1, bis: m)
+            return VorschulFrage(text: VorschulText(de: "\(x) plus \(y). Wie viel ist das?", tr: "\(x) artı \(y) kaç eder?"),
+                                 zeige: Array(repeating: paar[0], count: x),
+                                 zeigeZwei: Array(repeating: paar[1], count: y),
+                                 plus: true,
+                                 optionen: o.optionen, richtig: o.index)
+
+        case .mehr:
+            let m = stufe == 1 ? 5 : 10
+            let x = Int.random(in: 1...m)
+            var y = Int.random(in: 1...m)
+            while y == x { y = Int.random(in: 1...m) }
+            let e = dinge.randomElement() ?? "🍎"
+            let fragtMehr = Int.random(in: 0..<10) < 7
+            let tausch = Bool.random()
+            let a = tausch ? y : x
+            let b = tausch ? x : y
+            let idx: Int
+            if fragtMehr { idx = a > b ? 0 : 1 } else { idx = a < b ? 0 : 1 }
+            let text = fragtMehr
+                ? VorschulText(de: "Wo sind mehr?", tr: "Hangisi daha fazla?")
+                : VorschulText(de: "Wo sind weniger?", tr: "Hangisi daha az?")
+            return VorschulFrage(text: text,
+                                 optionen: [gruppe(a, e), gruppe(b, e)], richtig: idx,
+                                 gruppenOptionen: true)
+
+        case .nachbar:
+            let m = grenze(stufe)
+            let danach = Bool.random()
+            let n = danach ? Int.random(in: 1...(m - 1)) : Int.random(in: 2...m)
+            let ziel = danach ? n + 1 : n - 1
+            let o = zahlenOptionen(richtig: ziel, von: 0, bis: m)
+            let text = danach
+                ? VorschulText(de: "Welche Zahl kommt nach der \(n)?", tr: "\(n) sayısından sonra hangi sayı gelir?")
+                : VorschulText(de: "Welche Zahl kommt vor der \(n)?", tr: "\(n) sayısından önce hangi sayı gelir?")
+            return VorschulFrage(text: text, gross: String(n), optionen: o.optionen, richtig: o.index)
+
+        case .formen:
+            let quelle = Bool.random() ? formen : farben
+            let drei = Array(quelle.shuffled().prefix(3))
+            let r = Int.random(in: 0..<3)
+            return VorschulFrage(text: VorschulText(de: drei[r].frageDe, tr: drei[r].frageTr),
+                                 optionen: drei.map { $0.emoji }, richtig: r)
+
+        case .anlaut:
+            let item = anlaute.randomElement() ?? anlaute[0]
+            var buchstaben = Array(Set(anlaute.map { $0.buchstabe })).filter { $0 != item.buchstabe }
+            buchstaben.shuffle()
+            var optionen = Array(buchstaben.prefix(2)) + [item.buchstabe]
+            optionen.shuffle()
+            return VorschulFrage(text: VorschulText(de: "Womit fängt \(item.wort) an?", tr: nil),
+                                 gross: item.emoji,
+                                 optionen: optionen, richtig: optionen.firstIndex(of: item.buchstabe) ?? 0)
+
+        case .anders:
+            let g = gruppen.shuffled()
+            let eigene = Array(g[0].shuffled().prefix(3))
+            let fremd = g[1].randomElement() ?? "🍎"
+            var optionen = eigene + [fremd]
+            optionen.shuffle()
+            return VorschulFrage(text: VorschulText(de: "Was passt nicht dazu?", tr: "Hangisi diğerlerine uymuyor?"),
+                                 optionen: optionen, richtig: optionen.firstIndex(of: fremd) ?? 0)
+
+        default:
+            let p = ["🔴", "🔵", "🟡", "🟢", "🟣", "🟠", "⭐", "❤️", "🍎", "🐟"].shuffled()
+            let a = p[0]
+            let b = p[1]
+            let c = p[2]
+            let muster: [String]
+            switch stufe {
+            case 1: muster = [a, b]
+            case 2: muster = Bool.random() ? [a, a, b] : [a, b, b]
+            default: muster = [a, b, c]
+            }
+            let l = muster.count
+            let anzahl = Int.random(in: (l + 1)...(2 * l + 1))
+            let folge = (0..<anzahl).map { muster[$0 % l] }
+            let richtig = muster[anzahl % l]
+            var optionen = [richtig]
+            for e in p where optionen.count < 3 && e != richtig { optionen.append(e) }
+            optionen.shuffle()
+            return VorschulFrage(text: VorschulText(de: "Wie geht es weiter?", tr: "Sıradaki hangisi?"),
+                                 folge: folge,
+                                 optionen: optionen, richtig: optionen.firstIndex(of: richtig) ?? 0)
+        }
+    }
+}
+
+enum VorschulTon {
+    static func sag(_ t: VorschulText) {
+        let sprache = UserDefaults.standard.string(forKey: "vorschulSprache") ?? "de"
+        if sprache == "tr", let tr = t.tr {
+            Sprecher.shared.sprich(tr, code: "tr-TR")
+        } else {
+            Sprecher.shared.sprich(t.de, code: "de-DE")
+        }
+    }
+
+    static func lob() {
+        let lob: [VorschulText] = [
+            VorschulText(de: "Super!", tr: "Harika!"),
+            VorschulText(de: "Toll gemacht!", tr: "Aferin!"),
+            VorschulText(de: "Richtig!", tr: "Doğru!"),
+            VorschulText(de: "Prima!", tr: "Bravo!")
+        ]
+        sag(lob.randomElement() ?? lob[0])
+    }
+
+    static func nochmal() {
+        sag(VorschulText(de: "Probier es noch einmal.", tr: "Bir daha dene."))
+    }
+}
+
+struct EmojiReihen: View {
+    let emojis: [String]
+    var groesse: CGFloat = 38
+
+    var body: some View {
+        let reihen = stride(from: 0, to: emojis.count, by: 5).map {
+            Array(emojis[$0..<min($0 + 5, emojis.count)])
+        }
+        VStack(spacing: 6) {
+            ForEach(Array(reihen.enumerated()), id: \.offset) { _, reihe in
+                HStack(spacing: 6) {
+                    ForEach(Array(reihe.enumerated()), id: \.offset) { _, e in
+                        Text(e).font(.system(size: groesse))
+                    }
+                }
+            }
+        }
+    }
+}
+
+enum VorschulPaket {
+    // Aufgaben aus einem importierten Vorschul-Paket in Fragen für die Runde umwandeln
+    static func fragen(_ u: Uebung) -> [VorschulFrage] {
+        var liste: [VorschulFrage] = []
+        for a in u.sortierteAufgaben where a.art == "wahl" {
+            guard let d = a.reihenJSON.data(using: .utf8),
+                  let opt = try? JSONDecoder().decode([String].self, from: d),
+                  opt.count >= 2, opt.contains(a.antwort) else { continue }
+            let gemischt = opt.shuffled()
+            guard let richtig = gemischt.firstIndex(of: a.antwort) else { continue }
+            var f = VorschulFrage(text: VorschulText(de: a.frage, tr: a.hinweis.isEmpty ? nil : a.hinweis),
+                                  optionen: gemischt, richtig: richtig)
+            f.gross = a.erklaerung
+            f.folge = a.antwort2.split(separator: " ").map(String.init)
+            let teile = a.rechnung.components(separatedBy: "+")
+            func zeichen(_ t: String) -> [String] {
+                t.filter { !$0.isWhitespace }.map { String($0) }
+            }
+            if teile.count == 2 {
+                f.plus = true
+                f.zeige = zeichen(teile[0])
+                f.zeigeZwei = zeichen(teile[1])
+            } else {
+                f.zeige = zeichen(a.rechnung)
+            }
+            f.gruppenOptionen = opt.contains { $0.count > 2 }
+            liste.append(f)
+        }
+        return liste.shuffled()
+    }
+}
+
+struct VorschulPaketListe: View {
+    let arbeit: Klassenarbeit
+
+    var body: some View {
+        ZStack {
+            HintergrundView()
+            ScrollView {
+                VStack(spacing: 12) {
+                    ForEach(arbeit.sortierteUebungen) { u in
+                        NavigationLink(value: u) {
+                            HStack(spacing: 14) {
+                                Text(u.symbol).font(.system(size: 40))
+                                Text(u.titel)
+                                    .font(.system(.title3, design: .rounded).weight(.heavy))
+                                    .foregroundStyle(Color.white)
+                                    .multilineTextAlignment(.leading)
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .foregroundStyle(Theme.gelb)
+                            }
+                            .padding(16)
+                            .glasKarte(radius: 24)
+                        }
+                        .buttonStyle(TastenStil())
+                    }
+                }
+                .padding(20)
+            }
+        }
+        .navigationTitle(arbeit.titel)
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+struct VorschuleView: View {
+    @Environment(\.modelContext) private var context
+    @Query(sort: \Klassenarbeit.erstellt) private var alleArbeiten: [Klassenarbeit]
+    @State private var loeschen: Klassenarbeit?
+    @AppStorage("vorschulStufe") private var stufe = 2
+    @AppStorage("vorschulSprache") private var sprache = "de"
+    @AppStorage("kindName") private var kindName = ""
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                HintergrundView()
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
+                        kopf
+                        auswahl
+                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 14)], spacing: 14) {
+                            ForEach(VorschulArt.allCases) { art in
+                                NavigationLink(value: art) { karte(art) }
+                                    .buttonStyle(TastenStil())
+                            }
+                        }
+                        pakete
+                    }
+                    .padding(20)
+                }
+                .scrollIndicators(.hidden)
+            }
+            .toolbar(.hidden, for: .navigationBar)
+            .navigationDestination(for: VorschulArt.self) { art in
+                if art == .memory {
+                    VorschulMemory()
+                } else {
+                    VorschulRunde(art: art)
+                }
+            }
+            .navigationDestination(for: Klassenarbeit.self) { VorschulPaketListe(arbeit: $0) }
+            .navigationDestination(for: Uebung.self) { VorschulRunde(art: .mix, quelle: $0) }
+            .confirmationDialog("Paket löschen?", isPresented: Binding(get: { loeschen != nil },
+                                                                     set: { if !$0 { loeschen = nil } }),
+                                titleVisibility: .visible) {
+                Button("Löschen", role: .destructive) {
+                    if let a = loeschen { context.delete(a); try? context.save() }
+                    loeschen = nil
+                }
+                Button("Abbrechen", role: .cancel) { loeschen = nil }
+            }
+        }
+    }
+
+    private var eigenePakete: [Klassenarbeit] {
+        alleArbeiten.filter { $0.fach == "Vorschule" && $0.spezial.isEmpty }
+    }
+
+    @ViewBuilder
+    private var pakete: some View {
+        if !eigenePakete.isEmpty {
+            Text("Eigene Pakete")
+                .font(.system(.title3, design: .rounded).weight(.heavy))
+                .foregroundStyle(Theme.gelb)
+                .padding(.top, 8)
+            ForEach(eigenePakete) { a in
+                NavigationLink(value: a) {
+                    HStack(spacing: 14) {
+                        Text("📦").font(.system(size: 36))
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(a.titel)
+                                .font(.system(.headline, design: .rounded).weight(.heavy))
+                                .foregroundStyle(Color.white)
+                            Text("\(a.uebungen.count) Übungen")
+                                .font(.footnote)
+                                .foregroundStyle(Theme.textSanft)
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.right").foregroundStyle(Theme.gelb)
+                    }
+                    .padding(16)
+                    .glasKarte(radius: 24)
+                }
+                .buttonStyle(TastenStil())
+                .contextMenu {
+                    Button("Paket löschen", systemImage: "trash", role: .destructive) { loeschen = a }
+                }
+            }
+        }
+    }
+
+    private var kopf: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text("Vorschule")
+                .font(.system(size: 40, weight: .black, design: .rounded))
+                .foregroundStyle(Theme.gelb)
+            Text(kindName.isEmpty ? "Spielen und lernen" : "Hallo \(kindName)! Spielen und lernen")
+                .font(.system(.subheadline, design: .rounded).weight(.medium))
+                .foregroundStyle(Theme.textSanft)
+        }
+    }
+
+    private var auswahl: some View {
+        VStack(spacing: 10) {
+            Picker("Zahlenraum", selection: $stufe) {
+                Text("Bis 5").tag(1)
+                Text("Bis 10").tag(2)
+                Text("Bis 20").tag(3)
+            }
+            .pickerStyle(.segmented)
+            Picker("Sprache", selection: $sprache) {
+                Text("Deutsch").tag("de")
+                Text("Türkçe").tag("tr")
+            }
+            .pickerStyle(.segmented)
+        }
+    }
+
+    private func karte(_ art: VorschulArt) -> some View {
+        VStack(spacing: 8) {
+            Text(art.emoji).font(.system(size: 52))
+            Text(art.titel)
+                .font(.system(.subheadline, design: .rounded).weight(.heavy))
+                .foregroundStyle(Color.white)
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+        }
+        .frame(maxWidth: .infinity, minHeight: 130)
+        .padding(8)
+        .glasKarte(radius: 26)
+    }
+}
+
+struct VorschulRunde: View {
+    let art: VorschulArt
+    var quelle: Uebung? = nil
+    @Environment(\.modelContext) private var context
+    @Environment(\.dismiss) private var dismiss
+    @AppStorage("modus") private var modus = ""
+    @AppStorage("vorschulStufe") private var stufe = 2
+    @AppStorage("vorschulSprache") private var sprache = "de"
+    @State private var fragen: [VorschulFrage] = []
+    @State private var nr = 0
+    @State private var perfekt = 0
+    @State private var falsch: Set<Int> = []
+    @State private var richtigGewaehlt: Int?
+    @State private var schuettel: Int?
+    @State private var sperre = false
+    @State private var gespeichert = false
+
+    var body: some View {
+        ZStack {
+            HintergrundView()
+            if fragen.isEmpty {
+                ProgressView()
+            } else if nr >= fragen.count {
+                ergebnis
+            } else {
+                frage(fragen[nr])
+            }
+        }
+        .navigationTitle(quelle?.titel ?? art.titel)
+        .navigationBarTitleDisplayMode(.inline)
+        .onAppear { if fragen.isEmpty { neu() } }
+    }
+
+    private func frage(_ f: VorschulFrage) -> some View {
+        ScrollView {
+            VStack(spacing: 22) {
+                ProgressView(value: Double(nr), total: Double(fragen.count))
+                    .tint(Theme.gelb)
+
+                Button { VorschulTon.sag(f.text) } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "speaker.wave.2.fill")
+                            .foregroundStyle(Theme.gelb)
+                        Text(sprache == "tr" ? (f.text.tr ?? f.text.de) : f.text.de)
+                            .font(.system(.title3, design: .rounded).weight(.heavy))
+                            .foregroundStyle(Color.white)
+                            .multilineTextAlignment(.leading)
+                    }
+                    .padding(.horizontal, 18)
+                    .padding(.vertical, 12)
+                    .frame(maxWidth: .infinity)
+                    .glasKarte(radius: 22)
+                }
+                .buttonStyle(TastenStil())
+
+                bild(f)
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 110), spacing: 14)], spacing: 14) {
+                    ForEach(Array(f.optionen.enumerated()), id: \.offset) { i, o in
+                        optionKnopf(i, o, f)
+                    }
+                }
+            }
+            .padding(20)
+        }
+        .scrollIndicators(.hidden)
+    }
+
+    @ViewBuilder
+    private func bild(_ f: VorschulFrage) -> some View {
+        if !f.gross.isEmpty {
+            Text(f.gross)
+                .font(.system(size: 96, weight: .black, design: .rounded))
+                .foregroundStyle(Color.white)
+        }
+        if !f.zeige.isEmpty {
+            EmojiReihen(emojis: f.zeige)
+        }
+        if f.plus {
+            Text("+")
+                .font(.system(size: 44, weight: .black, design: .rounded))
+                .foregroundStyle(Theme.gelb)
+            EmojiReihen(emojis: f.zeigeZwei)
+        }
+        if !f.folge.isEmpty {
+            Text(f.folge.joined(separator: " ") + " ❓")
+                .font(.system(size: 40))
+                .lineLimit(1)
+                .minimumScaleFactor(0.4)
+        }
+    }
+
+    private func optionKnopf(_ i: Int, _ o: String, _ f: VorschulFrage) -> some View {
+        let istRichtig = richtigGewaehlt == i
+        let istFalsch = falsch.contains(i)
+        let farbe: Color = istRichtig ? Theme.mint.opacity(0.6)
+            : (istFalsch ? Theme.koralle.opacity(0.35) : Color.white.opacity(0.14))
+        return Button { wahl(i, f) } label: {
+            Text(o)
+                .font(.system(size: f.gruppenOptionen ? 30 : 54, weight: .black, design: .rounded))
+                .foregroundStyle(Color.white)
+                .multilineTextAlignment(.center)
+                .minimumScaleFactor(0.5)
+                .frame(maxWidth: .infinity, minHeight: 112)
+                .padding(6)
+                .background(farbe, in: RoundedRectangle(cornerRadius: 26, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 26, style: .continuous)
+                        .stroke(istRichtig ? Theme.mint : Color.white.opacity(0.18), lineWidth: istRichtig ? 4 : 1.5)
+                )
+                .opacity(istFalsch ? 0.45 : 1)
+                .scaleEffect(istRichtig ? 1.06 : 1)
+                .offset(x: schuettel == i ? 9 : 0)
+                .animation(.spring(response: 0.18, dampingFraction: 0.25), value: schuettel)
+                .animation(.spring(response: 0.3, dampingFraction: 0.6), value: richtigGewaehlt)
+        }
+        .buttonStyle(TastenStil())
+    }
+
+    private var ergebnis: some View {
+        let sterne = sterneFuer(gut: perfekt, gesamt: fragen.count)
+        return VStack(spacing: 18) {
+            Text(sterne == 3 ? "🎉" : (sterne >= 1 ? "👏" : "💪"))
+                .font(.system(size: 90))
+            Text("\(perfekt) von \(fragen.count) gleich richtig!")
+                .font(.system(size: 28, weight: .black, design: .rounded))
+                .foregroundStyle(Color.white)
+                .multilineTextAlignment(.center)
+            HStack(spacing: 8) {
+                ForEach(0..<3, id: \.self) { i in
+                    Image(systemName: i < sterne ? "star.fill" : "star")
+                        .font(.system(size: 48))
+                        .foregroundStyle(Theme.gelb)
+                }
+            }
+            Button { neu() } label: {
+                Label("Nochmal", systemImage: "arrow.clockwise")
+                    .font(.system(.title3, design: .rounded).weight(.heavy))
+                    .foregroundStyle(Theme.navy)
+                    .frame(maxWidth: 280, minHeight: 56)
+                    .background(Theme.gelb, in: Capsule())
+            }
+            .buttonStyle(TastenStil())
+            Button("Fertig") { dismiss() }
+                .font(.system(.headline, design: .rounded).weight(.bold))
+                .foregroundStyle(Theme.textSanft)
+        }
+        .padding(24)
+    }
+
+    private func neu() {
+        if let u = quelle {
+            fragen = VorschulPaket.fragen(u)
+        } else {
+            fragen = VorschulGenerator.fragen(art, stufe: stufe)
+        }
+        nr = 0
+        perfekt = 0
+        zuruecksetzen()
+        gespeichert = false
+        if let f = fragen.first { VorschulTon.sag(f.text) }
+    }
+
+    private func zuruecksetzen() {
+        falsch = []
+        richtigGewaehlt = nil
+        schuettel = nil
+        sperre = false
+    }
+
+    private func wahl(_ i: Int, _ f: VorschulFrage) {
+        guard !sperre, richtigGewaehlt == nil, !falsch.contains(i) else { return }
+        if i == f.richtig {
+            richtigGewaehlt = i
+            if falsch.isEmpty { perfekt += 1 }
+            sperre = true
+            Haptik.erfolg()
+            VorschulTon.lob()
+            Task {
+                try? await Task.sleep(for: .seconds(1.2))
+                weiter()
+            }
+        } else {
+            falsch.insert(i)
+            schuettel = i
+            Haptik.fehler()
+            VorschulTon.nochmal()
+            Task {
+                try? await Task.sleep(for: .seconds(0.4))
+                schuettel = nil
+            }
+        }
+    }
+
+    private func weiter() {
+        nr += 1
+        zuruecksetzen()
+        if nr < fragen.count {
+            VorschulTon.sag(fragen[nr].text)
+        } else {
+            abschliessen()
+        }
+    }
+
+    private func abschliessen() {
+        guard !gespeichert else { return }
+        gespeichert = true
+        VorschulTon.sag(VorschulText(de: "Das hast du toll gemacht!", tr: "Çok güzel yaptın!"))
+        guard modus == "kind" else { return }
+        let arbeitName = quelle?.arbeit?.titel ?? "Übungen"
+        let uebungName = quelle.map { "\($0.symbol) \($0.titel)" } ?? "\(art.emoji) \(art.titel)"
+        context.insert(RundenErgebnis(klasse: "Vorschule", fach: "Vorschule", arbeit: arbeitName,
+                                      uebung: uebungName,
+                                      richtig: perfekt, gesamt: fragen.count, angesehen: 0,
+                                      quelle: "lokal"))
+        try? context.save()
+        CloudSync.anstossen(context)
+    }
+}
+
+struct VorschulKarte: Identifiable {
+    let id = UUID()
+    let paar: Int
+    let emoji: String
+    var offen = false
+    var weg = false
+}
+
+struct VorschulMemory: View {
+    @Environment(\.modelContext) private var context
+    @Environment(\.dismiss) private var dismiss
+    @AppStorage("modus") private var modus = ""
+    @AppStorage("vorschulStufe") private var stufe = 2
+    @State private var karten: [VorschulKarte] = []
+    @State private var erste: Int?
+    @State private var zuege = 0
+    @State private var sperre = false
+    @State private var fertig = false
+
+    private var paare: Int { stufe == 1 ? 3 : (stufe == 2 ? 4 : 6) }
+
+    var body: some View {
+        ZStack {
+            HintergrundView()
+            if fertig {
+                geschafft
+            } else {
+                ScrollView {
+                    VStack(spacing: 16) {
+                        Text("Finde zwei gleiche Bilder")
+                            .font(.system(.title3, design: .rounded).weight(.heavy))
+                            .foregroundStyle(Color.white)
+                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 84), spacing: 12)], spacing: 12) {
+                            ForEach(Array(karten.enumerated()), id: \.element.id) { i, k in
+                                kartenKnopf(i, k)
+                            }
+                        }
+                    }
+                    .padding(20)
+                }
+                .scrollIndicators(.hidden)
+            }
+        }
+        .navigationTitle("Memory")
+        .navigationBarTitleDisplayMode(.inline)
+        .onAppear { if karten.isEmpty { neu() } }
+    }
+
+    private func kartenKnopf(_ i: Int, _ k: VorschulKarte) -> some View {
+        let zeigen = k.offen || k.weg
+        return Button { tippe(i) } label: {
+            Text(zeigen ? k.emoji : "❔")
+                .font(.system(size: 44))
+                .frame(maxWidth: .infinity, minHeight: 96)
+                .background(zeigen ? Color.white.opacity(0.16) : Theme.gelb.opacity(0.85),
+                            in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                .opacity(k.weg ? 0.3 : 1)
+        }
+        .buttonStyle(TastenStil())
+    }
+
+    private var geschafft: some View {
+        VStack(spacing: 18) {
+            Text("🎉").font(.system(size: 90))
+            Text("Alle Paare gefunden!")
+                .font(.system(size: 28, weight: .black, design: .rounded))
+                .foregroundStyle(Color.white)
+            Text("In \(zuege) Zügen")
+                .font(.system(.title3, design: .rounded).weight(.bold))
+                .foregroundStyle(Theme.gelb)
+            Button { neu() } label: {
+                Label("Nochmal", systemImage: "arrow.clockwise")
+                    .font(.system(.title3, design: .rounded).weight(.heavy))
+                    .foregroundStyle(Theme.navy)
+                    .frame(maxWidth: 280, minHeight: 56)
+                    .background(Theme.gelb, in: Capsule())
+            }
+            .buttonStyle(TastenStil())
+            Button("Fertig") { dismiss() }
+                .font(.system(.headline, design: .rounded).weight(.bold))
+                .foregroundStyle(Theme.textSanft)
+        }
+        .padding(24)
+    }
+
+    private func neu() {
+        let pool = (VorschulGenerator.dinge + ["🐰", "🦁", "🐸", "🍌", "🚌", "🌻"]).shuffled()
+        var liste: [VorschulKarte] = []
+        for (i, e) in pool.prefix(paare).enumerated() {
+            liste.append(VorschulKarte(paar: i, emoji: e))
+            liste.append(VorschulKarte(paar: i, emoji: e))
+        }
+        karten = liste.shuffled()
+        erste = nil
+        zuege = 0
+        sperre = false
+        fertig = false
+    }
+
+    private func tippe(_ i: Int) {
+        guard !sperre, karten.indices.contains(i), !karten[i].offen, !karten[i].weg else { return }
+        Haptik.leicht()
+        withAnimation(.snappy) { karten[i].offen = true }
+        guard let e = erste else {
+            erste = i
+            return
+        }
+        zuege += 1
+        erste = nil
+        if karten[e].paar == karten[i].paar {
+            Haptik.erfolg()
+            withAnimation(.snappy) {
+                karten[e].weg = true
+                karten[i].weg = true
+            }
+            if karten.allSatisfy({ $0.weg }) { abschliessen() }
+        } else {
+            sperre = true
+            Task {
+                try? await Task.sleep(for: .seconds(0.9))
+                withAnimation(.snappy) {
+                    karten[e].offen = false
+                    karten[i].offen = false
+                }
+                sperre = false
+            }
+        }
+    }
+
+    private func abschliessen() {
+        VorschulTon.lob()
+        fertig = true
+        guard modus == "kind" else { return }
+        context.insert(RundenErgebnis(klasse: "Vorschule", fach: "Vorschule", arbeit: "Übungen",
+                                      uebung: "🃏 Memory",
+                                      richtig: paare, gesamt: max(paare, zuege), angesehen: 0,
+                                      quelle: "lokal"))
+        try? context.save()
+        CloudSync.anstossen(context)
+    }
+}
+
+// ============================================================
+// MARK: - Klassencode absichern (digitale Unterschrift)
+// ============================================================
+
+enum KlassenFehler: LocalizedError {
+    case keinSchluessel
+
+    var errorDescription: String? {
+        "Auf diesem Gerät fehlt der Admin-Schlüssel für diesen Klassencode. Nur das Gerät, das den Klassencode angelegt hat, darf Pakete an die Klasse senden."
+    }
+}
+
+enum Schluesselbund {
+    private static let dienst = "de.cemaras.yem1n.klasse"
+
+    static func speichere(_ daten: Data, konto: String) {
+        let basis: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: dienst,
+            kSecAttrAccount as String: konto
+        ]
+        SecItemDelete(basis as CFDictionary)
+        var neu = basis
+        neu[kSecValueData as String] = daten
+        neu[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlock
+        SecItemAdd(neu as CFDictionary, nil)
+    }
+
+    static func lese(konto: String) -> Data? {
+        let q: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: dienst,
+            kSecAttrAccount as String: konto,
+            kSecReturnData as String: true,
+            kSecMatchLimit as String: kSecMatchLimitOne
+        ]
+        var ergebnis: AnyObject?
+        guard SecItemCopyMatching(q as CFDictionary, &ergebnis) == errSecSuccess else { return nil }
+        return ergebnis as? Data
+    }
+}
+
+enum Klassensiegel {
+    static func konto(_ code: String) -> String { "klassenkey-" + code }
+
+    static func privaterSchluessel(_ code: String) -> Curve25519.Signing.PrivateKey? {
+        guard let d = Schluesselbund.lese(konto: konto(code)) else { return nil }
+        return try? Curve25519.Signing.PrivateKey(rawRepresentation: d)
+    }
+
+    static func istAdmin(_ code: String) -> Bool { privaterSchluessel(code) != nil }
+
+    private static func nachricht(_ code: String, _ json: String) -> Data {
+        Data((code + "|" + json).utf8)
+    }
+
+    static func signiere(code: String, json: String) -> String? {
+        guard let k = privaterSchluessel(code),
+              let sig = try? k.signature(for: nachricht(code, json)) else { return nil }
+        return sig.base64EncodedString()
+    }
+
+    static func pruefe(code: String, json: String, sig: String, oeffentlich: Data) -> Bool {
+        guard let sd = Data(base64Encoded: sig),
+              let pk = try? Curve25519.Signing.PublicKey(rawRepresentation: oeffentlich) else { return false }
+        return pk.isValidSignature(sd, for: nachricht(code, json))
+    }
+
+    // Der öffentliche Schlüssel wird beim ersten Mal gemerkt. Danach muss die Cloud denselben liefern.
+    static func vertrauterSchluessel(_ code: String) async -> Data? {
+        let feld = "klassenPin-" + code
+        let geholt = await CloudDienst.ladeKlassenSchluessel(code)
+        if let b64 = UserDefaults.standard.string(forKey: feld), let gemerkt = Data(base64Encoded: b64) {
+            if let g = geholt, g != gemerkt { return nil }
+            return gemerkt
+        }
+        guard let g = geholt else { return nil }
+        UserDefaults.standard.set(g.base64EncodedString(), forKey: feld)
+        return g
+    }
+}
+
+// ============================================================
+// MARK: - Datenschutz
+// ============================================================
+
+struct DatenschutzView: View {
+    private let abschnitte: [(String, String)] = [
+        ("Verantwortlicher",
+         "Cem Aras, Schulweg 20, 65618 Selters (Taunus). Telefon: 0172-7579888, E-Mail: cembot@icloud.com."),
+        ("Auf deinem Gerät",
+         "YEM1N speichert Klassenarbeiten, Aufgaben, Ergebnisse und Einstellungen (zum Beispiel Name des Kindes, Klasse, Farbwelt, Tagesziel) auf diesem Gerät. Das bleibt dort, bis du die App löschst."),
+        ("In der Cloud",
+         "Nur wenn ein Familiencode eingetragen ist, nutzt die App die iCloud (CloudKit) von Apple. Dort liegen Rundenergebnisse (Fach, Übung, Anzahl richtig, Sterne, Zeitpunkt und der Name des Kindes, falls eingetragen), Joker-Nachrichten und Aufgabenpakete. Wer den Familiencode kennt, kann diese Einträge lesen. Gib ihn deshalb nur an Eltern weiter, denen du vertraust. Für den Namen des Kindes reicht ein Vorname oder Spitzname. Apple speichert technisch, welche pseudonyme iCloud-Kennung einen Eintrag angelegt hat, einen Klarnamen sehe ich dadurch nicht."),
+        ("Klassencode",
+         "Über den Klassencode kommen nur Aufgabenpakete an. Sie sind vom Admin digital unterschrieben, sonst nimmt die App sie nicht an. Ergebnisse und Joker laufen nie über den Klassencode."),
+        ("Kein Tracking",
+         "Die App enthält keine Werbung, keine Analysedienste und keine Software von Drittanbietern. Es gibt kein Benutzerkonto bei mir. Die Sprachausgabe läuft auf dem Gerät. Es werden keine Fotos, Kontakte, Standortdaten oder Mikrofonaufnahmen erhoben."),
+        ("Mitteilungen",
+         "Die App sendet Mitteilungen zwischen Eltern- und Kindgeräten über Apple. Dafür gibt Apple ein technisches Gerätekennzeichen aus. Die Erlaubnis kannst du jederzeit in den iOS-Einstellungen widerrufen."),
+        ("Zwecke und Rechtsgrundlagen",
+         "Die Daten werden nur verarbeitet, damit die App funktioniert: Üben, Ergebnisübersicht für Eltern, Joker und Aufgabenverteilung. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO und, soweit Eltern die App für ihr Kind einrichten, deren Einwilligung nach Art. 6 Abs. 1 lit. a in Verbindung mit Art. 8 DSGVO. Für Mitteilungen gilt deine Einwilligung. Die digitale Unterschrift der Klassenpakete dient der Sicherheit (Art. 6 Abs. 1 lit. f DSGVO)."),
+        ("Empfänger",
+         "Die Cloud-Daten und Mitteilungen laufen über Apple (iCloud/CloudKit und Apple Push Notification Service). Eine Übermittlung in Drittländer, insbesondere die USA, kann dabei nicht ausgeschlossen werden. Apple stützt sich dafür auf Standardvertragsklauseln und das EU-US Data Privacy Framework. Weitere Empfänger gibt es nicht."),
+        ("Speicherdauer und Löschen",
+         "Daten auf dem Gerät bleiben, bis du die App löschst. Cloud-Einträge bleiben, bis sie gelöscht werden. Mit dem Knopf unten löschst du die Cloud-Einträge dieses Familiencodes, die dieses Gerät angelegt hat. Nutze ihn auf jedem Gerät der Familie. Du kannst mich auch per E-Mail um Löschung bitten."),
+        ("Deine Rechte",
+         "Du hast das Recht auf Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung, Datenübertragbarkeit und Widerspruch sowie das Recht, eine Einwilligung jederzeit zu widerrufen. Schreibe dazu an die oben genannte E-Mail-Adresse. Du kannst dich außerdem bei einer Datenschutzaufsichtsbehörde beschweren, zum Beispiel beim Hessischen Beauftragten für Datenschutz und Informationsfreiheit in Wiesbaden."),
+        ("Kinder",
+         "Die App richtet sich an Eltern, die sie gemeinsam mit ihren Kindern nutzen. Familiencode, Klassencode und Name sollten Eltern einrichten.")
+    ]
+
+    var body: some View {
+        ZStack {
+            HintergrundView()
+            ScrollView {
+                VStack(alignment: .leading, spacing: 14) {
+                    ForEach(abschnitte, id: \.0) { a in
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(a.0)
+                                .font(.system(.headline, design: .rounded).weight(.heavy))
+                                .foregroundStyle(Theme.gelb)
+                            Text(a.1)
+                                .font(.subheadline)
+                                .foregroundStyle(Color.white)
+                        }
+                        .padding(16)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .glasKarte(radius: 22)
+                    }
+                    if let url = URL(string: "https://cembot90.github.io/YEM1N/") {
+                        Link(destination: url) {
+                            Label("Im Browser öffnen", systemImage: "safari")
+                                .font(.system(.headline, design: .rounded).weight(.heavy))
+                                .foregroundStyle(Theme.navy)
+                                .frame(maxWidth: .infinity, minHeight: 50)
+                                .background(Theme.gelb, in: Capsule())
+                        }
+                    }
+                }
+                .padding(20)
+            }
+            .scrollIndicators(.hidden)
+        }
+        .navigationTitle("Datenschutz")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+// ============================================================
+// MARK: - Profil und Einrichtungsassistent
+// ============================================================
+
+enum ProfilDaten {
+    static let klassen = ["Vorschule", "Klasse 1", "Klasse 2", "Klasse 3", "Klasse 4"]
+}
+
+struct ProfilAssistent: View {
+    @AppStorage("modus") private var modus = ""
+    @AppStorage("kindName") private var kindName = ""
+    @AppStorage("kindKlasse") private var kindKlasse = ""
+    @AppStorage("farbwelt") private var farbwelt = "blau"
+    @AppStorage("tagesziel") private var tagesziel = 2
+    @AppStorage("vorschulTab") private var vorschulTab = true
+    @AppStorage("jokerIch") private var jokerIch = ""
+    @AppStorage("profilFertig") private var profilFertig = false
+    @State private var schritt = 0
+    @State private var name = ""
+    @State private var klasse = ""
+    @State private var geladen = false
+    private let joker = JokerStand.shared
+
+    private var istKind: Bool { modus == "kind" }
+    private var letzterSchritt: Int { istKind ? 2 : 0 }
+
+    var body: some View {
+        ZStack {
+            HintergrundView()
+            ScrollView {
+                VStack(spacing: 22) {
+                    Text("Willkommen bei YEM1N")
+                        .font(.system(size: 30, weight: .black, design: .rounded))
+                        .foregroundStyle(Theme.gelb)
+                        .multilineTextAlignment(.center)
+                        .padding(.top, 40)
+                    if istKind {
+                        Text("Schritt \(schritt + 1) von 3")
+                            .font(.system(.subheadline, design: .rounded).weight(.semibold))
+                            .foregroundStyle(Theme.textSanft)
+                    }
+                    inhalt
+                    knoepfe
+                }
+                .padding(.horizontal, 24)
+                .padding(.bottom, 40)
+            }
+            .scrollIndicators(.hidden)
+        }
+        .onAppear {
+            guard !geladen else { return }
+            geladen = true
+            name = kindName
+            klasse = kindKlasse
+        }
+    }
+
+    @ViewBuilder
+    private var inhalt: some View {
+        if !istKind {
+            frageKarte("Wer bist du?", "Unter diesem Namen erscheinen deine Antworten auf Joker-Fragen.") {
+                let aktuell = jokerIch.isEmpty ? (joker.mitglieder.first?.id.uuidString ?? "") : jokerIch
+                VStack(spacing: 10) {
+                    ForEach(joker.mitglieder) { m in
+                        chip("\(m.emoji) \(m.name)", aktiv: aktuell == m.id.uuidString) {
+                            jokerIch = m.id.uuidString
+                        }
+                    }
+                }
+            }
+        } else if schritt == 0 {
+            frageKarte("Wie heißt das Kind?", "Ein Vorname oder Spitzname reicht. Der Name erscheint bei den Eltern.") {
+                TextField("Name", text: $name)
+                    .font(.system(.title3, design: .rounded).weight(.bold))
+                    .padding(14)
+                    .background(Color.white.opacity(0.10), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            }
+        } else if schritt == 1 {
+            frageKarte("In welcher Klasse?", "Danach lädt das Gerät nur passende Aufgabenpakete. Du kannst es später ändern.") {
+                VStack(spacing: 10) {
+                    ForEach(ProfilDaten.klassen, id: \.self) { k in
+                        chip(k, aktiv: klasse == k) { klasse = k }
+                    }
+                    chip("Weiß ich nicht", aktiv: klasse.isEmpty) { klasse = "" }
+                }
+            }
+        } else {
+            frageKarte("Farben und Ziel", "Wähle die Farbwelt und wie viele Runden pro Tag das Ziel sind.") {
+                VStack(spacing: 14) {
+                    HStack(spacing: 12) {
+                        farbKarte("Blau und Gelb", "blau")
+                        farbKarte("Rosa", "rosa")
+                    }
+                    Stepper("Tagesziel: \(tagesziel) \(tagesziel == 1 ? "Runde" : "Runden")",
+                            value: $tagesziel, in: 1...10)
+                        .font(.system(.body, design: .rounded).weight(.semibold))
+                        .foregroundStyle(Color.white)
+                }
+            }
+        }
+    }
+
+    private var knoepfe: some View {
+        VStack(spacing: 12) {
+            Button {
+                if schritt < letzterSchritt {
+                    schritt += 1
+                } else {
+                    fertigstellen()
+                }
+            } label: {
+                Text(schritt < letzterSchritt ? "Weiter" : "Los geht's")
+                    .font(.system(.title3, design: .rounded).weight(.heavy))
+                    .foregroundStyle(Theme.navy)
+                    .frame(maxWidth: .infinity, minHeight: 56)
+                    .background(Theme.gelb, in: Capsule())
+            }
+            .buttonStyle(TastenStil())
+            if schritt > 0 {
+                Button("Zurück") { schritt -= 1 }
+                    .font(.system(.headline, design: .rounded).weight(.bold))
+                    .foregroundStyle(Theme.textSanft)
+            } else {
+                Button("Später einrichten") { profilFertig = true }
+                    .font(.system(.headline, design: .rounded).weight(.bold))
+                    .foregroundStyle(Theme.textSanft)
+            }
+        }
+    }
+
+    private func fertigstellen() {
+        if istKind {
+            kindName = name.trimmingCharacters(in: .whitespaces)
+            kindKlasse = klasse
+            if klasse == "Vorschule" {
+                vorschulTab = true
+            } else if !klasse.isEmpty {
+                vorschulTab = false
+            }
+        }
+        profilFertig = true
+    }
+
+    private func frageKarte<Inhalt: View>(_ titel: String, _ text: String,
+                                          @ViewBuilder inhalt: () -> Inhalt) -> some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text(titel)
+                .font(.system(.title2, design: .rounded).weight(.heavy))
+                .foregroundStyle(Color.white)
+            Text(text)
+                .font(.subheadline)
+                .foregroundStyle(Theme.textSanft)
+            inhalt()
+        }
+        .padding(18)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .glasKarte(radius: 26)
+    }
+
+    private func chip(_ titel: String, aktiv: Bool, aktion: @escaping () -> Void) -> some View {
+        Button(action: aktion) {
+            Text(titel)
+                .font(.system(.headline, design: .rounded).weight(.heavy))
+                .foregroundStyle(aktiv ? Theme.navy : Color.white)
+                .frame(maxWidth: .infinity, minHeight: 48)
+                .background(aktiv ? Theme.gelb : Color.white.opacity(0.10), in: Capsule())
+        }
+        .buttonStyle(TastenStil())
+    }
+
+    private func farbKarte(_ titel: String, _ wert: String) -> some View {
+        let aktiv = farbwelt == wert
+        let farben: [Color] = wert == "rosa"
+            ? [Color(red: 0.36, green: 0.07, blue: 0.31), Color(red: 1.0, green: 0.45, blue: 0.74)]
+            : [Color(red: 0.0, green: 0.125, blue: 0.357), Color(red: 1.0, green: 0.93, blue: 0.0)]
+        return Button {
+            Theme.rosa = (wert == "rosa")
+            farbwelt = wert
+        } label: {
+            VStack(spacing: 8) {
+                LinearGradient(colors: farben, startPoint: .topLeading, endPoint: .bottomTrailing)
+                    .frame(height: 64)
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                Text(titel)
+                    .font(.system(.subheadline, design: .rounded).weight(.heavy))
+                    .foregroundStyle(Color.white)
+            }
+            .padding(10)
+            .frame(maxWidth: .infinity)
+            .background(Color.white.opacity(aktiv ? 0.18 : 0.06),
+                        in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .stroke(aktiv ? Theme.gelb : Color.clear, lineWidth: 3)
+            )
+        }
+        .buttonStyle(TastenStil())
+    }
 }

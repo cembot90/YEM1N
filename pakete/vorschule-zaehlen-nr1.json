@@ -1,0 +1,244 @@
+{
+  "klasse": "Vorschule",
+  "fach": "Vorschule",
+  "arbeit": "Zählen und Buchstaben Nr. 1",
+  "uebungen": [
+    {
+      "titel": "Zählen",
+      "gruppe": "Zahlen",
+      "symbol": "🍎",
+      "aufgaben": [
+        {
+          "art": "wahl",
+          "frage": "Wie viele Äpfel siehst du?",
+          "tr": "Kaç tane elma görüyorsun?",
+          "bild": "🍎🍎🍎",
+          "optionen": [
+            "3",
+            "6",
+            "7"
+          ],
+          "antwort": "3"
+        },
+        {
+          "art": "wahl",
+          "frage": "Wie viele Sterne siehst du?",
+          "tr": "Kaç tane yıldız görüyorsun?",
+          "bild": "⭐⭐⭐⭐⭐",
+          "optionen": [
+            "1",
+            "2",
+            "5"
+          ],
+          "antwort": "5"
+        },
+        {
+          "art": "wahl",
+          "frage": "Wie viele Fische siehst du?",
+          "tr": "Kaç tane balık görüyorsun?",
+          "bild": "🐟🐟",
+          "optionen": [
+            "2",
+            "6",
+            "9"
+          ],
+          "antwort": "2"
+        },
+        {
+          "art": "wahl",
+          "frage": "Wie viele Luftballons siehst du?",
+          "tr": "Kaç tane balon görüyorsun?",
+          "bild": "🎈🎈🎈🎈🎈🎈🎈",
+          "optionen": [
+            "1",
+            "7",
+            "10"
+          ],
+          "antwort": "7"
+        },
+        {
+          "art": "wahl",
+          "frage": "Wie viele Autos siehst du?",
+          "tr": "Kaç tane araba görüyorsun?",
+          "bild": "🚗🚗🚗🚗",
+          "optionen": [
+            "1",
+            "4",
+            "9"
+          ],
+          "antwort": "4"
+        },
+        {
+          "art": "wahl",
+          "frage": "Wie viele Erdbeeren siehst du?",
+          "tr": "Kaç tane çilek görüyorsun?",
+          "bild": "🍓🍓🍓🍓🍓🍓",
+          "optionen": [
+            "2",
+            "6",
+            "7"
+          ],
+          "antwort": "6"
+        }
+      ]
+    },
+    {
+      "titel": "Plus",
+      "gruppe": "Zahlen",
+      "symbol": "➕",
+      "aufgaben": [
+        {
+          "art": "wahl",
+          "frage": "Wie viele sind es zusammen?",
+          "tr": "Hepsi birlikte kaç tane?",
+          "bild": "🍎 + 🍎🍎",
+          "optionen": [
+            "2",
+            "3",
+            "7"
+          ],
+          "antwort": "3"
+        },
+        {
+          "art": "wahl",
+          "frage": "Wie viele sind es zusammen?",
+          "tr": "Hepsi birlikte kaç tane?",
+          "bild": "🍎🍎 + 🍎🍎",
+          "optionen": [
+            "2",
+            "4",
+            "7"
+          ],
+          "antwort": "4"
+        },
+        {
+          "art": "wahl",
+          "frage": "Wie viele sind es zusammen?",
+          "tr": "Hepsi birlikte kaç tane?",
+          "bild": "🍎🍎🍎 + 🍎",
+          "optionen": [
+            "1",
+            "2",
+            "4"
+          ],
+          "antwort": "4"
+        },
+        {
+          "art": "wahl",
+          "frage": "Wie viele sind es zusammen?",
+          "tr": "Hepsi birlikte kaç tane?",
+          "bild": "🍎🍎 + 🍎🍎🍎",
+          "optionen": [
+            "1",
+            "4",
+            "5"
+          ],
+          "antwort": "5"
+        },
+        {
+          "art": "wahl",
+          "frage": "Wie viele sind es zusammen?",
+          "tr": "Hepsi birlikte kaç tane?",
+          "bild": "🍎 + 🍎",
+          "optionen": [
+            "1",
+            "2",
+            "7"
+          ],
+          "antwort": "2"
+        },
+        {
+          "art": "wahl",
+          "frage": "Wie viele sind es zusammen?",
+          "tr": "Hepsi birlikte kaç tane?",
+          "bild": "🍎🍎🍎🍎 + 🍎",
+          "optionen": [
+            "1",
+            "4",
+            "5"
+          ],
+          "antwort": "5"
+        }
+      ]
+    },
+    {
+      "titel": "Anfangsbuchstaben",
+      "gruppe": "Buchstaben",
+      "symbol": "🔤",
+      "aufgaben": [
+        {
+          "art": "wahl",
+          "frage": "Mit welchem Buchstaben beginnt Apfel?",
+          "tr": "Elma hangi harfle başlar?",
+          "bild": "🍎",
+          "optionen": [
+            "A",
+            "D",
+            "N"
+          ],
+          "antwort": "A"
+        },
+        {
+          "art": "wahl",
+          "frage": "Mit welchem Buchstaben beginnt Fisch?",
+          "tr": "Balık hangi harfle başlar?",
+          "bild": "🐟",
+          "optionen": [
+            "F",
+            "G",
+            "L"
+          ],
+          "antwort": "F"
+        },
+        {
+          "art": "wahl",
+          "frage": "Mit welchem Buchstaben beginnt Blume?",
+          "tr": "Çiçek hangi harfle başlar?",
+          "bild": "🌸",
+          "optionen": [
+            "B",
+            "D",
+            "N"
+          ],
+          "antwort": "B"
+        },
+        {
+          "art": "wahl",
+          "frage": "Mit welchem Buchstaben beginnt Katze?",
+          "tr": "Kedi hangi harfle başlar?",
+          "bild": "🐱",
+          "optionen": [
+            "B",
+            "K",
+            "O"
+          ],
+          "antwort": "K"
+        },
+        {
+          "art": "wahl",
+          "frage": "Mit welchem Buchstaben beginnt Luftballon?",
+          "tr": "Balon hangi harfle başlar?",
+          "bild": "🎈",
+          "optionen": [
+            "G",
+            "L",
+            "N"
+          ],
+          "antwort": "L"
+        },
+        {
+          "art": "wahl",
+          "frage": "Mit welchem Buchstaben beginnt Erdbeere?",
+          "tr": "Çilek hangi harfle başlar?",
+          "bild": "🍓",
+          "optionen": [
+            "D",
+            "E",
+            "P"
+          ],
+          "antwort": "E"
+        }
+      ]
+    }
+  ]
+}

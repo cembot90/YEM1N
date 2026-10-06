@@ -1,0 +1,121 @@
+DEFINE SCHEMA
+
+    RECORD TYPE JokerAnfrage (
+        "___createTime" TIMESTAMP,
+        "___createdBy"  REFERENCE,
+        "___etag"       STRING,
+        "___modTime"    TIMESTAMP,
+        "___modifiedBy" REFERENCE,
+        "___recordID"   REFERENCE QUERYABLE,
+        fach            STRING QUERYABLE SEARCHABLE SORTABLE,
+        familienCode    STRING QUERYABLE SEARCHABLE SORTABLE,
+        kind            STRING QUERYABLE SEARCHABLE SORTABLE,
+        status          STRING QUERYABLE SEARCHABLE SORTABLE,
+        text            STRING QUERYABLE SEARCHABLE SORTABLE,
+        uebung          STRING QUERYABLE SEARCHABLE SORTABLE,
+        GRANT WRITE TO "_creator",
+        GRANT CREATE TO "_icloud",
+        GRANT READ TO "_world"
+    );
+
+    RECORD TYPE JokerAntwort (
+        "___createTime" TIMESTAMP,
+        "___createdBy"  REFERENCE,
+        "___etag"       STRING,
+        "___modTime"    TIMESTAMP,
+        "___modifiedBy" REFERENCE,
+        "___recordID"   REFERENCE QUERYABLE,
+        absender        STRING QUERYABLE SEARCHABLE SORTABLE,
+        anfrageID       STRING QUERYABLE SEARCHABLE SORTABLE,
+        emoji           STRING QUERYABLE SEARCHABLE SORTABLE,
+        familienCode    STRING QUERYABLE SEARCHABLE SORTABLE,
+        text            STRING QUERYABLE SEARCHABLE SORTABLE,
+        GRANT WRITE TO "_creator",
+        GRANT CREATE TO "_icloud",
+        GRANT READ TO "_world"
+    );
+
+    RECORD TYPE JokerDaumen (
+        "___createTime" TIMESTAMP,
+        "___createdBy"  REFERENCE,
+        "___etag"       STRING,
+        "___modTime"    TIMESTAMP,
+        "___modifiedBy" REFERENCE,
+        "___recordID"   REFERENCE QUERYABLE,
+        absender        STRING QUERYABLE SEARCHABLE SORTABLE,
+        anfrageID       STRING QUERYABLE SEARCHABLE SORTABLE,
+        antwortID       STRING QUERYABLE SEARCHABLE SORTABLE,
+        familienCode    STRING QUERYABLE SEARCHABLE SORTABLE,
+        GRANT WRITE TO "_creator",
+        GRANT CREATE TO "_icloud",
+        GRANT READ TO "_world"
+    );
+
+    RECORD TYPE KlassenSchluessel (
+        "___createTime" TIMESTAMP,
+        "___createdBy"  REFERENCE,
+        "___etag"       STRING,
+        "___modTime"    TIMESTAMP,
+        "___modifiedBy" REFERENCE,
+        "___recordID"   REFERENCE,
+        klassenCode     STRING QUERYABLE SEARCHABLE SORTABLE,
+        publicKey       STRING,
+        GRANT WRITE TO "_creator",
+        GRANT CREATE TO "_icloud",
+        GRANT READ TO "_world"
+    );
+
+    RECORD TYPE Lernpaket (
+        "___createTime" TIMESTAMP,
+        "___createdBy"  REFERENCE,
+        "___etag"       STRING,
+        "___modTime"    TIMESTAMP,
+        "___modifiedBy" REFERENCE,
+        "___recordID"   REFERENCE QUERYABLE,
+        aufgaben        INT64 QUERYABLE SORTABLE,
+        fach            STRING QUERYABLE SEARCHABLE SORTABLE,
+        familienCode    STRING QUERYABLE SEARCHABLE SORTABLE,
+        json            STRING,
+        klasse          STRING QUERYABLE SEARCHABLE SORTABLE,
+        sig             STRING,
+        titel           STRING QUERYABLE SEARCHABLE SORTABLE,
+        GRANT WRITE TO "_creator",
+        GRANT CREATE TO "_icloud",
+        GRANT READ TO "_world"
+    );
+
+    RECORD TYPE RundenErgebnis (
+        "___createTime" TIMESTAMP,
+        "___createdBy"  REFERENCE,
+        "___etag"       STRING,
+        "___modTime"    TIMESTAMP,
+        "___modifiedBy" REFERENCE,
+        "___recordID"   REFERENCE QUERYABLE,
+        angesehen       INT64 QUERYABLE SORTABLE,
+        arbeit          STRING QUERYABLE SEARCHABLE SORTABLE,
+        eintragID       STRING QUERYABLE SEARCHABLE SORTABLE,
+        fach            STRING QUERYABLE SEARCHABLE SORTABLE,
+        familienCode    STRING QUERYABLE SEARCHABLE SORTABLE,
+        gesamt          INT64 QUERYABLE SORTABLE,
+        kind            STRING QUERYABLE SEARCHABLE SORTABLE,
+        klasse          STRING QUERYABLE SEARCHABLE SORTABLE,
+        richtig         INT64 QUERYABLE SORTABLE,
+        sterne          INT64 QUERYABLE SORTABLE,
+        uebung          STRING QUERYABLE SEARCHABLE SORTABLE,
+        zeitpunkt       TIMESTAMP QUERYABLE SORTABLE,
+        GRANT WRITE TO "_creator",
+        GRANT CREATE TO "_icloud",
+        GRANT READ TO "_world"
+    );
+
+    RECORD TYPE Users (
+        "___createTime" TIMESTAMP,
+        "___createdBy"  REFERENCE,
+        "___etag"       STRING,
+        "___modTime"    TIMESTAMP,
+        "___modifiedBy" REFERENCE,
+        "___recordID"   REFERENCE,
+        roles           LIST<INT64>,
+        GRANT WRITE TO "_creator",
+        GRANT READ TO "_world"
+    );
