@@ -1346,13 +1346,14 @@ struct EinstellungenView: View {
                             }
                         Button("Klassencode speichern") {
                             klassenCode = Familiencode.bereinigt(klassenEingabe)
-                            klassenEingabe = ""
+                            klassenEingabe = klassenCode
                         }
                         .disabled(!Familiencode.istGueltig(klassenEingabe) || klassenEingabe == klassenCode)
                         if !klassenCode.isEmpty && modus != "eltern" {
                             Button("Klassencode entfernen", role: .destructive) {
                                 UserDefaults.standard.removeObject(forKey: "klassenPin-K-" + klassenCode)
                                 klassenCode = ""
+                                klassenEingabe = ""
                             }
                         }
                         if !klassenInfo.isEmpty {
@@ -1520,6 +1521,7 @@ struct EinstellungenView: View {
             }
             .onAppear {
                 codeEingabe = familienCode
+                klassenEingabe = klassenCode
                 kindNameEntwurf = kindName
             }
             .onChange(of: fokus) {
