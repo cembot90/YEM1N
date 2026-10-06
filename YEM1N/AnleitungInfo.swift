@@ -1,0 +1,253 @@
+import SwiftUI
+import SwiftData
+import UIKit
+import UniformTypeIdentifiers
+import CloudKit
+import AVFoundation
+import UserNotifications
+import PencilKit
+import CryptoKit
+import Security
+import WebKit
+import CoreImage.CIFilterBuiltins
+
+// ============================================================
+// MARK: - Anleitung und Info
+// ============================================================
+
+enum Lernzeit {
+    static let kennung = "yem1n.lernzeit"
+
+    static func planen(an: Bool, minuten: Int) {
+        let zentrum = UNUserNotificationCenter.current()
+        zentrum.removePendingNotificationRequests(withIdentifiers: [kennung])
+        guard an else { return }
+        zentrum.requestAuthorization(options: [.alert, .sound]) { erlaubt, _ in
+            guard erlaubt else { return }
+            let inhalt = UNMutableNotificationContent()
+            inhalt.title = "YEM1N"
+            inhalt.body = "Zeit zum Üben. Ein paar Aufgaben, dann hast du es geschafft."
+            inhalt.sound = .default
+            var zeit = DateComponents()
+            zeit.hour = minuten / 60
+            zeit.minute = minuten % 60
+            let ausloeser = UNCalendarNotificationTrigger(dateMatching: zeit, repeats: true)
+            zentrum.add(UNNotificationRequest(identifier: kennung, content: inhalt, trigger: ausloeser))
+        }
+    }
+}
+
+enum AppInfo {
+    static let anleitungURL = "https://cembot90.github.io/YEM1N/anleitung.html"
+    static let feedbackAdresse = "cembot@icloud.com"
+
+    static var version: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?"
+    }
+    static var build: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "?"
+    }
+    static var geraet: String {
+        UIDevice.current.model + ", iOS " + UIDevice.current.systemVersion
+    }
+    static func feedbackURL(modus: String) -> URL? {
+        let rolle = modus == "eltern" ? "Eltern-Gerät" : (modus == "kind" ? "Kind-Gerät" : "ohne Rolle")
+        let text = "\n\n\nBitte oben schreiben, hier nicht löschen:\nYEM1N \(version) (\(build))\n\(geraet)\n\(rolle)"
+        var c = URLComponents()
+        c.scheme = "mailto"
+        c.path = feedbackAdresse
+        c.queryItems = [
+            URLQueryItem(name: "subject", value: "YEM1N Feedback"),
+            URLQueryItem(name: "body", value: text)
+        ]
+        return c.url
+    }
+}
+
+struct WebAnsicht: UIViewRepresentable {
+    let url: URL
+    @Binding var laedt: Bool
+    @Binding var fehler: Bool
+
+    func makeCoordinator() -> Koordinator { Koordinator(self) }
+
+    func makeUIView(context: Context) -> WKWebView {
+        let web = WKWebView(frame: .zero)
+        web.isOpaque = false
+        web.backgroundColor = .clear
+        web.navigationDelegate = context.coordinator
+        web.load(URLRequest(url: url, cachePolicy: .reloadRevalidatingCacheData, timeoutInterval: 20))
+        return web
+    }
+
+    func updateUIView(_ uiView: WKWebView, context: Context) {}
+
+    final class Koordinator: NSObject, WKNavigationDelegate {
+        let eltern: WebAnsicht
+        init(_ eltern: WebAnsicht) { self.eltern = eltern }
+
+        func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+            eltern.laedt = false
+            eltern.fehler = false
+        }
+        func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+            eltern.laedt = false
+            eltern.fehler = true
+        }
+        func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+            eltern.laedt = false
+            eltern.fehler = true
+        }
+        func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction,
+                     decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+            if navigationAction.navigationType == .linkActivated,
+               let ziel = navigationAction.request.url,
+               ziel.host != "cembot90.github.io" {
+                UIApplication.shared.open(ziel)
+                decisionHandler(.cancel)
+                return
+            }
+            decisionHandler(.allow)
+        }
+    }
+}
+
+struct AnleitungView: View {
+    @State private var laedt = true
+    @State private var fehler = false
+
+    var body: some View {
+        ZStack {
+            Color(red: 0.97, green: 0.98, blue: 1.0).ignoresSafeArea()
+            if let url = URL(string: AppInfo.anleitungURL) {
+                WebAnsicht(url: url, laedt: $laedt, fehler: $fehler)
+                    .opacity(fehler ? 0 : 1)
+            }
+            if laedt && !fehler {
+                ProgressView("Anleitung wird geladen")
+                    .tint(Theme.navy)
+                    .foregroundStyle(Theme.navy)
+            }
+            if fehler {
+                kurzAnleitung
+            }
+        }
+        .navigationTitle("Anleitung")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private let kurz: [(String, String)] = [
+        ("Einrichten", "Beim ersten Start Kind oder Eltern wählen. Die Eltern erzeugen den Familiencode und tragen ihn auf dem Kind-Gerät ein. Ein Klassencode ist zusätzlich möglich."),
+        ("Üben", "Im Tab Schule eine Arbeit wählen, dann eine Übung. Antwort eintippen und bestätigen. Nach jeder Übung gibt es bis zu drei Sterne."),
+        ("Weiter", "Am Ende einer Übung führt der Knopf Nächste Übung direkt zur nächsten."),
+        ("Hilfen", "Der Lautsprecher liest die Aufgabe vor. Hinweis, Lösung zeigen, Notizblock und Joker helfen bei schweren Aufgaben."),
+        ("Joker", "Der Joker schickt eine Aufgabe an die Eltern. Sie antworten auf ihrem Gerät."),
+        ("Fehlerheft", "Falsche Aufgaben kommen ins Fehlerheft und können dort wiederholt werden."),
+        ("Neue Aufgaben", "Im Tab Schule nach unten ziehen oder Neue Aufgaben holen wählen. Dafür braucht das Gerät Internet."),
+        ("Hilfe", "Die ausführliche Anleitung öffnet sich, sobald das Gerät online ist. Unter Info kannst du Feedback an den Admin schicken.")
+    ]
+
+    private var kurzAnleitung: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 12) {
+                Label("Kein Internet. Das ist die Kurzfassung.", systemImage: "wifi.slash")
+                    .font(.system(.subheadline, design: .rounded).weight(.bold))
+                    .foregroundStyle(Theme.navy)
+                ForEach(kurz, id: \.0) { eintrag in
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(eintrag.0)
+                            .font(.system(.headline, design: .rounded).weight(.heavy))
+                            .foregroundStyle(Theme.navy)
+                        Text(eintrag.1)
+                            .font(.subheadline)
+                            .foregroundStyle(Theme.navy.opacity(0.85))
+                    }
+                    .padding(14)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color.white, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                }
+            }
+            .padding(20)
+        }
+    }
+}
+
+struct InfoView: View {
+    @AppStorage("modus") private var modus = ""
+    @State private var kopiert = false
+
+    private var infoText: String {
+        "YEM1N \(AppInfo.version) (\(AppInfo.build)), \(AppInfo.geraet)"
+    }
+
+    var body: some View {
+        ZStack {
+            HintergrundView()
+            ScrollView {
+                VStack(spacing: 16) {
+                    VStack(spacing: 6) {
+                        Text("YEM1N")
+                            .font(.system(size: 46, weight: .black, design: .rounded))
+                            .foregroundStyle(Theme.gelb)
+                        Text("Version \(AppInfo.version), Build \(AppInfo.build)")
+                            .font(.system(.subheadline, design: .rounded).weight(.semibold))
+                            .foregroundStyle(Theme.textSanft)
+                        Text(AppInfo.geraet)
+                            .font(.footnote)
+                            .foregroundStyle(Theme.textSanft)
+                    }
+                    .padding(.top, 10)
+
+                    VStack(spacing: 10) {
+                        NavigationLink { AnleitungView() } label: {
+                            zeile("Anleitung", "book.fill")
+                        }
+                        NavigationLink { DatenschutzView() } label: {
+                            zeile("Datenschutzhinweise", "hand.raised.fill")
+                        }
+                        if let url = AppInfo.feedbackURL(modus: modus) {
+                            Link(destination: url) {
+                                zeile("Feedback an den Admin", "envelope.fill")
+                            }
+                        }
+                        Button {
+                            UIPasteboard.general.string = infoText
+                            kopiert = true
+                        } label: {
+                            zeile(kopiert ? "Kopiert" : "Versionsinfo kopieren", kopiert ? "checkmark" : "doc.on.doc")
+                        }
+                    }
+
+                    Text("Fehler gefunden oder eine Idee? Schreibe kurz, was passiert ist. Version und Gerät hängen automatisch an der Nachricht.")
+                        .font(.footnote)
+                        .multilineTextAlignment(.center)
+                        .foregroundStyle(Theme.textSanft)
+                        .padding(.horizontal, 10)
+                }
+                .padding(20)
+            }
+            .scrollIndicators(.hidden)
+        }
+        .navigationTitle("Info")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private func zeile(_ titel: String, _ symbol: String) -> some View {
+        HStack(spacing: 14) {
+            Image(systemName: symbol)
+                .font(.system(size: 18, weight: .bold))
+                .foregroundStyle(Theme.navy)
+                .frame(width: 40, height: 40)
+                .background(Theme.gelb, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            Text(titel)
+                .font(.system(.headline, design: .rounded).weight(.bold))
+                .foregroundStyle(Color.white)
+            Spacer()
+            Image(systemName: "chevron.right")
+                .font(.footnote.weight(.bold))
+                .foregroundStyle(Theme.gelb)
+        }
+        .padding(14)
+        .glasKarte(radius: 20)
+    }
+}

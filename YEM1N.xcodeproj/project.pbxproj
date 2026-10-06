@@ -8,8 +8,6 @@
 
 /* Begin PBXFileReference section */
 		000000000000000000000120 /* YEM1N.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = YEM1N.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		2785730E306D745F009BAA9E /* YEM1N.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = YEM1N.swift; path = ../../../../../Downloads/YEM1N.swift; sourceTree = "<group>"; };
-		2785730F306D7468009BAA9E /* MyApp (1).swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "MyApp (1).swift"; path = "../../../../../Downloads/MyApp (1).swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -62,8 +60,6 @@
 		2785730D306D745F009BAA9E /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				2785730F306D7468009BAA9E /* MyApp (1).swift */,
-				2785730E306D745F009BAA9E /* YEM1N.swift */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
