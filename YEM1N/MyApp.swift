@@ -9107,6 +9107,17 @@ extension CloudDienst {
         UserDefaults.standard.removeObject(forKey: "klassenPin-" + code)
     }
 
+    static func stelleOeffentlichenSchluesselSicher(_ code: String) async throws {
+        guard let k = Klassensiegel.privaterSchluessel(code) else { return }
+        if await ladeKlassenSchluessel(code) != nil { return }
+        let r = CKRecord(recordType: "KlassenSchluessel",
+                         recordID: CKRecord.ID(recordName: "klassenkey-" + code))
+        r["klassenCode"] = code as CKRecordValue
+        r["publicKey"] = k.publicKey.rawRepresentation.base64EncodedString() as CKRecordValue
+        let erg = try await db.modifyRecords(saving: [r], deleting: [], savePolicy: .allKeys)
+        for (_, e) in erg.saveResults { _ = try e.get() }
+    }
+
     static func ladeKlassenSchluessel(_ code: String) async -> Data? {
         guard let r = try? await db.record(for: CKRecord.ID(recordName: "klassenkey-" + code)),
               let b64 = r["publicKey"] as? String else { return nil }
@@ -9150,6 +9161,9 @@ extension CloudDienst {
         r["json"] = json as CKRecordValue
         r["aufgaben"] = paket.uebungen.reduce(0) { $0 + $1.aufgaben.count } as CKRecordValue
         if code.hasPrefix("K-") {
+            // Falls der öffentliche Schlüssel in dieser Cloud fehlt (zum Beispiel nach dem Wechsel auf Production),
+            // wird er mit dem vorhandenen privaten Schlüssel neu hinterlegt. So bleibt der Schlüssel gleich.
+            try await stelleOeffentlichenSchluesselSicher(code)
             guard let sig = Klassensiegel.signiere(code: code, json: json) else { throw KlassenFehler.keinSchluessel }
             r["sig"] = sig as CKRecordValue
         }
