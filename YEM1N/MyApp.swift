@@ -1258,6 +1258,8 @@ struct EinstellungenView: View {
     @AppStorage("vorschulTabEltern") private var vorschulEltern = false
     @AppStorage("jokerIch") private var jokerIch = ""
     @AppStorage("profilFertig") private var profilFertig = true
+    @AppStorage("lernzeitAn") private var lernzeitAn = false
+    @AppStorage("lernzeitMinuten") private var lernzeitMinuten = 16 * 60
     @State private var klassenEingabe = ""
     @State private var klassenAdmin = false
     @State private var klassenInfo = ""
@@ -1272,6 +1274,19 @@ struct EinstellungenView: View {
     }
 
     private let zeile = Color.white.opacity(0.08)
+
+    private var lernzeitBinding: Binding<Date> {
+        Binding(
+            get: {
+                Calendar.current.date(bySettingHour: lernzeitMinuten / 60,
+                                      minute: lernzeitMinuten % 60,
+                                      second: 0, of: Date()) ?? Date()
+            },
+            set: {
+                let c = Calendar.current.dateComponents([.hour, .minute], from: $0)
+                lernzeitMinuten = (c.hour ?? 16) * 60 + (c.minute ?? 0)
+            })
+    }
 
     var body: some View {
         NavigationStack {
@@ -1388,6 +1403,21 @@ struct EinstellungenView: View {
                     .task { klassenAdmin = Klassensiegel.istAdmin("K-" + klassenCode) }
                     .onChange(of: klassenCode) { klassenAdmin = Klassensiegel.istAdmin("K-" + klassenCode) }
                     .listRowBackground(zeile)
+
+                    Section {
+                        Toggle("Täglich erinnern", isOn: $lernzeitAn)
+                            .tint(Theme.gelb)
+                        if lernzeitAn {
+                            DatePicker("Uhrzeit", selection: lernzeitBinding, displayedComponents: .hourAndMinute)
+                        }
+                    } header: {
+                        Text("Lernzeit")
+                    } footer: {
+                        Text("Eine Mitteilung erinnert dieses Gerät jeden Tag ans Üben. Eltern können sie auf dem Kind-Gerät einstellen.")
+                    }
+                    .listRowBackground(zeile)
+                    .onChange(of: lernzeitAn) { Lernzeit.planen(an: lernzeitAn, minuten: lernzeitMinuten) }
+                    .onChange(of: lernzeitMinuten) { Lernzeit.planen(an: lernzeitAn, minuten: lernzeitMinuten) }
 
                     Section {
                         NavigationLink { InfoView() } label: {
@@ -2371,8 +2401,25 @@ enum Bewertung {
     case richtig, falsch, loesung
 }
 
+// Zeigt eine Übung und wechselt am Ende auf Wunsch direkt zur nächsten
 struct UebungView: View {
+    let start: Uebung
+    @State private var aktuelle: Uebung?
+
+    init(uebung: Uebung) {
+        self.start = uebung
+    }
+
+    var body: some View {
+        let u = aktuelle ?? start
+        UebungInhalt(uebung: u, wechsel: { aktuelle = $0 })
+            .id(u.persistentModelID)
+    }
+}
+
+struct UebungInhalt: View {
     @Bindable var uebung: Uebung
+    var wechsel: ((Uebung) -> Void)? = nil
     @Environment(\.dismiss) private var dismiss
 
     @State private var eingabe = ""
@@ -2397,6 +2444,15 @@ struct UebungView: View {
     @State private var notiz = PKDrawing()
 
     private var istProbe: Bool { uebung.arbeit?.spezial == "probe" }
+
+    // Die nächste Übung derselben Arbeit, bevorzugt eine noch nicht fertige
+    private var naechsteUebung: Uebung? {
+        guard let arbeit = uebung.arbeit else { return nil }
+        let liste = arbeit.sortierteUebungen
+        guard let i = liste.firstIndex(where: { $0.persistentModelID == uebung.persistentModelID }) else { return nil }
+        let danach = Array(liste[(i + 1)...])
+        return danach.first(where: { !$0.istFertig }) ?? danach.first
+    }
 
     private var naechste: Aufgabe? { uebung.sortierteAufgaben.first { !$0.erledigt } }
     private var aktuell: Aufgabe? { bewertet ?? naechste }
@@ -2528,7 +2584,37 @@ struct UebungView: View {
         .padding(24)
         .frame(maxWidth: .infinity)
         .glasKarte(radius: 34)
+        .overlay(alignment: .topTrailing) { vorlesenKnopf(a) }
         .padding(.horizontal, 20)
+    }
+
+    @ViewBuilder
+    private func vorlesenKnopf(_ a: Aufgabe) -> some View {
+        if a.art != "text" && a.art != "mauer" {
+            Button {
+                Sprecher.shared.sprich(sprechText(a), code: "de-DE")
+            } label: {
+                Image(systemName: "speaker.wave.2.fill")
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(Theme.navy)
+                    .frame(width: 36, height: 36)
+                    .background(Theme.gelb, in: Circle())
+            }
+            .padding(14)
+            .accessibilityLabel("Vorlesen")
+        }
+    }
+
+    // Rechenzeichen werden für die Sprachausgabe in Wörter übersetzt
+    private func sprechText(_ a: Aufgabe) -> String {
+        var t = a.frage + ". " + a.rechnung
+        let tausch: [(String, String)] = [
+            ("\n", ". "), (" · ", " mal "), (" : ", " geteilt durch "),
+            (" - ", " minus "), (" + ", " plus "), ("=", " gleich "),
+            (" ? ", " und "), ("<", " kleiner "), (">", " größer ")
+        ]
+        for (alt, neu) in tausch { t = t.replacingOccurrences(of: alt, with: neu) }
+        return t
     }
 
     private func grosseSchrift(_ a: Aufgabe) -> Bool {
@@ -3048,7 +3134,20 @@ struct UebungView: View {
                         .padding(.horizontal, 24)
                 }
 
-                GelberKnopf(titel: "Nochmal üben") { neuStarten() }
+                if let weiter = naechsteUebung, let wechsel {
+                    GelberKnopf(titel: "Nächste Übung: \(weiter.titel)") { wechsel(weiter) }
+                    Button { neuStarten() } label: {
+                        Label("Nochmal üben", systemImage: "arrow.counterclockwise")
+                            .font(.system(.headline, design: .rounded))
+                            .foregroundStyle(Theme.gelb)
+                            .frame(maxWidth: .infinity, minHeight: 52)
+                            .background(Theme.gelb.opacity(0.15), in: Capsule())
+                            .overlay(Capsule().stroke(Theme.gelb.opacity(0.5), lineWidth: 1.5))
+                    }
+                    .padding(.horizontal, 24)
+                } else {
+                    GelberKnopf(titel: "Nochmal üben") { neuStarten() }
+                }
 
                 ShareLink(item: Nachricht.ergebnisMathe(uebung)) {
                     Label("Ergebnis an Eltern schicken", systemImage: "paperplane.fill")
@@ -11310,6 +11409,28 @@ struct DatenschutzView: View {
 // MARK: - Anleitung und Info
 // ============================================================
 
+enum Lernzeit {
+    static let kennung = "yem1n.lernzeit"
+
+    static func planen(an: Bool, minuten: Int) {
+        let zentrum = UNUserNotificationCenter.current()
+        zentrum.removePendingNotificationRequests(withIdentifiers: [kennung])
+        guard an else { return }
+        zentrum.requestAuthorization(options: [.alert, .sound]) { erlaubt, _ in
+            guard erlaubt else { return }
+            let inhalt = UNMutableNotificationContent()
+            inhalt.title = "YEM1N"
+            inhalt.body = "Zeit zum Üben. Ein paar Aufgaben, dann hast du es geschafft."
+            inhalt.sound = .default
+            var zeit = DateComponents()
+            zeit.hour = minuten / 60
+            zeit.minute = minuten % 60
+            let ausloeser = UNCalendarNotificationTrigger(dateMatching: zeit, repeats: true)
+            zentrum.add(UNNotificationRequest(identifier: kennung, content: inhalt, trigger: ausloeser))
+        }
+    }
+}
+
 enum AppInfo {
     static let anleitungURL = "https://cembot90.github.io/YEM1N/anleitung.html"
     static let feedbackAdresse = "cembot@icloud.com"
@@ -11402,23 +11523,46 @@ struct AnleitungView: View {
                     .foregroundStyle(Theme.navy)
             }
             if fehler {
-                VStack(spacing: 14) {
-                    Image(systemName: "wifi.slash")
-                        .font(.system(size: 40, weight: .bold))
-                        .foregroundStyle(Theme.navy)
-                    Text("Die Anleitung braucht Internet.")
-                        .font(.system(.headline, design: .rounded).weight(.heavy))
-                        .foregroundStyle(Theme.navy)
-                    Text("Verbinde das Gerät mit dem Internet und öffne die Seite noch einmal.")
-                        .font(.subheadline)
-                        .multilineTextAlignment(.center)
-                        .foregroundStyle(Theme.navy.opacity(0.7))
-                }
-                .padding(30)
+                kurzAnleitung
             }
         }
         .navigationTitle("Anleitung")
         .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private let kurz: [(String, String)] = [
+        ("Einrichten", "Beim ersten Start Kind oder Eltern wählen. Die Eltern erzeugen den Familiencode und tragen ihn auf dem Kind-Gerät ein. Ein Klassencode ist zusätzlich möglich."),
+        ("Üben", "Im Tab Schule eine Arbeit wählen, dann eine Übung. Antwort eintippen und bestätigen. Nach jeder Übung gibt es bis zu drei Sterne."),
+        ("Weiter", "Am Ende einer Übung führt der Knopf Nächste Übung direkt zur nächsten."),
+        ("Hilfen", "Der Lautsprecher liest die Aufgabe vor. Hinweis, Lösung zeigen, Notizblock und Joker helfen bei schweren Aufgaben."),
+        ("Joker", "Der Joker schickt eine Aufgabe an die Eltern. Sie antworten auf ihrem Gerät."),
+        ("Fehlerheft", "Falsche Aufgaben kommen ins Fehlerheft und können dort wiederholt werden."),
+        ("Neue Aufgaben", "Im Tab Schule nach unten ziehen oder Neue Aufgaben holen wählen. Dafür braucht das Gerät Internet."),
+        ("Hilfe", "Die ausführliche Anleitung öffnet sich, sobald das Gerät online ist. Unter Info kannst du Feedback an den Admin schicken.")
+    ]
+
+    private var kurzAnleitung: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 12) {
+                Label("Kein Internet. Das ist die Kurzfassung.", systemImage: "wifi.slash")
+                    .font(.system(.subheadline, design: .rounded).weight(.bold))
+                    .foregroundStyle(Theme.navy)
+                ForEach(kurz, id: \.0) { eintrag in
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(eintrag.0)
+                            .font(.system(.headline, design: .rounded).weight(.heavy))
+                            .foregroundStyle(Theme.navy)
+                        Text(eintrag.1)
+                            .font(.subheadline)
+                            .foregroundStyle(Theme.navy.opacity(0.85))
+                    }
+                    .padding(14)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color.white, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                }
+            }
+            .padding(20)
+        }
     }
 }
 
