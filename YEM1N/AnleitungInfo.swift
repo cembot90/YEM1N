@@ -138,11 +138,15 @@ struct AnleitungView: View {
 
     private let kurz: [(String, String)] = [
         ("Einrichten", "Beim ersten Start Kind oder Eltern wählen. Die Eltern erzeugen den Familiencode und tragen ihn auf dem Kind-Gerät ein. Ein Klassencode ist zusätzlich möglich."),
+        ("QR-Code", "Statt abzutippen: Das Eltern-Gerät zeigt den Code unter Einstellungen als QR-Code, das Kind-Gerät scannt ihn. Den Familiencode nur dem Kind oder dem anderen Elternteil zeigen."),
         ("Üben", "Im Tab Schule eine Arbeit wählen, dann eine Übung. Antwort eintippen und bestätigen. Nach jeder Übung gibt es bis zu drei Sterne."),
         ("Weiter", "Am Ende einer Übung führt der Knopf Nächste Übung direkt zur nächsten."),
         ("Hilfen", "Der Lautsprecher liest die Aufgabe vor. Hinweis, Lösung zeigen, Notizblock und Joker helfen bei schweren Aufgaben."),
         ("Joker", "Der Joker schickt eine Aufgabe an die Eltern. Sie antworten auf ihrem Gerät."),
         ("Fehlerheft", "Falsche Aufgaben kommen ins Fehlerheft und können dort wiederholt werden."),
+        ("Abzeichen", "Für Serien, Sterne und fehlerfreie Runden gibt es Abzeichen. Das Pokal-Symbol im Tab Schule zeigt alle. Ein neues Abzeichen erscheint gleich nach der Übung."),
+        ("Lernzeit", "In den Einstellungen lässt sich eine tägliche Erinnerung ans Üben einschalten, mit fester Uhrzeit."),
+        ("Für Eltern", "Die Übersicht zeigt den Wochenbericht, die Abzeichen und den Schwächen-Radar mit den Übungen, die am schwersten fallen."),
         ("Neue Aufgaben", "Im Tab Schule nach unten ziehen oder Neue Aufgaben holen wählen. Dafür braucht das Gerät Internet."),
         ("Hilfe", "Die ausführliche Anleitung öffnet sich, sobald das Gerät online ist. Unter Info kannst du Feedback an den Admin schicken.")
     ]
