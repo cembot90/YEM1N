@@ -46,6 +46,92 @@ enum Erfolge {
         return n
     }
 
+    // MARK: Serie mit freiem Tag
+    // Ein einzelner verpasster Tag unterbricht die Serie nicht, aber nur einmal
+    // pro Woche. Zwei verpasste Tage hintereinander beenden sie.
+
+    static let freierTagAbstand = 7
+
+    /// `laenge` zählt nur Tage, an denen geübt wurde. `gerettet` ist die Zahl der
+    /// freien Tage, die die Serie überbrückt haben.
+    static func serieMitSchutz(_ tage: Set<Date>, heute: Date = Date.now,
+                               kalender: Calendar = .current) -> (laenge: Int, gerettet: Int) {
+        func vor(_ t: Date) -> Date {
+            kalender.date(byAdding: .day, value: -1, to: t) ?? t.addingTimeInterval(-86400)
+        }
+        let eigene = Set(tage.map { kalender.startOfDay(for: $0) })
+        var tag = kalender.startOfDay(for: heute)
+        // Heute ist noch offen und zählt nicht als verpasst
+        if !eigene.contains(tag) { tag = vor(tag) }
+        var laenge = 0
+        var gerettet = 0
+        var letzteLuecke: Date?
+        var schutz = 0
+        while schutz < 4000 {
+            schutz += 1
+            if eigene.contains(tag) {
+                laenge += 1
+                tag = vor(tag)
+                continue
+            }
+            let davor = vor(tag)
+            var frei = true
+            if let l = letzteLuecke {
+                let abstand = kalender.dateComponents([.day], from: tag, to: l).day ?? 0
+                frei = abs(abstand) >= freierTagAbstand
+            }
+            guard eigene.contains(davor), frei else { break }
+            gerettet += 1
+            letzteLuecke = tag
+            tag = davor
+        }
+        return (laenge, gerettet)
+    }
+
+    static func geschuetzteSerie(_ liste: [RundenErgebnis], heute: Date = Date.now,
+                                 kalender: Calendar = .current) -> (laenge: Int, gerettet: Int) {
+        let tage = Set(liste.map { kalender.startOfDay(for: $0.zeitpunkt) })
+        return serieMitSchutz(tage, heute: heute, kalender: kalender)
+    }
+
+    // MARK: Wochenziel
+
+    /// Fünf Tage pro Woche mit dem Tagesziel, der Rest ist Zugabe.
+    static func wochenziel(tagesziel: Int) -> Int { max(tagesziel, 1) * 5 }
+    static let wochenBelohnung = 10
+    static let wochenBelohnungKey = "wochenBelohnung"
+
+    static func wochenRunden(_ liste: [RundenErgebnis], jetzt: Date = Date.now,
+                             kalender: Calendar = .current) -> Int {
+        let start = kalender.dateInterval(of: .weekOfYear, for: jetzt)?.start
+            ?? kalender.startOfDay(for: jetzt)
+        return liste.filter { $0.zeitpunkt >= start && $0.zeitpunkt <= jetzt }.count
+    }
+
+    static func wochenKennung(_ jetzt: Date = Date.now, kalender: Calendar = .current) -> String {
+        let t = kalender.dateComponents([.yearForWeekOfYear, .weekOfYear], from: jetzt)
+        return "\(t.yearForWeekOfYear ?? 0)-\(t.weekOfYear ?? 0)"
+    }
+
+    static func belohnungAbholbar(_ liste: [RundenErgebnis], tagesziel: Int, jetzt: Date = Date.now,
+                                  kalender: Calendar = .current,
+                                  speicher: UserDefaults = .standard) -> Bool {
+        guard wochenRunden(liste, jetzt: jetzt, kalender: kalender) >= wochenziel(tagesziel: tagesziel) else {
+            return false
+        }
+        return speicher.string(forKey: wochenBelohnungKey) != wochenKennung(jetzt, kalender: kalender)
+    }
+
+    /// Merkt sich die Woche und gibt die Münzen zurück. Das Gutschreiben macht der Aufrufer.
+    static func belohnungHolen(_ liste: [RundenErgebnis], tagesziel: Int, jetzt: Date = Date.now,
+                               kalender: Calendar = .current,
+                               speicher: UserDefaults = .standard) -> Int {
+        guard belohnungAbholbar(liste, tagesziel: tagesziel, jetzt: jetzt,
+                                kalender: kalender, speicher: speicher) else { return 0 }
+        speicher.set(wochenKennung(jetzt, kalender: kalender), forKey: wochenBelohnungKey)
+        return wochenBelohnung
+    }
+
     static func besteSerie(_ liste: [RundenErgebnis]) -> Int {
         let kal = Calendar.current
         let tage = tageMitRunde(liste).sorted()
@@ -145,6 +231,7 @@ struct ErfolgeView: View {
     private var lokale: [RundenErgebnis]
     @AppStorage("tagesziel") private var ziel = 2
     @AppStorage("kindName") private var kindName = ""
+    @State private var belohnungInfo: String?
 
     var body: some View {
         NavigationStack {
@@ -154,6 +241,7 @@ struct ErfolgeView: View {
                     VStack(alignment: .leading, spacing: 16) {
                         serieKarte
                         zielKarte
+                        wochenKarte
                         pokaleKarte
                     }
                     .padding(20)
@@ -171,15 +259,20 @@ struct ErfolgeView: View {
     }
 
     private var serieKarte: some View {
-        let serie = Erfolge.serie(lokale)
+        let serie = Erfolge.geschuetzteSerie(lokale)
         return HStack(spacing: 16) {
             Text("🔥").font(.system(size: 46))
             VStack(alignment: .leading, spacing: 2) {
-                Text(serie == 1 ? "1 Tag in Folge" : "\(serie) Tage in Folge")
+                Text(serie.laenge == 1 ? "1 Tag in Folge" : "\(serie.laenge) Tage in Folge")
                     .font(.system(.title3, design: .rounded).weight(.heavy))
                     .foregroundStyle(Color.white)
                 Text("Beste Serie: \(Erfolge.besteSerie(lokale))")
                     .font(.footnote)
+                    .foregroundStyle(Theme.textSanft)
+                Text(serie.gerettet > 0
+                     ? "🧊 Ein freier Tag hat deine Serie gerettet. Der nächste ist erst in einer Woche wieder frei."
+                     : "🧊 Ein freier Tag pro Woche ist erlaubt, ohne dass die Serie endet.")
+                    .font(.caption)
                     .foregroundStyle(Theme.textSanft)
             }
             Spacer()
@@ -209,6 +302,57 @@ struct ErfolgeView: View {
                     .foregroundStyle(Theme.textSanft)
             }
             Spacer()
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .glasKarte(radius: 26)
+    }
+
+    private var wochenKarte: some View {
+        let runden = Erfolge.wochenRunden(lokale)
+        let wochenZiel = Erfolge.wochenziel(tagesziel: ziel)
+        let anteil = min(Double(runden) / Double(max(wochenZiel, 1)), 1)
+        let holbar = Erfolge.belohnungAbholbar(lokale, tagesziel: ziel)
+        return VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 16) {
+                ZStack {
+                    Fortschrittsring(wert: anteil, breite: 8)
+                    Text("\(runden)/\(wochenZiel)")
+                        .font(.system(.footnote, design: .rounded).weight(.heavy))
+                        .foregroundStyle(Color.white)
+                }
+                .frame(width: 64, height: 64)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Wochenziel")
+                        .font(.system(.title3, design: .rounded).weight(.heavy))
+                        .foregroundStyle(Color.white)
+                    Text(runden >= wochenZiel ? "Geschafft! 🎉" : "Noch \(wochenZiel - runden) \(wochenZiel - runden == 1 ? "Runde" : "Runden") bis Sonntag")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.textSanft)
+                }
+                Spacer()
+            }
+            if holbar {
+                Button {
+                    let m = Erfolge.belohnungHolen(lokale, tagesziel: ziel)
+                    if m > 0 {
+                        Muenzen.gutschreiben(m)
+                        Haptik.erfolg()
+                        belohnungInfo = "+\(m) Münzen"
+                    }
+                } label: {
+                    Label("Belohnung abholen: \(Erfolge.wochenBelohnung) Münzen", systemImage: "gift.fill")
+                        .font(.system(.headline, design: .rounded).weight(.heavy))
+                        .foregroundStyle(Theme.navy)
+                        .frame(maxWidth: .infinity, minHeight: 50)
+                        .background(Theme.mint, in: Capsule())
+                }
+                .buttonStyle(TastenStil())
+            } else if let belohnungInfo {
+                Text("\(belohnungInfo) auf deinem Konto. Bis nächste Woche!")
+                    .font(.system(.subheadline, design: .rounded).weight(.bold))
+                    .foregroundStyle(Theme.mint)
+            }
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
