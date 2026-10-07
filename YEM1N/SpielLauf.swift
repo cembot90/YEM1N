@@ -4,7 +4,18 @@ import UIKit
 
 // ============================================================
 // MARK: - Zahlenlauf: Springen, ausweichen, sammeln
+// Grafiken: Jumper Pack von Kenney (www.kenney.nl), CC0
 // ============================================================
+
+enum SpielBild {
+    static let held = ["held_lauf1", "held_lauf2"]
+    static let heldSprung = "held_sprung"
+    static let heldAua = "held_aua"
+    static let hindernisse = ["hindernis_kaktus", "hindernis_kugel", "hindernis_pilz"]
+    static let muenze = "muenze"
+    static let boden = "boden"
+    static let huegel = "huegel"
+}
 
 final class LaufSzene: SKScene {
 
@@ -12,15 +23,19 @@ final class LaufSzene: SKScene {
     var beiEnde: ((Int) -> Void)?
 
     // Figuren
-    private let spieler = SKLabelNode(text: "🦊")
-    private let boden = SKSpriteNode(color: .white, size: CGSize(width: 10, height: 5))
+    private let spieler = SKSpriteNode(imageNamed: SpielBild.held[0])
     private let punkteLabel = SKLabelNode(text: "0")
     private let infoLabel = SKLabelNode(text: "Tippen und losrennen")
     private let untertitelLabel = SKLabelNode(text: "Tippen zum Springen")
 
-    private var hindernisse: [SKLabelNode] = []
-    private var sammler: [SKLabelNode] = []
-    private var wolken: [SKLabelNode] = []
+    private var laufBilder: [SKTexture] = []
+    private var sprungBild = SKTexture(imageNamed: SpielBild.heldSprung)
+    private var auaBild = SKTexture(imageNamed: SpielBild.heldAua)
+
+    private var bodenKacheln: [SKSpriteNode] = []
+    private var huegel: [SKSpriteNode] = []
+    private var hindernisse: [SKSpriteNode] = []
+    private var sammler: [SKSpriteNode] = []
 
     // Zustand
     private var vy: CGFloat = 0
@@ -29,34 +44,57 @@ final class LaufSzene: SKScene {
     private var vorbei = false
     private var punkte = 0
     private var vorigeZeit: TimeInterval = 0
-    private var bisHindernis: CGFloat = 400
-    private var bisMuenze: CGFloat = 260
+    private var bisHindernis: CGFloat = 420
+    private var bisMuenze: CGFloat = 280
 
     // Werte, die das Spielgefühl bestimmen
     private let schwerkraft: CGFloat = -2400
-    private let sprungKraft: CGFloat = 820
+    private let sprungKraft: CGFloat = 840
     private let grundTempo: CGFloat = 330
-    private let hoechstTempo: CGFloat = 760
+    private let hoechstTempo: CGFloat = 780
+
+    // Größen in Punkten
+    private let spielerHoehe: CGFloat = 70
+    private let hindernisHoehe: CGFloat = 58
+    private let muenzGroesse: CGFloat = 38
+    private let bodenHoehe: CGFloat = 56
+    private let kachelBreite: CGFloat = 220
 
     private var bodenY: CGFloat { size.height * 0.24 }
-    private var ruheY: CGFloat { bodenY + 26 }
+    private var ruheY: CGFloat { bodenY + spielerHoehe / 2 }
     private var tempo: CGFloat { min(grundTempo + CGFloat(punkte) * 2.2, hoechstTempo) }
 
     // MARK: Aufbau
 
     override func didMove(to view: SKView) {
         backgroundColor = UIColor(Theme.tiefNavy)
+        laufBilder = SpielBild.held.map { SKTexture(imageNamed: $0) }
+        for bild in laufBilder { bild.filteringMode = .linear }
 
-        boden.anchorPoint = CGPoint(x: 0.5, y: 0.5)
-        boden.alpha = 0.35
-        boden.zPosition = 1
-        addChild(boden)
+        // Hügel im Hintergrund, zwei Stück für den nahtlosen Übergang
+        for _ in 0..<2 {
+            let berg = SKSpriteNode(imageNamed: SpielBild.huegel)
+            berg.anchorPoint = CGPoint(x: 0, y: 0)
+            berg.alpha = 0.16
+            berg.zPosition = 0
+            addChild(berg)
+            huegel.append(berg)
+        }
 
-        spieler.fontSize = 48
-        spieler.verticalAlignmentMode = .center
-        spieler.horizontalAlignmentMode = .center
+        // Boden aus aneinandergereihten Kacheln
+        for _ in 0..<8 {
+            let kachel = SKSpriteNode(imageNamed: SpielBild.boden)
+            kachel.anchorPoint = CGPoint(x: 0, y: 1)
+            kachel.size = CGSize(width: kachelBreite, height: bodenHoehe)
+            kachel.zPosition = 2
+            addChild(kachel)
+            bodenKacheln.append(kachel)
+        }
+
+        spieler.size = groesse(fuer: laufBilder[0], hoehe: spielerHoehe)
         spieler.zPosition = 10
         addChild(spieler)
+        starteLaufBild()
 
         punkteLabel.fontName = "AvenirNext-Heavy"
         punkteLabel.fontSize = 30
@@ -80,16 +118,6 @@ final class LaufSzene: SKScene {
         untertitelLabel.zPosition = 20
         addChild(untertitelLabel)
 
-        for _ in 0..<4 {
-            let wolke = SKLabelNode(text: "☁️")
-            wolke.fontSize = CGFloat.random(in: 26...44)
-            wolke.alpha = 0.5
-            wolke.verticalAlignmentMode = .center
-            wolke.zPosition = 0
-            addChild(wolke)
-            wolken.append(wolke)
-        }
-        verteileWolken()
         ordneNeu()
     }
 
@@ -98,22 +126,39 @@ final class LaufSzene: SKScene {
         ordneNeu()
     }
 
+    /// Hält das Seitenverhältnis des Bildes bei vorgegebener Höhe.
+    private func groesse(fuer bild: SKTexture, hoehe: CGFloat) -> CGSize {
+        let roh = bild.size()
+        guard roh.height > 0 else { return CGSize(width: hoehe, height: hoehe) }
+        return CGSize(width: hoehe * roh.width / roh.height, height: hoehe)
+    }
+
     private func ordneNeu() {
-        guard size.width > 0 else { return }
-        boden.size = CGSize(width: size.width, height: 5)
-        boden.position = CGPoint(x: size.width / 2, y: bodenY)
-        if amBoden { spieler.position = CGPoint(x: size.width * 0.22, y: ruheY) }
-        spieler.position.x = size.width * 0.22
+        guard size.width > 0, size.height > 0 else { return }
+
+        for (i, berg) in huegel.enumerated() {
+            let breite = max(size.width * 1.2, 600)
+            berg.size = CGSize(width: breite, height: breite * 0.5)
+            berg.position = CGPoint(x: CGFloat(i) * breite, y: bodenY - 10)
+        }
+
+        for (i, kachel) in bodenKacheln.enumerated() {
+            kachel.position = CGPoint(x: CGFloat(i) * kachelBreite, y: bodenY)
+        }
+
+        spieler.position = CGPoint(x: size.width * 0.22,
+                                   y: amBoden ? ruheY : max(spieler.position.y, ruheY))
         punkteLabel.position = CGPoint(x: 24, y: size.height - 24)
         infoLabel.position = CGPoint(x: size.width / 2, y: size.height * 0.62)
         untertitelLabel.position = CGPoint(x: size.width / 2, y: size.height * 0.62 - 36)
     }
 
-    private func verteileWolken() {
-        for wolke in wolken {
-            wolke.position = CGPoint(x: CGFloat.random(in: 0...max(size.width, 1)),
-                                     y: CGFloat.random(in: size.height * 0.55...size.height * 0.92))
-        }
+    private func starteLaufBild() {
+        spieler.removeAction(forKey: "laufen")
+        guard laufBilder.count > 1 else { return }
+        spieler.run(SKAction.repeatForever(
+            SKAction.animate(with: laufBilder, timePerFrame: 0.13, resize: false, restore: false)
+        ), withKey: "laufen")
     }
 
     // MARK: Steuerung
@@ -134,10 +179,8 @@ final class LaufSzene: SKScene {
         guard amBoden else { return }
         vy = sprungKraft
         amBoden = false
-        spieler.run(SKAction.sequence([
-            SKAction.scale(to: 1.15, duration: 0.08),
-            SKAction.scale(to: 1.0, duration: 0.12)
-        ]))
+        spieler.removeAction(forKey: "laufen")
+        spieler.texture = sprungBild
     }
 
     private func neuStarten() {
@@ -150,14 +193,14 @@ final class LaufSzene: SKScene {
         amBoden = true
         vorbei = false
         laeuft = true
-        bisHindernis = 400
-        bisMuenze = 260
-        spieler.text = "🦊"
+        bisHindernis = 420
+        bisMuenze = 280
+        spieler.texture = laufBilder.first
         spieler.position = CGPoint(x: size.width * 0.22, y: ruheY)
         punkteLabel.text = "0"
         infoLabel.text = ""
         untertitelLabel.text = ""
-        verteileWolken()
+        starteLaufBild()
     }
 
     // MARK: Spielschleife
@@ -165,10 +208,10 @@ final class LaufSzene: SKScene {
     override func update(_ currentTime: TimeInterval) {
         let roh = currentTime - vorigeZeit
         vorigeZeit = currentTime
-        guard vorigeZeit > 0, roh > 0 else { return }
+        guard roh > 0 else { return }
         let dt = CGFloat(min(roh, 1.0 / 30.0))
 
-        bewegeWolken(dt)
+        bewegeHuegel(dt)
         guard laeuft, !vorbei else { return }
 
         // Schwerkraft
@@ -177,69 +220,83 @@ final class LaufSzene: SKScene {
         if spieler.position.y <= ruheY {
             spieler.position.y = ruheY
             vy = 0
-            amBoden = true
+            if !amBoden {
+                amBoden = true
+                starteLaufBild()
+            }
         }
 
         let strecke = tempo * dt
+        bewegeBoden(strecke)
 
         // Nachschub
         bisHindernis -= strecke
         if bisHindernis <= 0 {
             setzeHindernis()
-            bisHindernis = CGFloat.random(in: 300...520)
+            bisHindernis = CGFloat.random(in: 320...560)
         }
         bisMuenze -= strecke
         if bisMuenze <= 0 {
             setzeMuenze()
-            bisMuenze = CGFloat.random(in: 180...360)
+            bisMuenze = CGFloat.random(in: 190...370)
         }
 
         bewegeUndPruefe(strecke)
     }
 
-    private func bewegeWolken(_ dt: CGFloat) {
-        for wolke in wolken {
-            wolke.position.x -= grundTempo * 0.18 * dt
-            if wolke.position.x < -40 {
-                wolke.position.x = size.width + 40
-                wolke.position.y = CGFloat.random(in: size.height * 0.55...size.height * 0.92)
+    private func bewegeHuegel(_ dt: CGFloat) {
+        let breite = huegel.first?.size.width ?? size.width
+        for berg in huegel {
+            berg.position.x -= grundTempo * 0.14 * dt
+            if berg.position.x <= -breite {
+                berg.position.x += breite * CGFloat(huegel.count)
+            }
+        }
+    }
+
+    private func bewegeBoden(_ strecke: CGFloat) {
+        let gesamt = kachelBreite * CGFloat(bodenKacheln.count)
+        for kachel in bodenKacheln {
+            kachel.position.x -= strecke
+            if kachel.position.x <= -kachelBreite {
+                kachel.position.x += gesamt
             }
         }
     }
 
     private func setzeHindernis() {
-        let knoten = SKLabelNode(text: ["🌵", "🪨", "🌵"].randomElement() ?? "🌵")
-        knoten.fontSize = 42
-        knoten.verticalAlignmentMode = .center
-        knoten.horizontalAlignmentMode = .center
+        let name = SpielBild.hindernisse.randomElement() ?? SpielBild.hindernisse[0]
+        let knoten = SKSpriteNode(imageNamed: name)
+        knoten.size = groesse(fuer: knoten.texture ?? SKTexture(), hoehe: hindernisHoehe)
         knoten.zPosition = 5
-        knoten.position = CGPoint(x: size.width + 60, y: bodenY + 22)
+        knoten.position = CGPoint(x: size.width + 80, y: bodenY + hindernisHoehe / 2)
         addChild(knoten)
         hindernisse.append(knoten)
     }
 
     private func setzeMuenze() {
-        let knoten = SKLabelNode(text: "🪙")
-        knoten.fontSize = 30
-        knoten.verticalAlignmentMode = .center
-        knoten.horizontalAlignmentMode = .center
+        let knoten = SKSpriteNode(imageNamed: SpielBild.muenze)
+        knoten.size = CGSize(width: muenzGroesse, height: muenzGroesse)
         knoten.zPosition = 5
-        knoten.position = CGPoint(x: size.width + 40,
-                                  y: bodenY + CGFloat.random(in: 34...170))
+        knoten.position = CGPoint(x: size.width + 50,
+                                  y: bodenY + CGFloat.random(in: 46...200))
+        knoten.run(SKAction.repeatForever(SKAction.sequence([
+            SKAction.scaleX(to: 0.25, duration: 0.5),
+            SKAction.scaleX(to: 1.0, duration: 0.5)
+        ])))
         addChild(knoten)
         sammler.append(knoten)
     }
 
     private func bewegeUndPruefe(_ strecke: CGFloat) {
-        // Hindernisse
-        var bleiben: [SKLabelNode] = []
+        var bleiben: [SKSpriteNode] = []
         for knoten in hindernisse {
             knoten.position.x -= strecke
-            if trifft(knoten, breite: 34, hoehe: 40) {
+            if trifft(knoten, breite: 38, hoehe: 48) {
                 ende()
                 return
             }
-            if knoten.position.x < -60 {
+            if knoten.position.x < -80 {
                 knoten.removeFromParent()
                 punkte += 1
             } else {
@@ -248,16 +305,15 @@ final class LaufSzene: SKScene {
         }
         hindernisse = bleiben
 
-        // Münzen
-        var uebrig: [SKLabelNode] = []
+        var uebrig: [SKSpriteNode] = []
         for knoten in sammler {
             knoten.position.x -= strecke
-            if trifft(knoten, breite: 32, hoehe: 32) {
+            if trifft(knoten, breite: 36, hoehe: 40) {
                 punkte += 10
                 knoten.removeFromParent()
                 continue
             }
-            if knoten.position.x < -40 {
+            if knoten.position.x < -50 {
                 knoten.removeFromParent()
             } else {
                 uebrig.append(knoten)
@@ -276,7 +332,8 @@ final class LaufSzene: SKScene {
     private func ende() {
         vorbei = true
         laeuft = false
-        spieler.text = "😵"
+        spieler.removeAction(forKey: "laufen")
+        spieler.texture = auaBild
         infoLabel.text = "\(punkte) Punkte"
         untertitelLabel.text = "Tippen für noch einen Versuch"
         beiEnde?(punkte)

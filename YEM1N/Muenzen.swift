@@ -171,7 +171,10 @@ struct SpieleView: View {
 
     private var kontoKarte: some View {
         HStack(spacing: 16) {
-            Text("🪙").font(.system(size: 46))
+            Image("muenze")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 44, height: 44)
             VStack(alignment: .leading, spacing: 2) {
                 Text("\(muenzen) Münzen")
                     .font(.system(.title2, design: .rounded).weight(.heavy))
@@ -190,7 +193,10 @@ struct SpieleView: View {
 
     private var spielKarte: some View {
         VStack(spacing: 12) {
-            Text("🦊").font(.system(size: 60))
+            Image("held_lauf1")
+                .resizable()
+                .scaledToFit()
+                .frame(height: 76)
             Text("Zahlenlauf")
                 .font(.system(.title2, design: .rounded).weight(.heavy))
                 .foregroundStyle(Color.white)
