@@ -25,6 +25,11 @@ struct WurzelView: View {
     @State private var zeigeOffen = false
     @State private var offenMeldung: String?
     @AppStorage("profilFertig") private var profilFertig = false
+    @AppStorage(Einwilligung.versionKey) private var einwilligungVersion = 0
+
+    private var brauchtEinwilligung: Bool {
+        Einwilligung.erforderlich(gespeicherteVersion: einwilligungVersion)
+    }
 
     var body: some View {
         Group {
@@ -84,22 +89,30 @@ struct WurzelView: View {
         } message: {
             Text(offenMeldung ?? "")
         }
-        .fullScreenCover(isPresented: Binding(get: { !modus.isEmpty && !profilFertig },
+        .fullScreenCover(isPresented: Binding(get: { !modus.isEmpty && (brauchtEinwilligung || !profilFertig) },
                                               set: { _ in })) {
-            ProfilAssistent()
-                .preferredColorScheme(.dark)
+            Group {
+                if brauchtEinwilligung {
+                    EinwilligungView()
+                } else {
+                    ProfilAssistent()
+                }
+            }
+            .preferredColorScheme(.dark)
         }
-        .task(id: CloudDienst.marke(modus: modus, code: familienCode)) { await cloudStart() }
+        .task(id: CloudDienst.marke(modus: modus, code: familienCode) + (brauchtEinwilligung ? "-offen" : "")) { await cloudStart() }
         .onChange(of: phase) {
-            if phase == .active { Task { await CloudSync.aktiv(context) } }
+            if phase == .active, !brauchtEinwilligung { Task { await CloudSync.aktiv(context) } }
         }
         .onReceive(NotificationCenter.default.publisher(for: .cloudPush)) { _ in
+            guard !brauchtEinwilligung else { return }
             Task { await CloudSync.aktiv(context, erzwingen: true) }
         }
     }
 
     private func cloudStart() async {
-        guard !modus.isEmpty, Familiencode.istGueltig(familienCode) else { return }
+        guard !modus.isEmpty, Familiencode.istGueltig(familienCode), !brauchtEinwilligung else { return }
+        await CloudDienst.raeumeAufWennNoetig(code: familienCode)
         let marke = CloudDienst.marke(modus: modus, code: familienCode)
         if UserDefaults.standard.string(forKey: "cloudEingerichtet") == marke {
             CloudStatus.shared.meldung = "Cloud ist bereit. Mitteilungen sind eingerichtet."

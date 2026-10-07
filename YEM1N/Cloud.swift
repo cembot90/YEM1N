@@ -749,6 +749,9 @@ struct JokerAntwortSheet: View {
                         Text("Bitte nicht die Lösung verraten. Dafür gibt es Punktabzug.")
                             .font(.footnote)
                             .foregroundStyle(Theme.himmel)
+                        Text(RechtHinweise.freitext)
+                            .font(.footnote)
+                            .foregroundStyle(Theme.textSanft)
 
                         if !meldung.isEmpty {
                             Text(meldung).font(.footnote).foregroundStyle(Theme.koralle)

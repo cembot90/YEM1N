@@ -82,7 +82,7 @@ struct ProfilAssistent: View {
                 }
             }
         } else if schritt == 0 {
-            frageKarte("Wie heißt das Kind?", "Ein Vorname oder Spitzname reicht. Der Name erscheint bei den Eltern.") {
+            frageKarte("Wie heißt das Kind?", "Ein Vorname oder Spitzname reicht, bitte keinen Nachnamen. Der Name erscheint bei den Eltern.") {
                 TextField("Name", text: $name)
                     .font(.system(.title3, design: .rounded).weight(.bold))
                     .padding(14)

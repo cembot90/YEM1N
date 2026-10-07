@@ -439,6 +439,9 @@ struct JokerLigaView: View {
                         .background(Theme.gelb, in: Circle())
                 }
             }
+            Text(RechtHinweise.name)
+                .font(.footnote)
+                .foregroundStyle(Theme.textSanft)
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)

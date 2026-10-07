@@ -41,6 +41,8 @@ struct EinstellungenView: View {
     @State private var klassenAdmin = false
     @State private var klassenInfo = ""
     @State private var zeigeLoeschen = false
+    @State private var zeigeWiderruf = false
+    @AppStorage(Einwilligung.versionKey) private var einwilligungVersion = 0
     @State private var datenInfo = ""
     @State private var kindNameEntwurf = ""
     @FocusState private var fokus: String?
@@ -242,14 +244,24 @@ struct EinstellungenView: View {
                         NavigationLink { DatenschutzView() } label: {
                             Label("Datenschutzhinweise", systemImage: "hand.raised.fill")
                         }
+                        NavigationLink { ImpressumView() } label: {
+                            Label("Impressum", systemImage: "person.text.rectangle")
+                        }
+                        NavigationLink { BetaHinweisView() } label: {
+                            Label("Beta und Haftung", systemImage: "exclamationmark.shield")
+                        }
+                        Text("Einwilligung: \(Einwilligung.datumText(Einwilligung.datum()))")
+                            .font(.footnote)
+                            .foregroundStyle(Theme.textSanft)
                         Button("Meine Cloud-Daten löschen", role: .destructive) { zeigeLoeschen = true }
+                        Button("Einwilligung widerrufen", role: .destructive) { zeigeWiderruf = true }
                         if !datenInfo.isEmpty {
                             Text(datenInfo).font(.footnote).foregroundStyle(Theme.textSanft)
                         }
                     } header: {
                         Text("Datenschutz")
                     } footer: {
-                        Text("Löscht die Cloud-Einträge des Familiencodes, die dieses Gerät angelegt hat. Auf jedem Gerät der Familie einmal ausführen.")
+                        Text("Löscht die Cloud-Einträge des Familiencodes, die dieses Gerät angelegt hat. Auf jedem Gerät der Familie einmal ausführen. Cloud-Einträge löscht die App nach 12 Monaten außerdem selbst.")
                     }
                     .listRowBackground(zeile)
 
@@ -299,7 +311,7 @@ struct EinstellungenView: View {
                         } header: {
                             Text("Profil")
                         } footer: {
-                            Text("Der Name erscheint bei den Eltern und in der App. Mit einer Klasse lädt das Gerät nur passende Aufgabenpakete, bei Alle bekommt es alle.")
+                            Text("Der Name erscheint bei den Eltern und in der App. Ein Vorname oder Spitzname reicht, bitte keinen Nachnamen. Mit einer Klasse lädt das Gerät nur passende Aufgabenpakete, bei Alle bekommt es alle.")
                         }
                         .listRowBackground(zeile)
                     } else if modus == "eltern" {
@@ -398,6 +410,23 @@ struct EinstellungenView: View {
                 Button("Abbrechen", role: .cancel) {}
             } message: {
                 Text("Entfernt die Cloud-Einträge dieses Familiencodes, die dieses Gerät angelegt hat. Ergebnisse auf dem Gerät bleiben.")
+            }
+            .confirmationDialog("Einwilligung widerrufen?", isPresented: $zeigeWiderruf,
+                                titleVisibility: .visible) {
+                Button("Widerrufen und Cloud-Daten löschen", role: .destructive) {
+                    let code = familienCode
+                    Task {
+                        if Familiencode.istGueltig(code) {
+                            _ = await CloudDienst.loescheEigeneDaten(code: code)
+                        }
+                        familienCode = ""
+                        Einwilligung.widerrufen()
+                        einwilligungVersion = 0
+                    }
+                }
+                Button("Abbrechen", role: .cancel) {}
+            } message: {
+                Text("Die App löscht die Cloud-Einträge, die dieses Gerät angelegt hat, und trennt den Familiencode. Danach fragt sie neu nach der Einwilligung. Ergebnisse auf dem Gerät bleiben.")
             }
             .onAppear {
                 codeEingabe = familienCode

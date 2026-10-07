@@ -143,6 +143,7 @@ struct AnleitungView: View {
         ("Weiter", "Am Ende einer Übung führt der Knopf Nächste Übung direkt zur nächsten."),
         ("Hilfen", "Der Lautsprecher liest die Aufgabe vor. Hinweis, Lösung zeigen, Notizblock und Joker helfen bei schweren Aufgaben."),
         ("Joker", "Der Joker schickt eine Aufgabe an die Eltern. Sie antworten auf ihrem Gerät."),
+        ("Einwilligung", "Beim ersten Start bestätigt ein Elternteil die Datenschutzerklärung. Unter Einstellungen > Datenschutz lässt sich die Einwilligung widerrufen und die Cloud-Daten löschen. Cloud-Einträge löscht die App nach 12 Monaten selbst. Impressum und Beta und Haftung stehen unter Info."),
         ("Fehlerheft", "Falsche Aufgaben kommen ins Fehlerheft und können dort wiederholt werden."),
         ("Probearbeit", "Zwanzig gemischte Aufgaben mit Uhr, am Ende gibt es eine Note. Jede Probearbeit sieht anders aus. Eine angefangene Probearbeit geht am selben Tag weiter, danach gibt es neue Aufgaben."),
         ("Sprachen", "Im Tab Sprachen lernt das Kind Englisch, Türkisch und Italienisch. Welche Sprachen es gibt, wählt man beim Einrichten und später in den Einstellungen unter Sprachen. Ohne Auswahl verschwindet der Tab."),
@@ -214,6 +215,12 @@ struct InfoView: View {
                         }
                         NavigationLink { DatenschutzView() } label: {
                             zeile("Datenschutzhinweise", "hand.raised.fill")
+                        }
+                        NavigationLink { ImpressumView() } label: {
+                            zeile("Impressum", "person.text.rectangle")
+                        }
+                        NavigationLink { BetaHinweisView() } label: {
+                            zeile("Beta und Haftung", "exclamationmark.shield")
                         }
                         if let url = AppInfo.feedbackURL(modus: modus) {
                             Link(destination: url) {
