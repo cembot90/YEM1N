@@ -107,12 +107,17 @@ struct SpieleView: View {
     @AppStorage("spieleErlaubt") private var erlaubt = true
     @AppStorage("spieleProTag") private var proTag = 3
     @AppStorage("kindName") private var kindName = ""
+    @AppStorage("modus") private var modus = ""
     @State private var zeigeLauf = false
     @State private var gespieltHeute = Muenzen.spieleHeute
     @State private var bestwert = Muenzen.bestwert("lauf")
 
+    /// Auf dem Eltern-Gerät darf ohne Münzen gespielt werden, zum Ausprobieren.
+    private var testModus: Bool { modus == "eltern" }
+
     /// Grund, warum gerade nicht gespielt werden kann, sonst nil.
     private var sperre: String? {
+        if testModus { return nil }
         if !erlaubt {
             return "Die Spiele sind in den Einstellungen ausgeschaltet. Frag deine Eltern."
         }
@@ -145,7 +150,7 @@ struct SpieleView: View {
                                 .frame(maxWidth: .infinity)
                                 .glasKarte(radius: 22)
                         }
-                        verdienstKarte
+                        if !testModus { verdienstKarte }
                     }
                     .padding(20)
                 }
@@ -169,7 +174,38 @@ struct SpieleView: View {
         }
     }
 
+    private var knopfText: String {
+        if testModus { return "Ausprobieren, kostet nichts" }
+        return sperre == nil ? "Spielen für \(Muenzen.preisProSpiel) Münzen" : "Noch nicht möglich"
+    }
+
+    @ViewBuilder
     private var kontoKarte: some View {
+        if testModus { elternKarte } else { kindKonto }
+    }
+
+    private var elternKarte: some View {
+        HStack(spacing: 16) {
+            Image(systemName: "eye.fill")
+                .font(.system(size: 26, weight: .bold))
+                .foregroundStyle(Theme.navy)
+                .frame(width: 48, height: 48)
+                .background(Theme.gelb, in: Circle())
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Zum Ausprobieren")
+                    .font(.system(.title3, design: .rounded).weight(.heavy))
+                    .foregroundStyle(Color.white)
+                Text("Auf dem Eltern-Gerät kostet das Spiel keine Münzen und zählt nicht gegen das Tageslimit. So siehst du, was dein Kind bekommt.")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.textSanft)
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .glasKarte(radius: 26)
+    }
+
+    private var kindKonto: some View {
         HStack(spacing: 16) {
             Image("muenze")
                 .resizable()
@@ -211,14 +247,16 @@ struct SpieleView: View {
             }
             Button {
                 guard sperre == nil else { return }
-                if Muenzen.bezahlen(Muenzen.preisProSpiel) {
+                if testModus {
+                    zeigeLauf = true
+                } else if Muenzen.bezahlen(Muenzen.preisProSpiel) {
                     Muenzen.spielGestartet()
                     muenzen = Muenzen.stand
                     gespieltHeute = Muenzen.spieleHeute
                     zeigeLauf = true
                 }
             } label: {
-                Text(sperre == nil ? "Spielen für \(Muenzen.preisProSpiel) Münzen" : "Noch nicht möglich")
+                Text(knopfText)
                     .font(.system(.headline, design: .rounded).weight(.heavy))
                     .foregroundStyle(Theme.navy)
                     .frame(maxWidth: .infinity, minHeight: 54)

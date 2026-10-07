@@ -217,7 +217,7 @@ struct StartView: View {
                     .foregroundStyle(Theme.textSanft)
             }
             Spacer()
-            if modus == "kind" && spieleErlaubt {
+            if (modus == "kind" && spieleErlaubt) || modus == "eltern" {
                 Button { zeigeSpiele = true } label: {
                     Image(systemName: "gamecontroller.fill")
                         .font(.system(size: 18, weight: .bold))
