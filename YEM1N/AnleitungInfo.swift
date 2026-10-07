@@ -146,6 +146,7 @@ struct AnleitungView: View {
         ("Fehlerheft", "Falsche Aufgaben kommen ins Fehlerheft und können dort wiederholt werden."),
         ("Abzeichen", "Für Serien, Sterne und fehlerfreie Runden gibt es Abzeichen. Das Pokal-Symbol im Tab Schule zeigt alle. Ein neues Abzeichen erscheint gleich nach der Übung."),
         ("Münzen und Spiele", "Für jede gleich richtig gelöste Aufgabe gibt es eine Münze, für drei Sterne fünf extra. Angeschaute Lösungen bringen nichts. Mit den Münzen schaltet das Kind ein Spiel frei, das Symbol steht oben im Tab Schule. Gespielt wird erst nach einer geschafften Übung."),
+        ("Zahlenlauf", "Antippen springt, ein zweites Antippen in der Luft ist der Doppelsprung. Gedrückt halten springt höher. Drei Leben, danach ist die Runde vorbei. Flieger unterläuft man am besten, Trampoline schleudern hoch, Flügel geben kurz einen dritten Sprung."),
         ("Lernzeit", "In den Einstellungen lässt sich eine tägliche Erinnerung ans Üben einschalten, mit fester Uhrzeit."),
         ("Für Eltern", "Die Übersicht zeigt den Wochenbericht, die Abzeichen und den Schwächen-Radar mit den Übungen, die am schwersten fallen."),
         ("Neue Aufgaben", "Im Tab Schule nach unten ziehen oder Neue Aufgaben holen wählen. Dafür braucht das Gerät Internet."),
