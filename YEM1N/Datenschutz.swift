@@ -20,7 +20,7 @@ struct DatenschutzView: View {
         ("Verantwortlicher",
          "Cem Aras, Schulweg 20, 65618 Selters (Taunus). Telefon: +49 172 7579888, E-Mail: cembot@icloud.com."),
         ("Auf deinem Gerät",
-         "YEM1N speichert Klassenarbeiten, Aufgaben, Ergebnisse und Einstellungen (zum Beispiel Name des Kindes, Klasse, Farbwelt, Tagesziel, gewählte Sprachen) sowie Datum und Fassung der Einwilligung auf diesem Gerät. Das bleibt dort, bis du die App löschst."),
+         "YEM1N speichert Klassenarbeiten, Aufgaben, Ergebnisse und Einstellungen (zum Beispiel Name des Kindes, Klasse, Farbwelt, Tagesziel, gewählte Sprachen, Name und Zustand des Haustiers) sowie Datum und Fassung der Einwilligung auf diesem Gerät. Das bleibt dort, bis du die App löschst."),
         ("In der Cloud",
          "Nur wenn ein Familiencode eingetragen ist, nutzt die App die iCloud (CloudKit) von Apple. Dort liegen Rundenergebnisse (Fach, Übung, Anzahl richtig, Sterne, Zeitpunkt und der Name des Kindes, falls eingetragen), Joker-Nachrichten und Aufgabenpakete. Wer den Familiencode kennt, kann diese Einträge lesen. Gib ihn deshalb nur an Eltern weiter, denen du vertraust. Für den Namen des Kindes reicht ein Vorname oder Spitzname. Tipps im Joker sind Freitext. Schreibe dort bitte keine Nachnamen, Adressen oder Telefonnummern. Apple speichert technisch, welche pseudonyme iCloud-Kennung einen Eintrag angelegt hat, einen Klarnamen sehe ich dadurch nicht."),
         ("Klassencode",

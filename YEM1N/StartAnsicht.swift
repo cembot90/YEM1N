@@ -49,14 +49,14 @@ struct StartView: View {
     private var alleFaecher: [String] { Array(Set(normale.map(\.fach))).sorted() }
     private var aktuellerFilter: String { alleFaecher.contains(fachFilter) ? fachFilter : "Alle" }
 
-    private var offeneFehler: Int {
-        var n = 0
-        for k in normale {
-            for u in k.uebungen {
-                for a in u.aufgaben where a.richtig == false && !a.gemeistert { n += 1 }
-            }
-        }
-        return n
+    private var fehlerStand: (faellig: Int, wartend: Int) {
+        Spezial.fehlerStand(alle: normale)
+    }
+
+    private var fehlerUntertitel: String {
+        let stand = fehlerStand
+        if stand.faellig > 0 { return "\(stand.faellig) fällig" }
+        return stand.wartend > 0 ? "ruht kurz" : "alles gut"
     }
 
     private func oeffneSpezial(_ art: String) {
@@ -73,7 +73,10 @@ struct StartView: View {
         default: neu = Spezial.probe(alle: normale, fruehere: alleArbeiten.filter { $0.spezial == "probe" }, in: context)
         }
         guard let neu else {
-            infoMeldung = "Keine offenen Fehler. Super gemacht! 🎉"
+            let wartend = Spezial.fehlerStand(alle: normale).wartend
+            infoMeldung = wartend > 0
+                ? "Gerade ist nichts fällig. \(wartend) \(wartend == 1 ? "Fehler kommt" : "Fehler kommen") in den nächsten Tagen noch einmal dran, damit sie wirklich sitzen. 👍"
+                : "Keine offenen Fehler. Super gemacht! 🎉"
             return
         }
         for alt in alleArbeiten where alt.spezial == art { context.delete(alt) }
@@ -203,7 +206,7 @@ struct StartView: View {
 
     private var untertitel: String {
         var text = kindName.isEmpty ? "Schule üben" : "Hallo \(kindName)! Schule üben"
-        let serie = Erfolge.serie(lokale)
+        let serie = Erfolge.geschuetzteSerie(lokale).laenge
         if modus != "eltern" && serie > 0 { text += " · 🔥 \(serie)" }
         return text
     }
@@ -390,7 +393,7 @@ struct StartView: View {
                 .font(.system(.headline, design: .rounded).weight(.heavy))
                 .foregroundStyle(Theme.gelb)
             HStack(spacing: 10) {
-                extraKnopf("📓", "Fehlerheft", offeneFehler > 0 ? "\(offeneFehler) offen" : "alles gut") {
+                extraKnopf("📓", "Fehlerheft", fehlerUntertitel) {
                     oeffneSpezial("fehlerheft")
                 }
                 extraKnopf("🎯", "Training", "für heute") {

@@ -732,6 +732,7 @@ struct VorschulRunde: View {
         guard modus == "kind" else { return }
         Muenzen.gutschreiben(Muenzen.verdient(richtig: perfekt, gesamt: fragen.count, angesehen: 0))
         Muenzen.rundeGeschafft()
+        HaustierDienst.rundeGeschafft(richtig: perfekt, gesamt: fragen.count, angesehen: 0)
         let arbeitName = quelle?.arbeit?.titel ?? "Übungen"
         let uebungName = quelle.map { "\($0.symbol) \($0.titel)" } ?? "\(art.emoji) \(art.titel)"
         context.insert(RundenErgebnis(klasse: "Vorschule", fach: "Vorschule", arbeit: arbeitName,
@@ -876,6 +877,7 @@ struct VorschulMemory: View {
         VorschulTon.lob()
         fertig = true
         guard modus == "kind" else { return }
+        HaustierDienst.rundeGeschafft(richtig: paare, gesamt: max(paare, zuege), angesehen: 0)
         context.insert(RundenErgebnis(klasse: "Vorschule", fach: "Vorschule", arbeit: "Übungen",
                                       uebung: "🃏 Memory",
                                       richtig: paare, gesamt: max(paare, zuege), angesehen: 0,

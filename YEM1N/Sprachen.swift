@@ -628,6 +628,7 @@ enum SprachErgebnis {
         if stand.verlauf.count > 300 { stand.verlauf = Array(stand.verlauf.suffix(300)) }
         stand.sichere()
         if istKind {
+            HaustierDienst.rundeGeschafft(richtig: richtig, gesamt: gesamt, angesehen: 0)
             let info = SprachKatalogStore.shared.sprache(sprache)
             context.insert(RundenErgebnis(klasse: "Sprachen", fach: info.name, arbeit: "Wortschatz",
                                           uebung: "\(info.flagge) \(thema.titel)",
@@ -649,6 +650,8 @@ enum SprachErgebnis {
 struct KindTabs: View {
     @AppStorage("vorschulTab") private var vorschul = true
     @AppStorage(SprachAuswahl.schluessel) private var sprachWahl = ""
+    @AppStorage(HaustierSpeicher.key) private var haustierDaten = Data()
+    @Environment(\.scenePhase) private var phase
 
     private var hatSprachen: Bool {
         !SprachAuswahl.aktiv(roh: sprachWahl, alle: SprachKatalogStore.shared.katalog.lernsprachen).isEmpty
@@ -666,10 +669,17 @@ struct KindTabs: View {
                 VorschuleView()
                     .tabItem { Label("Vorschule", systemImage: "sparkles") }
             }
+            HaustierView()
+                .tabItem { Label("Haustier", systemImage: "pawprint.fill") }
+                .badge(HaustierDienst.braucheAufmerksamkeit(haustierDaten) ? 1 : 0)
             KindJokerView()
                 .tabItem { Label("Joker", systemImage: "suit.spade.fill") }
             EinstellungenView(eingebettet: true)
                 .tabItem { Label("Einstellungen", systemImage: "gearshape.fill") }
+        }
+        .task { await HaustierErinnerung.aktualisieren() }
+        .onChange(of: phase) {
+            if phase == .active { Task { await HaustierErinnerung.aktualisieren() } }
         }
     }
 }
