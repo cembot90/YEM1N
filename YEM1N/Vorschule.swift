@@ -730,6 +730,8 @@ struct VorschulRunde: View {
         gespeichert = true
         VorschulTon.sag(VorschulText(de: "Das hast du toll gemacht!", tr: "Çok güzel yaptın!"))
         guard modus == "kind" else { return }
+        Muenzen.gutschreiben(Muenzen.verdient(richtig: perfekt, gesamt: fragen.count, angesehen: 0))
+        Muenzen.rundeGeschafft()
         let arbeitName = quelle?.arbeit?.titel ?? "Übungen"
         let uebungName = quelle.map { "\($0.symbol) \($0.titel)" } ?? "\(art.emoji) \(art.titel)"
         context.insert(RundenErgebnis(klasse: "Vorschule", fach: "Vorschule", arbeit: arbeitName,

@@ -925,6 +925,10 @@ struct UebungInhalt: View {
         uebung.sterne = max(uebung.sterne, uebung.sternAnzahl(fuer: gut))
         // Auf dem Kind-Gerät landet jede fertige Runde in der Warteschlange
         if modus == "kind" {
+            Muenzen.gutschreiben(Muenzen.verdient(richtig: gut,
+                                                  gesamt: uebung.aufgaben.count,
+                                                  angesehen: uebung.angesehenAnzahl))
+            Muenzen.rundeGeschafft()
             context.insert(RundenErgebnis(
                 klasse: uebung.arbeit?.klasse ?? "",
                 fach: uebung.arbeit?.fach ?? "",

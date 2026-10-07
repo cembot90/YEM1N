@@ -31,12 +31,14 @@ struct StartView: View {
     @State private var zeigeEditor = false
     @State private var zeigePakete = false
     @State private var zeigeErfolge = false
+    @State private var zeigeSpiele = false
     @State private var pfad = NavigationPath()
     @State private var zwischenPaket: ArbeitPaket?
     @State private var zwischenText = ""
     @State private var zeigeZwischen = false
     @AppStorage("modus") private var modus = ""
     @AppStorage("kindName") private var kindName = ""
+    @AppStorage("spieleErlaubt") private var spieleErlaubt = true
     @Query(filter: #Predicate<RundenErgebnis> { $0.quelle == "lokal" })
     private var lokale: [RundenErgebnis]
 
@@ -146,6 +148,11 @@ struct StartView: View {
                     .preferredColorScheme(.dark)
                     .tint(Theme.gelb)
             }
+            .sheet(isPresented: $zeigeSpiele) {
+                SpieleView()
+                    .preferredColorScheme(.dark)
+                    .tint(Theme.gelb)
+            }
             .confirmationDialog("\(zwischenPaket?.arbeit ?? "Paket") veröffentlichen?",
                                 isPresented: $zeigeZwischen, titleVisibility: .visible) {
                 Button("An meine Familie veröffentlichen") {
@@ -210,6 +217,15 @@ struct StartView: View {
                     .foregroundStyle(Theme.textSanft)
             }
             Spacer()
+            if modus == "kind" && spieleErlaubt {
+                Button { zeigeSpiele = true } label: {
+                    Image(systemName: "gamecontroller.fill")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundStyle(Theme.gelb)
+                        .frame(width: 48, height: 48)
+                        .background(Color.white.opacity(0.12), in: Circle())
+                }
+            }
             if modus != "eltern" {
                 Button { zeigeErfolge = true } label: {
                     Image(systemName: "trophy.fill")
