@@ -230,6 +230,15 @@ struct EinstellungenView: View {
                     .onChange(of: lernzeitMinuten) { Lernzeit.planen(an: lernzeitAn, minuten: lernzeitMinuten) }
 
                     Section {
+                        SprachWahlSchalter()
+                    } header: {
+                        Text("Sprachen")
+                    } footer: {
+                        Text("Nur die angehakten Sprachen erscheinen im Bereich Sprachen. Sind alle aus, verschwindet der Bereich auf dem Kind-Gerät.")
+                    }
+                    .listRowBackground(zeile)
+
+                    Section {
                         NavigationLink { DatenschutzView() } label: {
                             Label("Datenschutzhinweise", systemImage: "hand.raised.fill")
                         }

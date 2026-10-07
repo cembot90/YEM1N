@@ -153,20 +153,60 @@ enum Spezial {
     }
 
     // Probearbeit: 20 neue Aufgaben quer durch alle Bereiche, mit Uhr und Note
-    static func probe(alle: [Klassenarbeit], in context: ModelContext) -> Klassenarbeit {
-        let plan: [(String, Int)] = [
-            ("minuswort", 1), ("malwort", 1), ("kern", 1), ("nachbar", 1), ("einmaleins", 3),
-            ("umkehr", 2), ("rest", 3), ("punkt", 2), ("vergleich", 2), ("mauer", 1),
-            ("raetsel", 1), ("sach", 2)
-        ]
-        var sperre = vorhandeneSchluessel(alle)
+
+    /// Jeder Bereich kommt mindestens einmal vor. Die übrigen Aufgaben werden bei
+    /// jeder Probearbeit anders auf die Bereiche verteilt, die Reihenfolge der
+    /// Bereiche bleibt wie in einer echten Klassenarbeit.
+    static let probeBereiche = ["minuswort", "malwort", "kern", "nachbar", "einmaleins",
+                                "umkehr", "rest", "punkt", "vergleich", "mauer", "raetsel", "sach"]
+    static let probeAufgaben = 20
+    /// Mehr als zwei Zahlenmauern wären zu viel Schreibarbeit.
+    static let probeMaxMauern = 2
+
+    static func probePlan<G: RandomNumberGenerator>(zufall: inout G) -> [(String, Int)] {
+        var anzahl = Dictionary(uniqueKeysWithValues: probeBereiche.map { ($0, 1) })
+        var uebrig = probeAufgaben - probeBereiche.count
+        while uebrig > 0 {
+            guard let id = probeBereiche.randomElement(using: &zufall) else { break }
+            if id == "mauer" && (anzahl[id] ?? 0) >= probeMaxMauern { continue }
+            anzahl[id, default: 0] += 1
+            uebrig -= 1
+        }
+        return probeBereiche.map { ($0, anzahl[$0] ?? 1) }
+    }
+
+    /// Eine angefangene Probearbeit wird nur weitergemacht, wenn sie heute begonnen
+    /// wurde und schon Antworten hat. Sonst gibt es beim Antippen neue Aufgaben.
+    static func probeWeiterfuehren(erstellt: Date, beantwortet: Int, jetzt: Date = Date.now,
+                                   kalender: Calendar = .current) -> Bool {
+        beantwortet > 0 && kalender.isDate(erstellt, inSameDayAs: jetzt)
+    }
+
+    static func beantwortetAnzahl(_ k: Klassenarbeit) -> Int {
+        k.uebungen.reduce(0) { $0 + $1.aufgaben.filter { $0.richtig != nil }.count }
+    }
+
+    static func probe(alle: [Klassenarbeit], fruehere: [Klassenarbeit] = [],
+                      in context: ModelContext) -> Klassenarbeit {
+        var generator = SystemRandomNumberGenerator()
+        let plan = probePlan(zufall: &generator)
+        // Weder die Aufgaben der Klassenarbeiten noch die der letzten Probearbeit
+        var sperre = vorhandeneSchluessel(alle + fruehere)
         let arbeit = neueArbeit(titel: "Probearbeit", art: "probe", klasse: klasseVon(alle), in: context)
         let u = neueUebung(arbeit, titel: "Probearbeit", gruppe: "Wie in der Klassenarbeit", symbol: "★",
                            tipp: "", reihenfolge: 0, in: context)
+        var inDieserProbe = Set<String>()
         var nummer = 0
         for (id, anzahl) in plan {
             guard let v = MatheGenerator.vorlagen.first(where: { $0.id == id }) else { continue }
-            let aufgaben = MatheGenerator.fuelle(v, anzahl: anzahl, ausschluss: &sperre)
+            var aufgaben = MatheGenerator.fuelle(v, anzahl: anzahl, ausschluss: &sperre)
+            for m in aufgaben { inDieserProbe.insert(MatheGenerator.schluessel(m)) }
+            if aufgaben.count < anzahl {
+                // Kleine Bereiche (Kernaufgaben, Umkehraufgaben) sind nach vielen
+                // Klassenarbeiten leer gefischt. Dann dürfen sie wiederkommen.
+                var nurDiese = inDieserProbe
+                aufgaben += MatheGenerator.fuelle(v, anzahl: anzahl - aufgaben.count, ausschluss: &nurDiese)
+            }
             for m in aufgaben {
                 let a = aufgabe(m, reihenfolge: nummer)
                 context.insert(a)

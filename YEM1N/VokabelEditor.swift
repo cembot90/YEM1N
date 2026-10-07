@@ -19,9 +19,45 @@ struct EditorWort: Codable, Identifiable, Equatable {
     var de = ""
     var en = ""
     var tr = ""
+    var it = ""
     var altEn = ""
     var altTr = ""
+    var altIt = ""
     var hinweis = ""
+    /// Hinweise nur für eine Sprache. Der Editor zeigt sie nicht an, behält sie aber.
+    var hinweise: [String: String] = [:]
+
+    init(id: UUID = UUID(), emoji: String = "", de: String = "", en: String = "", tr: String = "",
+         it: String = "", altEn: String = "", altTr: String = "", altIt: String = "",
+         hinweis: String = "", hinweise: [String: String] = [:]) {
+        self.id = id
+        self.emoji = emoji
+        self.de = de
+        self.en = en
+        self.tr = tr
+        self.it = it
+        self.altEn = altEn
+        self.altTr = altTr
+        self.altIt = altIt
+        self.hinweis = hinweis
+        self.hinweise = hinweise
+    }
+
+    // Ältere gespeicherte Entwürfe kennen Italienisch noch nicht
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = (try? c.decode(UUID.self, forKey: .id)) ?? UUID()
+        emoji = (try? c.decode(String.self, forKey: .emoji)) ?? ""
+        de = (try? c.decode(String.self, forKey: .de)) ?? ""
+        en = (try? c.decode(String.self, forKey: .en)) ?? ""
+        tr = (try? c.decode(String.self, forKey: .tr)) ?? ""
+        it = (try? c.decode(String.self, forKey: .it)) ?? ""
+        altEn = (try? c.decode(String.self, forKey: .altEn)) ?? ""
+        altTr = (try? c.decode(String.self, forKey: .altTr)) ?? ""
+        altIt = (try? c.decode(String.self, forKey: .altIt)) ?? ""
+        hinweis = (try? c.decode(String.self, forKey: .hinweis)) ?? ""
+        hinweise = (try? c.decode([String: String].self, forKey: .hinweise)) ?? [:]
+    }
 
     static func liste(_ s: String) -> [String] {
         s.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
@@ -35,14 +71,19 @@ struct EditorWort: Codable, Identifiable, Equatable {
 
     func katalogDict() -> [String: Any] {
         var d: [String: Any] = ["de": de, "en": en, "tr": tr]
+        if !it.trimmingCharacters(in: .whitespaces).isEmpty { d["it"] = it }
         if !emoji.isEmpty { d["emoji"] = emoji }
         var alt: [String: [String]] = [:]
         let e = EditorWort.liste(altEn)
         let t = EditorWort.liste(altTr)
         if !e.isEmpty { alt["en"] = e }
+        let i = EditorWort.liste(altIt)
         if !t.isEmpty { alt["tr"] = t }
+        if !i.isEmpty { alt["it"] = i }
         if !alt.isEmpty { d["alt"] = alt }
         if !hinweis.isEmpty { d["hinweis"] = hinweis }
+        let echte = hinweise.filter { !$0.value.isEmpty }
+        if !echte.isEmpty { d["hinweise"] = echte }
         return d
     }
 }
@@ -72,8 +113,11 @@ struct EditorThema: Codable, Identifiable, Equatable {
         EditorThema(id: t.id, titel: t.titel, emoji: t.emoji, stufe: t.stufe, bilder: t.bilder,
                     woerter: t.woerter.map { w in
                         EditorWort(emoji: w.emoji ?? "", de: w.texte["de"] ?? "", en: w.texte["en"] ?? "",
-                                   tr: w.texte["tr"] ?? "", altEn: (w.alt["en"] ?? []).joined(separator: ", "),
-                                   altTr: (w.alt["tr"] ?? []).joined(separator: ", "), hinweis: w.hinweis ?? "")
+                                   tr: w.texte["tr"] ?? "", it: w.texte["it"] ?? "",
+                                   altEn: (w.alt["en"] ?? []).joined(separator: ", "),
+                                   altTr: (w.alt["tr"] ?? []).joined(separator: ", "),
+                                   altIt: (w.alt["it"] ?? []).joined(separator: ", "),
+                                   hinweis: w.hinweis ?? "", hinweise: w.hinweise)
                     })
     }
 }
@@ -349,6 +393,9 @@ struct WortEditorView: View {
                     TextField("Türkisch, zum Beispiel köpek", text: $wort.tr)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
+                    TextField("Italienisch, zum Beispiel cane (kann leer bleiben)", text: $wort.it)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
                     HStack(spacing: 6) {
                         ForEach(["ç", "ğ", "ı", "ö", "ş", "ü", "İ"], id: \.self) { z in
                             Button { wort.tr += z } label: {
@@ -368,6 +415,9 @@ struct WortEditorView: View {
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                     TextField("Türkisch, zum Beispiel bere", text: $wort.altTr)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                    TextField("Italienisch, zum Beispiel il cane", text: $wort.altIt)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                 } header: {

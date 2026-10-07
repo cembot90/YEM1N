@@ -35,7 +35,7 @@ struct ProfilAssistent: View {
     private let joker = JokerStand.shared
 
     private var istKind: Bool { modus == "kind" }
-    private var letzterSchritt: Int { istKind ? 2 : 0 }
+    private var letzterSchritt: Int { istKind ? 3 : 0 }
 
     var body: some View {
         ZStack {
@@ -48,7 +48,7 @@ struct ProfilAssistent: View {
                         .multilineTextAlignment(.center)
                         .padding(.top, 40)
                     if istKind {
-                        Text("Schritt \(schritt + 1) von 3")
+                        Text("Schritt \(schritt + 1) von 4")
                             .font(.system(.subheadline, design: .rounded).weight(.semibold))
                             .foregroundStyle(Theme.textSanft)
                     }
@@ -96,6 +96,10 @@ struct ProfilAssistent: View {
                     }
                     chip("Weiß ich nicht", aktiv: klasse.isEmpty) { klasse = "" }
                 }
+            }
+        } else if schritt == 2 {
+            frageKarte("Welche Sprachen möchtest du lernen?", "Tippe an, was du lernen willst. Du kannst es später in den Einstellungen ändern. Wenn du nichts wählst, gibt es keinen Sprachen-Bereich.") {
+                SprachWahlChips()
             }
         } else {
             frageKarte("Farben und Ziel", "Wähle die Farbwelt und wie viele Runden pro Tag das Ziel sind.") {

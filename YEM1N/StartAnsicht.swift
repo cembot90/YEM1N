@@ -60,7 +60,9 @@ struct StartView: View {
     }
 
     private func oeffneSpezial(_ art: String) {
-        if let offen = alleArbeiten.first(where: { $0.spezial == art && $0.fertigeUebungen < $0.uebungen.count }) {
+        if let offen = alleArbeiten.first(where: { $0.spezial == art && $0.fertigeUebungen < $0.uebungen.count }),
+           art != "probe" || Spezial.probeWeiterfuehren(erstellt: offen.erstellt,
+                                                        beantwortet: Spezial.beantwortetAnzahl(offen)) {
             pfad.append(offen)
             return
         }
@@ -68,7 +70,7 @@ struct StartView: View {
         switch art {
         case "fehlerheft": neu = Spezial.fehlerheft(alle: normale, in: context)
         case "training": neu = Spezial.training(alle: normale, ergebnisse: lokale, in: context)
-        default: neu = Spezial.probe(alle: normale, in: context)
+        default: neu = Spezial.probe(alle: normale, fruehere: alleArbeiten.filter { $0.spezial == "probe" }, in: context)
         }
         guard let neu else {
             infoMeldung = "Keine offenen Fehler. Super gemacht! 🎉"

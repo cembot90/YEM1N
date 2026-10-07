@@ -12,7 +12,7 @@ import WebKit
 import CoreImage.CIFilterBuiltins
 
 // ============================================================
-// MARK: - Sprachen (Englisch und Türkisch)
+// MARK: - Sprachen (Englisch, Türkisch und Italienisch)
 // ============================================================
 
 // MARK: Katalog-Modelle
@@ -27,6 +27,8 @@ struct Wort: Decodable, Identifiable {
     var id: String
     let emoji: String?
     let hinweis: String?
+    /// Hinweise nur für eine Sprache, zum Beispiel zu "anneanne" oder "l'amico".
+    let hinweise: [String: String]
     let texte: [String: String]
     let alt: [String: [String]]
     var themaID: String
@@ -44,12 +46,14 @@ struct Wort: Decodable, Identifiable {
         var texte: [String: String] = [:]
         var emoji: String?
         var hinweis: String?
+        var hinweise: [String: String] = [:]
         var eigeneID = ""
         var alt: [String: [String]] = [:]
         for key in c.allKeys {
             switch key.stringValue {
             case "emoji": emoji = try? c.decode(String.self, forKey: key)
             case "hinweis": hinweis = try? c.decode(String.self, forKey: key)
+            case "hinweise": hinweise = (try? c.decode([String: String].self, forKey: key)) ?? [:]
             case "id": eigeneID = (try? c.decode(String.self, forKey: key)) ?? ""
             case "alt": alt = (try? c.decode([String: [String]].self, forKey: key)) ?? [:]
             default:
@@ -64,10 +68,21 @@ struct Wort: Decodable, Identifiable {
         self.id = eigeneID
         self.emoji = emoji
         self.hinweis = hinweis
+        self.hinweise = hinweise
         self.texte = texte
         self.alt = alt
         self.themaID = ""
         self.bilder = true
+    }
+}
+
+extension Wort {
+    /// Der Hinweis für diese Lernsprache. Ein Hinweis nur für eine andere Sprache
+    /// erscheint hier nicht, ein allgemeiner Hinweis gilt für alle.
+    func hinweis(fuer sprache: String) -> String? {
+        if let h = hinweise[sprache], !h.isEmpty { return h }
+        if let h = hinweis, !h.isEmpty { return h }
+        return nil
     }
 }
 
@@ -132,7 +147,7 @@ struct SprachKatalog: Decodable {
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: Keys.self)
         self.sprachen = try c.decode([String: SprachInfo].self, forKey: .sprachen)
-        self.lernsprachen = (try? c.decode([String].self, forKey: .lernsprachen)) ?? ["en", "tr"]
+        self.lernsprachen = (try? c.decode([String].self, forKey: .lernsprachen)) ?? ["en", "tr", "it"]
         self.themen = try c.decode([Thema].self, forKey: .themen)
     }
 }
@@ -348,6 +363,14 @@ enum SprachHelfer {
     static func norm(_ s: String, _ sp: String) -> String {
         var t = s.trimmingCharacters(in: .whitespacesAndNewlines)
         t = sp == "tr" ? t.lowercased(with: Locale(identifier: "tr")) : t.lowercased()
+        if sp == "it" {
+            // l'amico und l’amico sind dasselbe, der Artikel davor ist egal
+            t = t.replacingOccurrences(of: "\u{2019}", with: "'").replacingOccurrences(of: "\u{2018}", with: "'")
+            for p in ["l'", "un'"] where t.hasPrefix(p) {
+                t = String(t.dropFirst(p.count))
+                break
+            }
+        }
         let weg = CharacterSet(charactersIn: ".,!?;:…\"'“”‘’")
         t = t.components(separatedBy: weg).joined()
         t = t.replacingOccurrences(of: "-", with: " ")
@@ -360,7 +383,22 @@ enum SprachHelfer {
                 break
             }
         }
+        if sp == "it" {
+            for p in ["il ", "lo ", "la ", "i ", "gli ", "le ", "un ", "uno ", "una "] where t.hasPrefix(p) {
+                t = String(t.dropFirst(p.count))
+                break
+            }
+        }
         return t
+    }
+
+    /// Die Zusatztasten über der Tastatur beim Tippen.
+    static func sonderzeichen(_ sp: String) -> [String] {
+        switch sp {
+        case "tr": return ["ç", "ğ", "ı", "ö", "ş", "ü", "İ"]
+        case "it": return ["à", "è", "é", "ì", "ò", "ù"]
+        default: return []
+        }
     }
 
     // Sonderzeichen vereinfachen, damit "kirmizi" als fast richtig für "kırmızı" gilt
@@ -368,7 +406,8 @@ enum SprachHelfer {
         var t = s
         let paare: [(String, String)] = [
             ("ı", "i"), ("İ", "i"), ("ğ", "g"), ("ü", "u"), ("ş", "s"), ("ö", "o"),
-            ("ç", "c"), ("â", "a"), ("ä", "a"), ("î", "i"), ("û", "u"), ("ß", "ss")
+            ("ç", "c"), ("â", "a"), ("ä", "a"), ("î", "i"), ("û", "u"), ("ß", "ss"),
+            ("à", "a"), ("è", "e"), ("é", "e"), ("ì", "i"), ("ò", "o"), ("ù", "u")
         ]
         for (a, b) in paare { t = t.replacingOccurrences(of: a, with: b) }
         return t.replacingOccurrences(of: " ", with: "")
@@ -609,13 +648,20 @@ enum SprachErgebnis {
 
 struct KindTabs: View {
     @AppStorage("vorschulTab") private var vorschul = true
+    @AppStorage(SprachAuswahl.schluessel) private var sprachWahl = ""
+
+    private var hatSprachen: Bool {
+        !SprachAuswahl.aktiv(roh: sprachWahl, alle: SprachKatalogStore.shared.katalog.lernsprachen).isEmpty
+    }
 
     var body: some View {
         TabView {
             StartView()
                 .tabItem { Label("Schule", systemImage: "books.vertical.fill") }
-            SprachStartView()
-                .tabItem { Label("Sprachen", systemImage: "globe") }
+            if hatSprachen {
+                SprachStartView()
+                    .tabItem { Label("Sprachen", systemImage: "globe") }
+            }
             if vorschul {
                 VorschuleView()
                     .tabItem { Label("Vorschule", systemImage: "sparkles") }
@@ -634,9 +680,14 @@ struct SprachStartView: View {
     private let store = SprachKatalogStore.shared
     private let stand = SprachStand.shared
     @AppStorage("sprachTon") private var ton = true
+    @AppStorage(SprachAuswahl.schluessel) private var sprachWahl = ""
+
+    private var aktive: [String] {
+        SprachAuswahl.aktiv(roh: sprachWahl, alle: store.katalog.lernsprachen)
+    }
 
     private var stimmenFehlen: Bool {
-        !store.katalog.lernsprachen.allSatisfy {
+        !aktive.allSatisfy {
             Sprecher.shared.hatStimme(store.sprache($0).sprachcode)
         }
     }
@@ -652,8 +703,15 @@ struct SprachStartView: View {
                         Text("Was möchtest du lernen?")
                             .font(.system(.subheadline, design: .rounded).weight(.semibold))
                             .foregroundStyle(Theme.textSanft)
-                        ForEach(store.katalog.lernsprachen, id: \.self) { c in
+                        ForEach(aktive, id: \.self) { c in
                             sprachKarte(c)
+                        }
+                        if aktive.isEmpty {
+                            Text("Du hast keine Sprache gewählt. Wähle in den Einstellungen unter „Sprachen“, was du lernen möchtest.")
+                                .font(.subheadline)
+                                .foregroundStyle(Theme.textSanft)
+                                .padding(16)
+                                .glasKarte(radius: 22)
                         }
                     }
                     .padding(20)
@@ -739,8 +797,13 @@ struct SprachStartView: View {
 
 struct SprachThemenView: View {
     @State var sprache: String
+    @AppStorage(SprachAuswahl.schluessel) private var sprachWahl = ""
     private let store = SprachKatalogStore.shared
     private let stand = SprachStand.shared
+
+    private var aktive: [String] {
+        SprachAuswahl.aktiv(roh: sprachWahl, alle: store.katalog.lernsprachen)
+    }
 
     private var info: SprachInfo { store.sprache(sprache) }
     private var faellige: [Wort] { stand.faellig(sprache, store.alleWoerter(sprache)) }
@@ -766,7 +829,7 @@ struct SprachThemenView: View {
 
     private var chips: some View {
         HStack(spacing: 8) {
-            ForEach(store.katalog.lernsprachen, id: \.self) { c in
+            ForEach(aktive, id: \.self) { c in
                 let aktiv = (c == sprache)
                 Button { sprache = c } label: {
                     Text("\(store.sprache(c).flagge) \(store.sprache(c).name)")
@@ -1079,7 +1142,7 @@ struct SprachKartenView: View {
                             .background(Theme.gelb, in: Circle())
                     }
                     .buttonStyle(TastenStil())
-                    if let h = w.hinweis {
+                    if let h = w.hinweis(fuer: sprache) {
                         Text(h)
                             .font(.footnote.weight(.semibold))
                             .foregroundStyle(Theme.himmel)
@@ -1445,9 +1508,9 @@ struct SprachFragenView: View {
                     RoundedRectangle(cornerRadius: 20, style: .continuous)
                         .stroke(Theme.gelb, lineWidth: 2)
                 )
-            if sprache == "tr" && !s.beantwortet {
+            if !SprachHelfer.sonderzeichen(sprache).isEmpty && !s.beantwortet {
                 HStack(spacing: 6) {
-                    ForEach(["ç", "ğ", "ı", "ö", "ş", "ü", "İ"], id: \.self) { z in
+                    ForEach(SprachHelfer.sonderzeichen(sprache), id: \.self) { z in
                         Button { eingabe += z } label: {
                             Text(z)
                                 .font(.system(size: 22, weight: .bold, design: .rounded))
@@ -1486,7 +1549,7 @@ struct SprachFragenView: View {
             Text("\(SprachHelfer.bild(f.wort)) \(f.wort.texte["de"] ?? "")")
                 .font(.subheadline)
                 .foregroundStyle(Theme.textSanft)
-            if let h = f.wort.hinweis {
+            if let h = f.wort.hinweis(fuer: sprache) {
                 Text(h)
                     .font(.footnote.weight(.semibold))
                     .foregroundStyle(Theme.himmel)
@@ -1818,6 +1881,11 @@ struct SchwierigesWort: Identifiable {
 
 struct SprachBerichtView: View {
     @State private var c = "en"
+    @AppStorage(SprachAuswahl.schluessel) private var sprachWahl = ""
+
+    private var aktive: [String] {
+        SprachAuswahl.aktiv(roh: sprachWahl, alle: store.katalog.lernsprachen)
+    }
     private let store = SprachKatalogStore.shared
     private let stand = SprachStand.shared
 
@@ -1865,13 +1933,13 @@ struct SprachBerichtView: View {
         .navigationTitle("Bericht")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
-            if let erste = store.katalog.lernsprachen.first, !store.katalog.lernsprachen.contains(c) { c = erste }
+            if let erste = aktive.first, !aktive.contains(c) { c = erste }
         }
     }
 
     private var chips: some View {
         HStack(spacing: 8) {
-            ForEach(store.katalog.lernsprachen, id: \.self) { code in
+            ForEach(aktive, id: \.self) { code in
                 let aktiv = (code == c)
                 Button { c = code } label: {
                     Text("\(store.sprache(code).flagge) \(store.sprache(code).name)")

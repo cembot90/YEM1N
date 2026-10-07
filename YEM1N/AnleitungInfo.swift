@@ -144,6 +144,8 @@ struct AnleitungView: View {
         ("Hilfen", "Der Lautsprecher liest die Aufgabe vor. Hinweis, Lösung zeigen, Notizblock und Joker helfen bei schweren Aufgaben."),
         ("Joker", "Der Joker schickt eine Aufgabe an die Eltern. Sie antworten auf ihrem Gerät."),
         ("Fehlerheft", "Falsche Aufgaben kommen ins Fehlerheft und können dort wiederholt werden."),
+        ("Probearbeit", "Zwanzig gemischte Aufgaben mit Uhr, am Ende gibt es eine Note. Jede Probearbeit sieht anders aus. Eine angefangene Probearbeit geht am selben Tag weiter, danach gibt es neue Aufgaben."),
+        ("Sprachen", "Im Tab Sprachen lernt das Kind Englisch, Türkisch und Italienisch. Welche Sprachen es gibt, wählt man beim Einrichten und später in den Einstellungen unter Sprachen. Ohne Auswahl verschwindet der Tab."),
         ("Abzeichen", "Für Serien, Sterne und fehlerfreie Runden gibt es Abzeichen. Das Pokal-Symbol im Tab Schule zeigt alle. Ein neues Abzeichen erscheint gleich nach der Übung."),
         ("Münzen und Spiele", "Für jede gleich richtig gelöste Aufgabe gibt es eine Münze, für drei Sterne fünf extra. Angeschaute Lösungen bringen nichts. Mit den Münzen schaltet das Kind ein Spiel frei, das Symbol steht oben im Tab Schule. Es gibt drei Spiele: Zahlenlauf, Münzjagd und Münz-Hockey. Gespielt wird erst nach einer geschafften Übung."),
         ("Zahlenlauf", "Antippen springt, ein zweites Antippen in der Luft ist der Doppelsprung. Gedrückt halten springt höher. Drei Leben, danach ist die Runde vorbei. Flieger unterläuft man am besten, Trampoline schleudern hoch, Flügel geben kurz einen dritten Sprung."),
