@@ -43,11 +43,16 @@ struct MuenzenTests {
         }
     }
 
-    @Test func einSpielIstInEinPaarRundenVerdient() {
-        // Drei saubere Runden mit zehn Aufgaben sollen für ein Spiel reichen
-        let dreiRunden = 3 * Muenzen.verdient(richtig: 10, gesamt: 10, angesehen: 0)
-        #expect(dreiRunden >= Muenzen.preisProSpiel)
-        // Aber eine einzelne Runde soll noch nicht reichen
-        #expect(Muenzen.verdient(richtig: 10, gesamt: 10, angesehen: 0) < Muenzen.preisProSpiel)
+    @Test func eineSauberRundeReichtGenauFuerEinSpiel() {
+        // Die Regel fürs Kind: Eine Runde mit zehn Aufgaben, alle gleich richtig,
+        // ergibt genau ein Spiel. Das ist leicht zu merken.
+        #expect(Muenzen.verdient(richtig: 10, gesamt: 10, angesehen: 0) == Muenzen.preisProSpiel)
+    }
+
+    @Test func eineSchwacheRundeReichtNochNicht() {
+        // 7 von 10 sind 9 Münzen, das langt nicht. Es lohnt sich, genau zu rechnen.
+        #expect(Muenzen.verdient(richtig: 7, gesamt: 10, angesehen: 0) < Muenzen.preisProSpiel)
+        // Und mit Spicken erst recht nicht
+        #expect(Muenzen.verdient(richtig: 10, gesamt: 10, angesehen: 3) < Muenzen.preisProSpiel)
     }
 }
