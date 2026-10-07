@@ -145,10 +145,12 @@ struct AnleitungView: View {
         ("Joker", "Der Joker schickt eine Aufgabe an die Eltern. Sie antworten auf ihrem Gerät."),
         ("Fehlerheft", "Falsche Aufgaben kommen ins Fehlerheft und können dort wiederholt werden."),
         ("Abzeichen", "Für Serien, Sterne und fehlerfreie Runden gibt es Abzeichen. Das Pokal-Symbol im Tab Schule zeigt alle. Ein neues Abzeichen erscheint gleich nach der Übung."),
-        ("Münzen und Spiele", "Für jede gleich richtig gelöste Aufgabe gibt es eine Münze, für drei Sterne fünf extra. Angeschaute Lösungen bringen nichts. Mit den Münzen schaltet das Kind ein Spiel frei, das Symbol steht oben im Tab Schule. Gespielt wird erst nach einer geschafften Übung."),
+        ("Münzen und Spiele", "Für jede gleich richtig gelöste Aufgabe gibt es eine Münze, für drei Sterne fünf extra. Angeschaute Lösungen bringen nichts. Mit den Münzen schaltet das Kind ein Spiel frei, das Symbol steht oben im Tab Schule. Es gibt drei Spiele: Zahlenlauf, Münzjagd und Münz-Hockey. Gespielt wird erst nach einer geschafften Übung."),
         ("Zahlenlauf", "Antippen springt, ein zweites Antippen in der Luft ist der Doppelsprung. Gedrückt halten springt höher. Drei Leben, danach ist die Runde vorbei. Flieger unterläuft man am besten, Trampoline schleudern hoch, Flügel geben kurz einen dritten Sprung."),
+        ("Münzjagd", "Auf den Plattformen alle Münzen einsammeln. Links unten laufen, rechts springen. Beim Fallen gedrückt halten lässt dich schweben. Die leuchtende Münze bringt drei Punkte. Gegner kosten ein Leben."),
+        ("Münz-Hockey", "Mit dem Finger den Schläger in der linken Hälfte bewegen. Wer zuerst fünf Tore hat, gewinnt. Danach wird der Computer besser."),
         ("Lernzeit", "In den Einstellungen lässt sich eine tägliche Erinnerung ans Üben einschalten, mit fester Uhrzeit."),
-        ("Für Eltern", "Die Übersicht zeigt den Wochenbericht, die Abzeichen und den Schwächen-Radar mit den Übungen, die am schwersten fallen."),
+        ("Für Eltern", "Die Übersicht zeigt den Wochenbericht, die Abzeichen und den Schwächen-Radar mit den Übungen, die am schwersten fallen. Unter Kinder in der Familie steht, wann jedes Kind zuletzt geübt hat. Alte Konten lassen sich mit dem Papierkorb entfernen."),
         ("Neue Aufgaben", "Im Tab Schule nach unten ziehen oder Neue Aufgaben holen wählen. Dafür braucht das Gerät Internet."),
         ("Hilfe", "Die ausführliche Anleitung öffnet sich, sobald das Gerät online ist. Unter Info kannst du Feedback an den Admin schicken.")
     ]

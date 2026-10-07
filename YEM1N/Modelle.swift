@@ -153,7 +153,8 @@ final class RundenErgebnis {
         self.sterne = sterneFuer(gut: richtig, gesamt: gesamt)
         self.zeitpunkt = zeitpunkt
         self.quelle = quelle
-        self.kind = UserDefaults.standard.string(forKey: "kindName") ?? ""
+        self.kind = (UserDefaults.standard.string(forKey: "kindName") ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     var anteil: Double { gesamt > 0 ? Double(richtig) / Double(gesamt) : 0 }

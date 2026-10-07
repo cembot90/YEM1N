@@ -230,15 +230,6 @@ struct EinstellungenView: View {
                     .onChange(of: lernzeitMinuten) { Lernzeit.planen(an: lernzeitAn, minuten: lernzeitMinuten) }
 
                     Section {
-                        NavigationLink { InfoView() } label: {
-                            Label("Info, Anleitung und Feedback", systemImage: "info.circle.fill")
-                        }
-                    } footer: {
-                        Text("Version \(AppInfo.version) (\(AppInfo.build))")
-                    }
-                    .listRowBackground(zeile)
-
-                    Section {
                         NavigationLink { DatenschutzView() } label: {
                             Label("Datenschutzhinweise", systemImage: "hand.raised.fill")
                         }
@@ -350,6 +341,16 @@ struct EinstellungenView: View {
                         }
                     } footer: {
                         Text("Danach erscheint wieder die Auswahl Kind oder Eltern. Familiencode, Klassenarbeiten und Fortschritt bleiben erhalten.")
+                    }
+                    .listRowBackground(zeile)
+
+                    // Ganz unten, wie in den meisten Apps
+                    Section {
+                        NavigationLink { InfoView() } label: {
+                            Label("Info, Anleitung und Feedback", systemImage: "info.circle.fill")
+                        }
+                    } footer: {
+                        Text("Version \(AppInfo.version) (\(AppInfo.build))")
                     }
                     .listRowBackground(zeile)
                 }

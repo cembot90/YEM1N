@@ -98,6 +98,52 @@ enum Muenzen {
 }
 
 // ============================================================
+// MARK: - Die Spiele
+// ============================================================
+
+enum SpielArt: String, CaseIterable, Identifiable {
+    case lauf, jagd, hockey
+
+    var id: String { rawValue }
+
+    /// Unter diesem Namen wird der Bestwert gespeichert.
+    var schluessel: String { rawValue }
+
+    var titel: String {
+        switch self {
+        case .lauf: return "Zahlenlauf"
+        case .jagd: return "Münzjagd"
+        case .hockey: return "Münz-Hockey"
+        }
+    }
+
+    var beschreibung: String {
+        switch self {
+        case .lauf: return "Spring über die Kakteen und sammle Münzen. Es wird immer schneller."
+        case .jagd: return "Sammle auf den Plattformen alle Münzen ein. Weich den Fliegern aus."
+        case .hockey: return "Tischhockey gegen den Computer. Wer zuerst fünf Tore hat, gewinnt."
+        }
+    }
+
+    var bild: String {
+        switch self {
+        case .lauf: return "held_lauf1"
+        case .jagd: return "held_sprung"
+        case .hockey: return "muenze"
+        }
+    }
+
+    @ViewBuilder
+    var ansicht: some View {
+        switch self {
+        case .lauf: SpielLaufView()
+        case .jagd: SpielJagdView()
+        case .hockey: SpielHockeyView()
+        }
+    }
+}
+
+// ============================================================
 // MARK: - Spieleübersicht
 // ============================================================
 
@@ -108,9 +154,27 @@ struct SpieleView: View {
     @AppStorage("spieleProTag") private var proTag = 3
     @AppStorage("kindName") private var kindName = ""
     @AppStorage("modus") private var modus = ""
-    @State private var zeigeLauf = false
+    @State private var aktiv: SpielArt?
     @State private var gespieltHeute = Muenzen.spieleHeute
-    @State private var bestwert = Muenzen.bestwert("lauf")
+    @State private var bestwerte: [String: Int] = SpieleView.leseBestwerte()
+
+    private static func leseBestwerte() -> [String: Int] {
+        var d: [String: Int] = [:]
+        for art in SpielArt.allCases { d[art.schluessel] = Muenzen.bestwert(art.schluessel) }
+        return d
+    }
+
+    private func starte(_ art: SpielArt) {
+        guard sperre == nil else { return }
+        if testModus {
+            aktiv = art
+        } else if Muenzen.bezahlen(Muenzen.preisProSpiel) {
+            Muenzen.spielGestartet()
+            muenzen = Muenzen.stand
+            gespieltHeute = Muenzen.spieleHeute
+            aktiv = art
+        }
+    }
 
     /// Auf dem Eltern-Gerät darf ohne Münzen gespielt werden, zum Ausprobieren.
     private var testModus: Bool { modus == "eltern" }
@@ -140,7 +204,9 @@ struct SpieleView: View {
                 ScrollView {
                     VStack(spacing: 16) {
                         kontoKarte
-                        spielKarte
+                        ForEach(SpielArt.allCases) { art in
+                            spielKarte(art)
+                        }
                         if let grund = sperre {
                             Text(grund)
                                 .font(.system(.subheadline, design: .rounded).weight(.semibold))
@@ -163,13 +229,12 @@ struct SpieleView: View {
                     Button("Fertig") { dismiss() }
                 }
             }
-            .fullScreenCover(isPresented: $zeigeLauf) {
-                SpielLaufView()
-                    .onDisappear {
-                        gespieltHeute = Muenzen.spieleHeute
-                        bestwert = Muenzen.bestwert("lauf")
-                        muenzen = Muenzen.stand
-                    }
+            .fullScreenCover(item: $aktiv, onDismiss: {
+                gespieltHeute = Muenzen.spieleHeute
+                bestwerte = SpieleView.leseBestwerte()
+                muenzen = Muenzen.stand
+            }) { art in
+                art.ansicht
             }
         }
     }
@@ -227,16 +292,17 @@ struct SpieleView: View {
         .glasKarte(radius: 26)
     }
 
-    private var spielKarte: some View {
-        VStack(spacing: 12) {
-            Image("held_lauf1")
+    private func spielKarte(_ art: SpielArt) -> some View {
+        let bestwert = bestwerte[art.schluessel] ?? 0
+        return VStack(spacing: 12) {
+            Image(art.bild)
                 .resizable()
                 .scaledToFit()
                 .frame(height: 76)
-            Text("Zahlenlauf")
+            Text(art.titel)
                 .font(.system(.title2, design: .rounded).weight(.heavy))
                 .foregroundStyle(Color.white)
-            Text("Spring über die Kakteen und sammle Münzen. Es wird immer schneller.")
+            Text(art.beschreibung)
                 .font(.subheadline)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(Theme.textSanft)
@@ -246,15 +312,7 @@ struct SpieleView: View {
                     .foregroundStyle(Theme.gelb)
             }
             Button {
-                guard sperre == nil else { return }
-                if testModus {
-                    zeigeLauf = true
-                } else if Muenzen.bezahlen(Muenzen.preisProSpiel) {
-                    Muenzen.spielGestartet()
-                    muenzen = Muenzen.stand
-                    gespieltHeute = Muenzen.spieleHeute
-                    zeigeLauf = true
-                }
+                starte(art)
             } label: {
                 Text(knopfText)
                     .font(.system(.headline, design: .rounded).weight(.heavy))

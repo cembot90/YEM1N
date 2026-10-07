@@ -25,7 +25,14 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         UNUserNotificationCenter.current().delegate = self
         application.registerForRemoteNotifications()
+        Mitteilungen.aufraeumen()
         return true
+    }
+
+    /// Wer die App öffnet, hat die Mitteilungen gesehen. Der rote Punkt am Symbol
+    /// und die Einträge in der Mitteilungszentrale verschwinden dann.
+    func applicationDidBecomeActive(_ application: UIApplication) {
+        Mitteilungen.aufraeumen()
     }
 
     nonisolated func application(_ application: UIApplication,
@@ -48,7 +55,18 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
     nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter,
                                             willPresent notification: UNNotification) async -> UNNotificationPresentationOptions {
         NotificationCenter.default.post(name: .cloudPush, object: nil)
-        return [.banner, .list, .sound, .badge]
+        // Ohne .badge: Solange die App offen ist, soll kein roter Punkt entstehen
+        return [.banner, .list, .sound]
+    }
+}
+
+enum Mitteilungen {
+    /// Löscht den roten Punkt am App-Symbol und alle schon zugestellten Mitteilungen.
+    /// Geplante Erinnerungen wie die Lernzeit bleiben erhalten.
+    static func aufraeumen() {
+        let zentrum = UNUserNotificationCenter.current()
+        zentrum.removeAllDeliveredNotifications()
+        zentrum.setBadgeCount(0) { _ in }
     }
 }
 
@@ -333,6 +351,9 @@ enum CloudSync {
             for v in vorhanden { ids.insert(v.eintragID) }
             for r in records {
                 guard let id = r["eintragID"] as? String, !ids.contains(id) else { continue }
+                let kindName = ((r["kind"] as? String) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+                let zeit = (r["zeitpunkt"] as? Date) ?? (r.creationDate ?? Date.now)
+                if Kinder.istEntfernt(kindName, zeitpunkt: zeit) { continue }
                 let e = RundenErgebnis(klasse: (r["klasse"] as? String) ?? "",
                                        fach: (r["fach"] as? String) ?? "",
                                        arbeit: (r["arbeit"] as? String) ?? "",
@@ -340,10 +361,10 @@ enum CloudSync {
                                        richtig: (r["richtig"] as? Int) ?? 0,
                                        gesamt: (r["gesamt"] as? Int) ?? 0,
                                        angesehen: (r["angesehen"] as? Int) ?? 0,
-                                       zeitpunkt: (r["zeitpunkt"] as? Date) ?? (r.creationDate ?? Date.now),
+                                       zeitpunkt: zeit,
                                        quelle: "cloud")
                 e.eintragID = id
-                e.kind = (r["kind"] as? String) ?? ""
+                e.kind = kindName
                 context.insert(e)
                 ids.insert(id)
             }

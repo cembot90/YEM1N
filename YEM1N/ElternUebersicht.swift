@@ -82,12 +82,65 @@ struct ElternDashboardView: View {
     @State private var pdfURL: URL?
     @State private var zeigePDF = false
 
+    @State private var kindZuEntfernen: KindEintrag?
+
     private var ergebnisse: [RundenErgebnis] {
-        kindFilter.isEmpty ? alleErgebnisse : alleErgebnisse.filter { $0.kind == kindFilter }
+        kindFilter.isEmpty ? alleErgebnisse : alleErgebnisse.filter { Kinder.gleich($0.kind, kindFilter) }
     }
 
-    private var kinder: [String] {
-        Array(Set(alleErgebnisse.map { $0.kind }.filter { !$0.isEmpty })).sorted()
+    private var kinderListe: [KindEintrag] {
+        Kinder.liste(aus: alleErgebnisse.map { (name: $0.kind, zeitpunkt: $0.zeitpunkt) })
+    }
+
+    private var kinder: [String] { kinderListe.map { $0.name } }
+
+    private func entferne(_ kind: KindEintrag) {
+        Kinder.entfernen(kind.name)
+        for e in alleErgebnisse where Kinder.gleich(e.kind, kind.name) {
+            context.delete(e)
+        }
+        try? context.save()
+        if Kinder.gleich(kindFilter, kind.name) { kindFilter = "" }
+    }
+
+    private var kinderKarte: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Kinder in der Familie")
+                .font(.system(.headline, design: .rounded).weight(.heavy))
+                .foregroundStyle(Theme.gelb)
+            ForEach(kinderListe) { kind in
+                let alt = Kinder.tageSeit(kind.zuletzt) >= Kinder.langeInaktivTage
+                HStack(spacing: 12) {
+                    Image(systemName: alt ? "moon.zzz.fill" : "person.fill")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(alt ? Theme.textSanft : Theme.navy)
+                        .frame(width: 38, height: 38)
+                        .background(alt ? Color.white.opacity(0.12) : Theme.gelb, in: Circle())
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(kind.name)
+                            .font(.system(.subheadline, design: .rounded).weight(.bold))
+                            .foregroundStyle(Color.white)
+                        Text("\(kind.runden) \(kind.runden == 1 ? "Runde" : "Runden"), zuletzt \(Kinder.zuletztText(kind.zuletzt))")
+                            .font(.caption)
+                            .foregroundStyle(alt ? Theme.koralle : Theme.textSanft)
+                    }
+                    Spacer()
+                    Button { kindZuEntfernen = kind } label: {
+                        Image(systemName: "trash")
+                            .font(.system(size: 15, weight: .bold))
+                            .foregroundStyle(Theme.koralle)
+                            .frame(width: 40, height: 40)
+                    }
+                    .accessibilityLabel("\(kind.name) entfernen")
+                }
+            }
+            Text("Hier stehen alle Kinder, von denen Ergebnisse angekommen sind. Entfernen löscht nur die Einträge auf diesem Gerät. Spielt das Kind später weiter, erscheint es wieder.")
+                .font(.caption)
+                .foregroundStyle(Theme.textSanft)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .glasKarte(radius: 26)
     }
 
     private var kindWahl: some View {
@@ -107,7 +160,7 @@ struct ElternDashboardView: View {
         let namen: [String] = kinder.isEmpty ? [""] : kinder
         var zeilen: [String] = ["📊 YEM1N Wochenbericht"]
         for name in namen {
-            let l = diese.filter { name.isEmpty || $0.kind == name }
+            let l = diese.filter { name.isEmpty || Kinder.gleich($0.kind, name) }
             let titel = name.isEmpty ? "Diese Woche" : name
             if l.isEmpty {
                 zeilen.append("")
@@ -242,6 +295,7 @@ struct ElternDashboardView: View {
                         schwaecheKarte
                         letzteRunden
                     }
+                    if !kinderListe.isEmpty { kinderKarte }
                     demoKnoepfe
                 }
                 .padding(20)
@@ -252,6 +306,18 @@ struct ElternDashboardView: View {
         .task { await CloudSync.aktiv(context) }
         .task { await Wochenbericht.planen() }
         .sheet(isPresented: $zeigeEinstellungen) { EinstellungenView() }
+        .confirmationDialog(
+            "Kind entfernen?",
+            isPresented: Binding(get: { kindZuEntfernen != nil },
+                                 set: { if !$0 { kindZuEntfernen = nil } }),
+            titleVisibility: .visible,
+            presenting: kindZuEntfernen
+        ) { kind in
+            Button("\(kind.name) entfernen", role: .destructive) { entferne(kind) }
+            Button("Abbrechen", role: .cancel) {}
+        } message: { kind in
+            Text("Die \(kind.runden) Runden von \(kind.name) verschwinden von diesem Gerät. Beim Kind selbst bleibt alles erhalten.")
+        }
     }
 
     // MARK: Teile
