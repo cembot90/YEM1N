@@ -31,6 +31,8 @@ struct EinstellungenView: View {
     @AppStorage("vorschulTabEltern") private var vorschulEltern = false
     @AppStorage("jokerIch") private var jokerIch = ""
     @AppStorage("profilFertig") private var profilFertig = true
+    @AppStorage("spieleErlaubt") private var spieleErlaubt = true
+    @AppStorage("spieleProTag") private var spieleProTag = 3
     @AppStorage("lernzeitAn") private var lernzeitAn = false
     @AppStorage("lernzeitMinuten") private var lernzeitMinuten = 16 * 60
     @State private var zeigeFamilienQR = false
@@ -197,6 +199,19 @@ struct EinstellungenView: View {
                     }
                     .task { klassenAdmin = Klassensiegel.istAdmin("K-" + klassenCode) }
                     .onChange(of: klassenCode) { klassenAdmin = Klassensiegel.istAdmin("K-" + klassenCode) }
+                    .listRowBackground(zeile)
+
+                    Section {
+                        Toggle("Spiele erlauben", isOn: $spieleErlaubt)
+                            .tint(Theme.gelb)
+                        if spieleErlaubt {
+                            Stepper("Höchstens \(spieleProTag) Spiele pro Tag", value: $spieleProTag, in: 1...10)
+                        }
+                    } header: {
+                        Text("Spiele")
+                    } footer: {
+                        Text("Münzen gibt es für richtig gelöste Aufgaben, nicht für angeschaute Lösungen. Gespielt werden darf erst, wenn an diesem Tag schon eine Übung geschafft wurde.")
+                    }
                     .listRowBackground(zeile)
 
                     Section {
