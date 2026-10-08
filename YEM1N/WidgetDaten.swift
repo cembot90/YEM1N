@@ -73,7 +73,8 @@ enum WidgetBruecke {
     static func aktualisieren(serie: Int? = nil, letzteRunde: Date? = nil,
                               speicher: UserDefaults = .standard,
                               gemeinsam: UserDefaults? = UserDefaults(suiteName: WidgetBruecke.gruppe),
-                              jetzt: Date = Date.now, neuLaden: Bool = true) {
+                              jetzt: Date = Date.now, neuLaden: Bool = true,
+                              cloud: Bool = true) {
         if let serie {
             speicher.set(serie, forKey: serieKey)
             if let bis = serieBis(letzteRunde: letzteRunde) {
@@ -90,5 +91,17 @@ enum WidgetBruecke {
         guard let gemeinsam, let daten = try? JSONEncoder().encode(s) else { return }
         gemeinsam.set(daten, forKey: key)
         if neuLaden { WidgetCenter.shared.reloadAllTimelines() }
+        // Auf dem Kind-Gerät geht jede Änderung am Tier auch an die Familie.
+        if neuLaden && cloud { HaustierSync.anstossen() }
+    }
+
+    /// Eltern-Gerät: Das Widget zeigt das Tier des Kindes aus der Cloud. Eine Serie gibt es dort nicht.
+    static func zeige(haustier: Haustier?,
+                      gemeinsam: UserDefaults? = UserDefaults(suiteName: WidgetBruecke.gruppe),
+                      jetzt: Date = Date.now) {
+        let s = stand(haustier: haustier, serie: 0, jetzt: jetzt)
+        guard let gemeinsam, let daten = try? JSONEncoder().encode(s) else { return }
+        gemeinsam.set(daten, forKey: key)
+        WidgetCenter.shared.reloadAllTimelines()
     }
 }

@@ -262,6 +262,9 @@ enum CloudDienst {
                                                    "zeitpunkt": Date() as CKRecordValue])
         try await schemaBeispiel("JokerNachschub", ["familienCode": code, "kind": "Test" as CKRecordValue])
         try await schemaBeispiel("JokerFreigabe", ["familienCode": code, "anzahl": 3 as CKRecordValue])
+        try await schemaBeispiel("Haustier", ["familienCode": code, "json": "{}" as CKRecordValue])
+        try await schemaBeispiel("HaustierPflege", ["familienCode": code, "art": "leckerli" as CKRecordValue,
+                                                    "tag": "2026-1-1" as CKRecordValue, "absender": "Test" as CKRecordValue])
         try await schemaBeispiel("Lernpaket", ["familienCode": code, "klasse": "Test" as CKRecordValue,
                                                "fach": "Test" as CKRecordValue, "titel": "Test" as CKRecordValue,
                                                "json": "{}" as CKRecordValue, "aufgaben": 0 as CKRecordValue])
@@ -303,6 +306,8 @@ enum CloudDienst {
                               text: "💡 Du hast einen Tipp bekommen! Schau im Tab Joker nach.")
                 try await abo(typ: "JokerFreigabe", code: code,
                               text: "🎉 Neue Joker! Du hast wieder alle Joker für heute.")
+                try await abo(typ: "HaustierPflege", code: code,
+                              text: "🐾 Dein Haustier hat von deiner Familie etwas bekommen!")
                 try await abo(typ: "Lernpaket", code: code,
                               text: "📚 Neue Aufgaben für dich sind da! Öffne YEM1N und leg los. 💪")
             }

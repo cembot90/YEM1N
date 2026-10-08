@@ -518,7 +518,7 @@ struct HaustierView: View {
                 .font(.system(.title3, design: .rounded).weight(.bold))
                 .padding(14)
                 .background(Color.white.opacity(0.10), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            Text("Der Name bleibt auf diesem Gerät. Dein Haustier läuft nie weg, auch wenn du mal ein paar Tage nicht übst.")
+            Text("Ein Rufname reicht, bitte keinen Nachnamen. Deine Eltern sehen dein Haustier auch und können es füttern. Es läuft nie weg, auch wenn du mal ein paar Tage nicht übst.")
                 .font(.footnote)
                 .foregroundStyle(Theme.textSanft)
                 .multilineTextAlignment(.center)
