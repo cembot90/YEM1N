@@ -652,30 +652,41 @@ struct KindTabs: View {
     @AppStorage(SprachAuswahl.schluessel) private var sprachWahl = ""
     @AppStorage(HaustierSpeicher.key) private var haustierDaten = Data()
     @Environment(\.scenePhase) private var phase
+    /// Welcher Tab offen ist. Das Widget springt mit "yem1n://haustier" zum Haustier.
+    @State private var tab = "schule"
 
     private var hatSprachen: Bool {
         !SprachAuswahl.aktiv(roh: sprachWahl, alle: SprachKatalogStore.shared.katalog.lernsprachen).isEmpty
     }
 
     var body: some View {
-        TabView {
+        TabView(selection: $tab) {
             StartView()
                 .tabItem { Label("Schule", systemImage: "books.vertical.fill") }
+                .tag("schule")
             if hatSprachen {
                 SprachStartView()
                     .tabItem { Label("Sprachen", systemImage: "globe") }
+                    .tag("sprachen")
             }
             if vorschul {
                 VorschuleView()
                     .tabItem { Label("Vorschule", systemImage: "sparkles") }
+                    .tag("vorschule")
             }
             HaustierView()
                 .tabItem { Label("Haustier", systemImage: "pawprint.fill") }
                 .badge(HaustierDienst.braucheAufmerksamkeit(haustierDaten) ? 1 : 0)
+                .tag("haustier")
             KindJokerView()
                 .tabItem { Label("Joker", systemImage: "suit.spade.fill") }
+                .tag("joker")
             EinstellungenView(eingebettet: true)
                 .tabItem { Label("Einstellungen", systemImage: "gearshape.fill") }
+                .tag("einstellungen")
+        }
+        .onOpenURL { url in
+            if url.scheme == "yem1n", url.host == "haustier" { tab = "haustier" }
         }
         .task {
             WidgetBruecke.aktualisieren()
