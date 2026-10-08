@@ -15,23 +15,44 @@ import CoreImage.CIFilterBuiltins
 
 struct ElternTabs: View {
     @AppStorage("vorschulTabEltern") private var vorschul = false
+    @AppStorage(HaustierSpeicher.key) private var haustierDaten = Data()
+    @Environment(\.scenePhase) private var phase
+    /// Das Widget springt mit "yem1n://haustier" zum Haustier.
+    @State private var tab = "uebersicht"
 
     var body: some View {
-        TabView {
+        TabView(selection: $tab) {
             ElternDashboardView()
                 .tabItem { Label("Übersicht", systemImage: "chart.bar.fill") }
+                .tag("uebersicht")
             StartView()
                 .tabItem { Label("Schule", systemImage: "books.vertical.fill") }
+                .tag("schule")
             SprachStartView()
                 .tabItem { Label("Sprachen", systemImage: "globe") }
+                .tag("sprachen")
             if vorschul {
                 VorschuleView()
                     .tabItem { Label("Vorschule", systemImage: "sparkles") }
+                    .tag("vorschule")
             }
+            HaustierView()
+                .tabItem { Label("Haustier", systemImage: "pawprint.fill") }
+                .badge(HaustierDienst.braucheAufmerksamkeit(haustierDaten) ? 1 : 0)
+                .tag("haustier")
             JokerLigaView()
                 .tabItem { Label("Joker", systemImage: "suit.spade.fill") }
+                .tag("joker")
             EinstellungenView(eingebettet: true)
                 .tabItem { Label("Einstellungen", systemImage: "gearshape.fill") }
+                .tag("einstellungen")
+        }
+        .onOpenURL { url in
+            if url.scheme == "yem1n", url.host == "haustier" { tab = "haustier" }
+        }
+        .task { WidgetBruecke.aktualisieren() }
+        .onChange(of: phase) {
+            if phase == .active { WidgetBruecke.aktualisieren() }
         }
     }
 }
