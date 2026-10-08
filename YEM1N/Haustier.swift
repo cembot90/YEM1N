@@ -353,7 +353,10 @@ enum HaustierDienst {
         guard var h = HaustierSpeicher.laden(speicher: speicher) else { return nil }
         let ereignis = h.lernrunde(richtig: richtig, gesamt: gesamt, angesehen: angesehen, jetzt: jetzt)
         HaustierSpeicher.sichern(h, speicher: speicher)
-        if erinnern { Task { await HaustierErinnerung.aktualisieren() } }
+        if erinnern {
+            Task { await HaustierErinnerung.aktualisieren() }
+            WidgetBruecke.aktualisieren()
+        }
         return ereignis.text(fuer: h)
     }
 
@@ -468,6 +471,7 @@ struct HaustierView: View {
                     HaustierSpeicher.entfernen()
                     daten = Data()
                     antippSpruch = nil
+                    WidgetBruecke.aktualisieren()
                     Task { await HaustierErinnerung.aktualisieren() }
                 }
                 Button("Nein, behalten", role: .cancel) {}
@@ -523,6 +527,7 @@ struct HaustierView: View {
                 HaustierSpeicher.sichern(neu)
                 daten = HaustierSpeicher.kodiere(neu)
                 Haptik.erfolg()
+                WidgetBruecke.aktualisieren()
                 Task { await HaustierErinnerung.aktualisieren(fragen: true) }
             }
             .padding(.horizontal, -24)
@@ -794,6 +799,7 @@ struct HaustierView: View {
         block(&h)
         daten = HaustierSpeicher.kodiere(h)
         muenzen = Muenzen.stand
+        WidgetBruecke.aktualisieren()
         Task { await HaustierErinnerung.aktualisieren() }
     }
 }
