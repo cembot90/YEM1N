@@ -51,10 +51,7 @@ enum Spezial {
         guard !a.quellKey.isEmpty else { return }
         guard Fehlerplan.richtig(a.quellKey) else { return }
         // Nur falsch beantwortete Originale kommen infrage. So lädt die App nicht jede Aufgabe.
-        let beschreibung = FetchDescriptor<Aufgabe>(
-            predicate: #Predicate<Aufgabe> { $0.quellKey == "" && $0.richtig == false })
-        let alle = (try? context.fetch(beschreibung)) ?? []
-        for o in alle where schluessel(o) == a.quellKey {
+        for o in falscheOriginale(in: context) where schluessel(o) == a.quellKey {
             o.gemeistert = true
         }
     }
@@ -80,12 +77,19 @@ enum Spezial {
         return (faellig, wartend)
     }
 
+    /// Alle Originalaufgaben, die falsch beantwortet wurden. Die Datenbank filtert nur
+    /// nach dem Verweis (einfach und schnell), das "falsch" prüfen wir danach im Speicher.
+    private static func falscheOriginale(in context: ModelContext) -> [Aufgabe] {
+        let beschreibung = FetchDescriptor<Aufgabe>(
+            predicate: #Predicate<Aufgabe> { $0.quellKey == "" })
+        let alle = (try? context.fetch(beschreibung)) ?? []
+        return alle.filter { $0.richtig == false }
+    }
+
     /// Schnelle Variante für die Startseite: holt nur die falsch beantworteten Originale
     /// aus der Datenbank, statt alle Klassenarbeiten mit allen Aufgaben zu durchlaufen.
     static func fehlerStand(in context: ModelContext, jetzt: Date = Date.now) -> (faellig: Int, wartend: Int) {
-        let beschreibung = FetchDescriptor<Aufgabe>(
-            predicate: #Predicate<Aufgabe> { $0.richtig == false && $0.gemeistert == false && $0.quellKey == "" })
-        let falsche = (try? context.fetch(beschreibung)) ?? []
+        let falsche = falscheOriginale(in: context).filter { !$0.gemeistert }
         let tabelle = Fehlerplan.tabelle()
         var faellig = 0
         var wartend = 0
