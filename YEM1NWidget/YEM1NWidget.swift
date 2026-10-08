@@ -116,6 +116,21 @@ struct HaustierWidgetAnsicht: View {
                 }
                 Spacer(minLength: 0)
             }
+        case .systemMedium:
+            HStack(spacing: 16) {
+                Text(tier).font(.system(size: 64))
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(eintrag.name)
+                        .font(.system(.title2, design: .rounded).weight(.heavy))
+                        .lineLimit(1)
+                    Text(eintrag.text).font(.subheadline).lineLimit(1)
+                    if let s = eintrag.serie {
+                        Text("🔥 \(s) Tage in Folge").font(.subheadline.weight(.bold))
+                    }
+                }
+                Spacer(minLength: 0)
+            }
+            .foregroundStyle(.white)
         default:
             VStack(spacing: 4) {
                 Text(tier).font(.system(size: 52))
@@ -147,11 +162,17 @@ struct YEM1NWidget: Widget {
         .configurationDisplayName("Haustier")
         .description("Dein Haustier und deine Serie, auch auf dem Sperrbildschirm.")
         .supportedFamilies([.accessoryCircular, .accessoryRectangular,
-                            .accessoryInline, .systemSmall])
+                            .accessoryInline, .systemSmall, .systemMedium])
     }
 }
 
 #Preview("Sperrbildschirm", as: .accessoryRectangular) {
+    YEM1NWidget()
+} timeline: {
+    HaustierEintrag(date: .now, stand: .beispiel)
+}
+
+#Preview("Home mittel", as: .systemMedium) {
     YEM1NWidget()
 } timeline: {
     HaustierEintrag(date: .now, stand: .beispiel)
