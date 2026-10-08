@@ -515,6 +515,9 @@ struct HaustierView: View {
                 }
             }
             TextField("Name, zum Beispiel Pip", text: $wahlName)
+                // Namen braucht keine Wortvorschläge. Das macht das Tippen auf älteren Geräten flüssiger.
+                .autocorrectionDisabled()
+                .textInputAutocapitalization(.words)
                 .font(.system(.title3, design: .rounded).weight(.bold))
                 .padding(14)
                 .background(Color.white.opacity(0.10), in: RoundedRectangle(cornerRadius: 16, style: .continuous))

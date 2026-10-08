@@ -84,6 +84,8 @@ struct ProfilAssistent: View {
         } else if schritt == 0 {
             frageKarte("Wie heißt das Kind?", "Ein Vorname oder Spitzname reicht, bitte keinen Nachnamen. Der Name erscheint bei den Eltern.") {
                 TextField("Name", text: $name)
+                    .autocorrectionDisabled()
+                    .textInputAutocapitalization(.words)
                     .font(.system(.title3, design: .rounded).weight(.bold))
                     .padding(14)
                     .background(Color.white.opacity(0.10), in: RoundedRectangle(cornerRadius: 16, style: .continuous))

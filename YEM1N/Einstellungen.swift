@@ -300,6 +300,8 @@ struct EinstellungenView: View {
                     if modus == "kind" {
                         Section {
                             TextField("Name, zum Beispiel Yemin", text: $kindNameEntwurf)
+                                .autocorrectionDisabled()
+                                .textInputAutocapitalization(.words)
                                 .focused($fokus, equals: "name")
                             Picker("Klasse", selection: $kindKlasse) {
                                 Text("Alle").tag("")

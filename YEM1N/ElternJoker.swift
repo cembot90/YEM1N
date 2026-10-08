@@ -423,6 +423,8 @@ struct JokerLigaView: View {
                     .padding(10)
                     .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                 TextField("Name hinzufügen", text: $neuerName)
+                    .autocorrectionDisabled()
+                    .textInputAutocapitalization(.words)
                     .padding(10)
                     .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                 Button {

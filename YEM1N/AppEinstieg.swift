@@ -30,7 +30,9 @@ struct MatheApp: App {
         // SwiftData bleibt lokal auf dem Gerät. Ohne diese Zeile würde SwiftData
         // nach dem Aktivieren von iCloud die Daten automatisch in die private
         // iCloud-Datenbank spiegeln.
-        let konfiguration = ModelConfiguration(schema: schema, cloudKitDatabase: .none)
+        // Ausdrücklich im normalen App-Ordner. Seit es die App Group fürs Widget gibt, würde SwiftData
+        // sonst von selbst in den Gruppen-Ordner wechseln und die vorhandenen Daten wären weg.
+        let konfiguration = ModelConfiguration(schema: schema, groupContainer: .none, cloudKitDatabase: .none)
         do {
             container = try ModelContainer(for: schema, configurations: konfiguration)
         } catch {
