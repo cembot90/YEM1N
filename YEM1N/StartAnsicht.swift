@@ -83,6 +83,13 @@ struct StartView: View {
         pfad.append(neu)
     }
 
+    /// Gibt dem Sperrbildschirm-Widget die aktuelle Serie.
+    private func widgetSerie() {
+        guard modus == "kind" else { return }
+        WidgetBruecke.aktualisieren(serie: Erfolge.geschuetzteSerie(lokale).laenge,
+                                    letzteRunde: lokale.map(\.zeitpunkt).max())
+    }
+
     private func pruefeZwischenablage() {
         guard let gelesen = PaketAktion.lese(UIPasteboard.general.string ?? "") else {
             infoMeldung = "In der Zwischenablage liegt kein passendes JSON von Claude. Kopiere es im Chat und tippe dann noch einmal hier."
@@ -130,6 +137,8 @@ struct StartView: View {
                 }
             }
             .toolbar(.hidden, for: .navigationBar)
+            .onAppear { widgetSerie() }
+            .onChange(of: lokale.count) { widgetSerie() }
             .alert("Hinweis",
                    isPresented: Binding(get: { infoMeldung != nil },
                                         set: { if !$0 { infoMeldung = nil } })) {

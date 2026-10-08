@@ -677,9 +677,15 @@ struct KindTabs: View {
             EinstellungenView(eingebettet: true)
                 .tabItem { Label("Einstellungen", systemImage: "gearshape.fill") }
         }
-        .task { await HaustierErinnerung.aktualisieren() }
+        .task {
+            WidgetBruecke.aktualisieren()
+            await HaustierErinnerung.aktualisieren()
+        }
         .onChange(of: phase) {
-            if phase == .active { Task { await HaustierErinnerung.aktualisieren() } }
+            if phase == .active {
+                WidgetBruecke.aktualisieren()
+                Task { await HaustierErinnerung.aktualisieren() }
+            }
         }
     }
 }
