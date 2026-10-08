@@ -298,6 +298,7 @@ struct UebungInhalt: View {
     private var lokaleRunden: [RundenErgebnis]
     @AppStorage("tagesziel") private var tagesziel = 2
     @State private var neuePokale: [Pokal] = []
+    @State private var haustierText: String?
 
     private var istProbe: Bool { uebung.arbeit?.spezial == "probe" }
 
@@ -861,7 +862,7 @@ struct UebungInhalt: View {
 
     private func melde(_ a: Aufgabe, ok: Bool, erklaerung: String) {
         a.richtig = ok
-        if ok { Spezial.gemeistert(a, in: context) }
+        if ok { Spezial.gemeistert(a, in: context) } else { Spezial.falschBeantwortet(a) }
         bewertet = a
         bewertung = ok ? .richtig : .falsch
         kurzerHinweis = nil
@@ -929,6 +930,9 @@ struct UebungInhalt: View {
                                                   gesamt: uebung.aufgaben.count,
                                                   angesehen: uebung.angesehenAnzahl))
             Muenzen.rundeGeschafft()
+            haustierText = HaustierDienst.rundeGeschafft(richtig: gut,
+                                                         gesamt: uebung.aufgaben.count,
+                                                         angesehen: uebung.angesehenAnzahl)
             context.insert(RundenErgebnis(
                 klasse: uebung.arbeit?.klasse ?? "",
                 fach: uebung.arbeit?.fach ?? "",
@@ -949,6 +953,7 @@ struct UebungInhalt: View {
         }
         probeStart = Date.now
         bewertet = nil
+        haustierText = nil
     }
 
     // MARK: Ergebnis
@@ -988,6 +993,18 @@ struct UebungInhalt: View {
                     .font(.system(.title3, design: .rounded).weight(.semibold))
                     .foregroundStyle(Theme.textSanft)
                     .multilineTextAlignment(.center)
+
+                if let haustierText {
+                    Text(haustierText)
+                        .font(.system(.headline, design: .rounded).weight(.heavy))
+                        .foregroundStyle(Color.white)
+                        .multilineTextAlignment(.center)
+                        .padding(14)
+                        .frame(maxWidth: .infinity)
+                        .background(Theme.mint.opacity(0.25),
+                                    in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                        .padding(.horizontal, 24)
+                }
 
                 if !neuePokale.isEmpty {
                     VStack(spacing: 8) {

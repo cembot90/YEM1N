@@ -45,13 +45,35 @@ enum Spezial {
                        reihenJSON: reihenJSON, reihenfolge: reihenfolge)
     }
 
-    // Wird aufgerufen, wenn eine Aufgabe richtig beantwortet wurde
+    // Wird aufgerufen, wenn eine Aufgabe richtig beantwortet wurde.
+    // Im Fehlerheft zählt das erst nach der zweiten richtigen Wiederholung.
     static func gemeistert(_ a: Aufgabe, in context: ModelContext) {
         guard !a.quellKey.isEmpty else { return }
+        guard Fehlerplan.richtig(a.quellKey) else { return }
         let alle = (try? context.fetch(FetchDescriptor<Aufgabe>())) ?? []
         for o in alle where o.quellKey.isEmpty && schluessel(o) == a.quellKey {
             o.gemeistert = true
         }
+    }
+
+    // Wird aufgerufen, wenn eine Aufgabe falsch beantwortet wurde
+    static func falschBeantwortet(_ a: Aufgabe) {
+        guard !a.quellKey.isEmpty else { return }
+        Fehlerplan.falsch(a.quellKey)
+    }
+
+    /// Wie viele Fehler jetzt dran sind und wie viele erst in einigen Tagen wiederkommen.
+    static func fehlerStand(alle: [Klassenarbeit], jetzt: Date = Date.now) -> (faellig: Int, wartend: Int) {
+        var faellig = 0
+        var wartend = 0
+        for k in alle {
+            for u in k.uebungen {
+                for a in u.aufgaben where a.richtig == false && !a.gemeistert {
+                    if Fehlerplan.istFaellig(schluessel(a), jetzt: jetzt) { faellig += 1 } else { wartend += 1 }
+                }
+            }
+        }
+        return (faellig, wartend)
     }
 
     static func note(gut: Int, gesamt: Int) -> Int {
@@ -89,13 +111,13 @@ enum Spezial {
         return alle.first?.klasse ?? "Klasse 3"
     }
 
-    // Fehlerheft: bis zu 15 noch nicht gemeisterte Fehler als neue Runde
+    // Fehlerheft: bis zu 15 fällige, noch nicht gemeisterte Fehler als neue Runde
     static func fehlerheft(alle: [Klassenarbeit], in context: ModelContext) -> Klassenarbeit? {
         var fehler: [Aufgabe] = []
         for k in alle {
             for u in k.sortierteUebungen {
                 for a in u.sortierteAufgaben where a.richtig == false && !a.gemeistert {
-                    fehler.append(a)
+                    if Fehlerplan.istFaellig(schluessel(a)) { fehler.append(a) }
                 }
             }
         }
