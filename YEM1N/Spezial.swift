@@ -50,8 +50,11 @@ enum Spezial {
     static func gemeistert(_ a: Aufgabe, in context: ModelContext) {
         guard !a.quellKey.isEmpty else { return }
         guard Fehlerplan.richtig(a.quellKey) else { return }
-        let alle = (try? context.fetch(FetchDescriptor<Aufgabe>())) ?? []
-        for o in alle where o.quellKey.isEmpty && schluessel(o) == a.quellKey {
+        // Nur falsch beantwortete Originale kommen infrage. So lädt die App nicht jede Aufgabe.
+        let beschreibung = FetchDescriptor<Aufgabe>(
+            predicate: #Predicate<Aufgabe> { $0.quellKey == "" && $0.richtig == false })
+        let alle = (try? context.fetch(beschreibung)) ?? []
+        for o in alle where schluessel(o) == a.quellKey {
             o.gemeistert = true
         }
     }
@@ -66,12 +69,29 @@ enum Spezial {
     static func fehlerStand(alle: [Klassenarbeit], jetzt: Date = Date.now) -> (faellig: Int, wartend: Int) {
         var faellig = 0
         var wartend = 0
+        let tabelle = Fehlerplan.tabelle()
         for k in alle {
             for u in k.uebungen {
                 for a in u.aufgaben where a.richtig == false && !a.gemeistert {
-                    if Fehlerplan.istFaellig(schluessel(a), jetzt: jetzt) { faellig += 1 } else { wartend += 1 }
+                    if Fehlerplan.istFaellig(schluessel(a), in: tabelle, jetzt: jetzt) { faellig += 1 } else { wartend += 1 }
                 }
             }
+        }
+        return (faellig, wartend)
+    }
+
+    /// Schnelle Variante für die Startseite: holt nur die falsch beantworteten Originale
+    /// aus der Datenbank, statt alle Klassenarbeiten mit allen Aufgaben zu durchlaufen.
+    static func fehlerStand(in context: ModelContext, jetzt: Date = Date.now) -> (faellig: Int, wartend: Int) {
+        let beschreibung = FetchDescriptor<Aufgabe>(
+            predicate: #Predicate<Aufgabe> { $0.richtig == false && $0.gemeistert == false && $0.quellKey == "" })
+        let falsche = (try? context.fetch(beschreibung)) ?? []
+        let tabelle = Fehlerplan.tabelle()
+        var faellig = 0
+        var wartend = 0
+        for a in falsche {
+            guard let arbeit = a.uebung?.arbeit, arbeit.spezial.isEmpty, arbeit.fach != "Vorschule" else { continue }
+            if Fehlerplan.istFaellig(schluessel(a), in: tabelle, jetzt: jetzt) { faellig += 1 } else { wartend += 1 }
         }
         return (faellig, wartend)
     }
@@ -114,10 +134,11 @@ enum Spezial {
     // Fehlerheft: bis zu 15 fällige, noch nicht gemeisterte Fehler als neue Runde
     static func fehlerheft(alle: [Klassenarbeit], in context: ModelContext) -> Klassenarbeit? {
         var fehler: [Aufgabe] = []
+        let tabelle = Fehlerplan.tabelle()
         for k in alle {
             for u in k.sortierteUebungen {
                 for a in u.sortierteAufgaben where a.richtig == false && !a.gemeistert {
-                    if Fehlerplan.istFaellig(schluessel(a)) { fehler.append(a) }
+                    if Fehlerplan.istFaellig(schluessel(a), in: tabelle) { fehler.append(a) }
                 }
             }
         }

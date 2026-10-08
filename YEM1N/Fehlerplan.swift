@@ -36,6 +36,18 @@ enum Fehlerplan {
         return Date(timeIntervalSince1970: t)
     }
 
+    /// Die ganze Tabelle auf einmal. Wer viele Fehler prüft, liest sie nur einmal
+    /// und fragt dann mit `istFaellig(_:in:jetzt:)`, statt sie bei jeder Aufgabe neu zu laden.
+    static func tabelle(speicher: UserDefaults = .standard) -> [String: Double] {
+        faelligkeiten(speicher)
+    }
+
+    static func istFaellig(_ schluessel: String, in tabelle: [String: Double],
+                           jetzt: Date = Date.now) -> Bool {
+        guard let t = tabelle[schluessel] else { return true }
+        return Date(timeIntervalSince1970: t) <= jetzt
+    }
+
     static func istFaellig(_ schluessel: String, jetzt: Date = Date.now,
                            speicher: UserDefaults = .standard) -> Bool {
         guard let ab = faelligAb(schluessel, speicher: speicher) else { return true }

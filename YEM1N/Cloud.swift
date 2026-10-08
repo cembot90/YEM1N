@@ -449,16 +449,29 @@ enum CloudSync {
         }
     }
 
+    private static let paketeSucheKey = "paketeLetzteSuche"
+    private static let paketeSucheAbstand: TimeInterval = 600
+
+    private static func paketeSucheFaellig(jetzt: Date = Date()) -> Bool {
+        let t = UserDefaults.standard.double(forKey: paketeSucheKey)
+        return t == 0 || jetzt.timeIntervalSince1970 - t >= paketeSucheAbstand
+    }
+
     // Wird beim Öffnen der App, bei Mitteilungen und beim Aktualisieren aufgerufen
     nonisolated(unsafe) private static var letzterLauf = Date.distantPast
 
     static func aktiv(_ context: ModelContext, erzwingen: Bool = false) async {
-        if !erzwingen && Date().timeIntervalSince(letzterLauf) < 5 { return }
+        if !erzwingen && Date().timeIntervalSince(letzterLauf) < 20 { return }
         letzterLauf = Date()
         if modus == "kind" {
             await sendeOffene(context)
             await holeFreigaben()
-            await holePakete(context)
+            // Neue Pakete kommen per Mitteilung (erzwingen) oder über "Neue Aufgaben holen".
+            // Beim bloßen Öffnen der App reicht es, wenn die Suche alle 10 Minuten läuft.
+            if erzwingen || paketeSucheFaellig() {
+                await holePakete(context)
+                UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: paketeSucheKey)
+            }
         }
         if modus == "eltern" { await holeErgebnisse(context) }
         if !modus.isEmpty { await JokerCloud.shared.aktualisieren() }

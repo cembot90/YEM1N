@@ -78,3 +78,17 @@ struct FehlerplanTests {
         #expect(Fehlerplan.istFaellig("a", jetzt: drittenTagMorgens, speicher: s))
     }
 }
+
+@MainActor
+struct FehlerplanTabelleTests {
+    @Test func ohneEintragIstEinFehlerSofortDran() {
+        #expect(Fehlerplan.istFaellig("a|b", in: [:]))
+    }
+
+    @Test func dieTabelleEntscheidetNachDemZeitpunkt() {
+        let jetzt = Date(timeIntervalSince1970: 1_000_000)
+        let tabelle = ["spaeter": 1_000_100.0, "frueher": 999_900.0]
+        #expect(!Fehlerplan.istFaellig("spaeter", in: tabelle, jetzt: jetzt))
+        #expect(Fehlerplan.istFaellig("frueher", in: tabelle, jetzt: jetzt))
+    }
+}

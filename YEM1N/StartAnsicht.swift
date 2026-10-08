@@ -49,8 +49,15 @@ struct StartView: View {
     private var alleFaecher: [String] { Array(Set(normale.map(\.fach))).sorted() }
     private var aktuellerFilter: String { alleFaecher.contains(fachFilter) ? fachFilter : "Alle" }
 
-    private var fehlerStand: (faellig: Int, wartend: Int) {
-        Spezial.fehlerStand(alle: normale)
+    /// Wird nur bei Bedarf neu berechnet, nicht bei jedem Zeichnen der Seite.
+    @State private var fehlerStandWert: (faellig: Int, wartend: Int) = (0, 0)
+    @State private var serieAnzeige = 0
+
+    private var fehlerStand: (faellig: Int, wartend: Int) { fehlerStandWert }
+
+    private func aktualisiereWerte() {
+        fehlerStandWert = Spezial.fehlerStand(in: context)
+        widgetSerie()
     }
 
     private var fehlerUntertitel: String {
@@ -73,7 +80,7 @@ struct StartView: View {
         default: neu = Spezial.probe(alle: normale, fruehere: alleArbeiten.filter { $0.spezial == "probe" }, in: context)
         }
         guard let neu else {
-            let wartend = Spezial.fehlerStand(alle: normale).wartend
+            let wartend = Spezial.fehlerStand(in: context).wartend
             infoMeldung = wartend > 0
                 ? "Gerade ist nichts fällig. \(wartend) \(wartend == 1 ? "Fehler kommt" : "Fehler kommen") in den nächsten Tagen noch einmal dran, damit sie wirklich sitzen. 👍"
                 : "Keine offenen Fehler. Super gemacht! 🎉"
@@ -85,8 +92,10 @@ struct StartView: View {
 
     /// Gibt dem Sperrbildschirm-Widget die aktuelle Serie.
     private func widgetSerie() {
+        let serie = Erfolge.geschuetzteSerie(lokale).laenge
+        serieAnzeige = serie
         guard modus == "kind" else { return }
-        WidgetBruecke.aktualisieren(serie: Erfolge.geschuetzteSerie(lokale).laenge,
+        WidgetBruecke.aktualisieren(serie: serie,
                                     letzteRunde: lokale.map(\.zeitpunkt).max())
     }
 
@@ -137,8 +146,9 @@ struct StartView: View {
                 }
             }
             .toolbar(.hidden, for: .navigationBar)
-            .onAppear { widgetSerie() }
-            .onChange(of: lokale.count) { widgetSerie() }
+            .onAppear { aktualisiereWerte() }
+            .onChange(of: lokale.count) { aktualisiereWerte() }
+            .onChange(of: pfad.count) { aktualisiereWerte() }
             .alert("Hinweis",
                    isPresented: Binding(get: { infoMeldung != nil },
                                         set: { if !$0 { infoMeldung = nil } })) {
@@ -215,7 +225,7 @@ struct StartView: View {
 
     private var untertitel: String {
         var text = kindName.isEmpty ? "Schule üben" : "Hallo \(kindName)! Schule üben"
-        let serie = Erfolge.geschuetzteSerie(lokale).laenge
+        let serie = serieAnzeige
         if modus != "eltern" && serie > 0 { text += " · 🔥 \(serie)" }
         return text
     }
