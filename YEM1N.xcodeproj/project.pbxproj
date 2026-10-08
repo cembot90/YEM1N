@@ -6,7 +6,20 @@
 	objectVersion = 90;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		274492AE307785EE004D8E2E /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 274492AD307785EE004D8E2E /* WidgetKit.framework */; };
+		274492B0307785EE004D8E2E /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 274492AF307785EE004D8E2E /* SwiftUI.framework */; };
+		274492BD307785EF004D8E2E /* YEM1NWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 274492AC307785EE004D8E2E /* YEM1NWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
+		274492BB307785EF004D8E2E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 000000000000000000000000 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 274492AB307785EE004D8E2E;
+			remoteInfo = YEM1NWidgetExtension;
+		};
 		27738EBC3075936E0020F348 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 000000000000000000000000 /* Project object */;
@@ -16,12 +29,35 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		274492C2307785EF004D8E2E /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			dstPath = "";
+			dstSubfolder = PlugIns;
+			files = (
+				274492BD307785EF004D8E2E /* YEM1NWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		000000000000000000000120 /* YEM1N.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = YEM1N.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		274492AC307785EE004D8E2E /* YEM1NWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = YEM1NWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		274492AD307785EE004D8E2E /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		274492AF307785EE004D8E2E /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		274492C330778614004D8E2E /* YEM1NWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = YEM1NWidgetExtension.entitlements; sourceTree = "<group>"; };
 		27738EB83075936E0020F348 /* YEM1NTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = YEM1NTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		274492C1307785EF004D8E2E /* Exceptions for "YEM1NWidget" folder in "YEM1NWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 274492AB307785EE004D8E2E /* YEM1NWidgetExtension */;
+		};
 		27857319306D8EC6009BAA9E /* Exceptions for "YEM1N" folder in "YEM1N" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -40,6 +76,14 @@
 			path = YEM1N;
 			sourceTree = "<group>";
 		};
+		274492B1307785EE004D8E2E /* YEM1NWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				274492C1307785EF004D8E2E /* Exceptions for "YEM1NWidget" folder in "YEM1NWidgetExtension" target */,
+			);
+			path = YEM1NWidget;
+			sourceTree = "<group>";
+		};
 		27738EB93075936E0020F348 /* YEM1NTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = YEM1NTests;
@@ -53,6 +97,13 @@
 			files = (
 			);
 		};
+		274492A9307785EE004D8E2E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+				274492B0307785EE004D8E2E /* SwiftUI.framework in Frameworks */,
+				274492AE307785EE004D8E2E /* WidgetKit.framework in Frameworks */,
+			);
+		};
 		27738EB53075936E0020F348 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			files = (
@@ -64,8 +115,10 @@
 		000000000000000000000001 = {
 			isa = PBXGroup;
 			children = (
+				274492C330778614004D8E2E /* YEM1NWidgetExtension.entitlements */,
 				000000000000000000000010 /* YEM1N */,
 				27738EB93075936E0020F348 /* YEM1NTests */,
+				274492B1307785EE004D8E2E /* YEM1NWidget */,
 				2785730D306D745F009BAA9E /* Frameworks */,
 				000000000000000000000020 /* Products */,
 			);
@@ -76,6 +129,7 @@
 			children = (
 				000000000000000000000120 /* YEM1N.app */,
 				27738EB83075936E0020F348 /* YEM1NTests.xctest */,
+				274492AC307785EE004D8E2E /* YEM1NWidgetExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -83,6 +137,8 @@
 		2785730D306D745F009BAA9E /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				274492AD307785EE004D8E2E /* WidgetKit.framework */,
+				274492AF307785EE004D8E2E /* SwiftUI.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -97,8 +153,12 @@
 				000000000000000120000000 /* Sources */,
 				000000000000000130000000 /* Frameworks */,
 				000000000000000140000000 /* Resources */,
+				274492C2307785EF004D8E2E /* Embed Foundation Extensions */,
 			);
 			buildRules = (
+			);
+			dependencies = (
+				274492BC307785EF004D8E2E /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				000000000000000000000010 /* YEM1N */,
@@ -107,6 +167,24 @@
 			productName = MyApp;
 			productReference = 000000000000000000000120 /* YEM1N.app */;
 			productType = "com.apple.product-type.application";
+		};
+		274492AB307785EE004D8E2E /* YEM1NWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 274492BE307785EF004D8E2E /* Build configuration list for PBXNativeTarget "YEM1NWidgetExtension" */;
+			buildPhases = (
+				274492A8307785EE004D8E2E /* Sources */,
+				274492A9307785EE004D8E2E /* Frameworks */,
+				274492AA307785EE004D8E2E /* Resources */,
+			);
+			buildRules = (
+			);
+			fileSystemSynchronizedGroups = (
+				274492B1307785EE004D8E2E /* YEM1NWidget */,
+			);
+			name = YEM1NWidgetExtension;
+			productName = YEM1NWidgetExtension;
+			productReference = 274492AC307785EE004D8E2E /* YEM1NWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 		27738EB73075936E0020F348 /* YEM1NTests */ = {
 			isa = PBXNativeTarget;
@@ -142,6 +220,9 @@
 					000000000000000100000000 = {
 						CreatedOnToolsVersion = 26.3;
 					};
+					274492AB307785EE004D8E2E = {
+						CreatedOnToolsVersion = 27.0;
+					};
 					27738EB73075936E0020F348 = {
 						CreatedOnToolsVersion = 27.0;
 						TestTargetID = 000000000000000100000000;
@@ -164,12 +245,18 @@
 			targets = (
 				000000000000000100000000 /* YEM1N */,
 				27738EB73075936E0020F348 /* YEM1NTests */,
+				274492AB307785EE004D8E2E /* YEM1NWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		000000000000000140000000 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+			);
+		};
+		274492AA307785EE004D8E2E /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			files = (
 			);
@@ -187,6 +274,11 @@
 			files = (
 			);
 		};
+		274492A8307785EE004D8E2E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+			);
+		};
 		27738EB43075936E0020F348 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			files = (
@@ -195,6 +287,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		274492BC307785EF004D8E2E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 274492AB307785EE004D8E2E /* YEM1NWidgetExtension */;
+			targetProxy = 274492BB307785EF004D8E2E /* PBXContainerItemProxy */;
+		};
 		27738EBD3075936E0020F348 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 000000000000000100000000 /* YEM1N */;
@@ -429,6 +526,73 @@
 			};
 			name = Release;
 		};
+		274492BF307785EF004D8E2E /* Debug configuration for PBXNativeTarget "YEM1NWidgetExtension" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = YEM1NWidgetExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = JB7WJ7R7L2;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = YEM1NWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = YEM1NWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = de.cemaras.yem1n.YEM1NWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		274492C0307785EF004D8E2E /* Release configuration for PBXNativeTarget "YEM1NWidgetExtension" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = YEM1NWidgetExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = JB7WJ7R7L2;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = YEM1NWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = YEM1NWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = de.cemaras.yem1n.YEM1NWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 		27738EBE3075936E0020F348 /* Debug configuration for PBXNativeTarget "YEM1NTests" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -490,6 +654,14 @@
 			buildConfigurations = (
 				000000000000000111000000 /* Debug configuration for PBXNativeTarget "YEM1N" */,
 				000000000000000112000000 /* Release configuration for PBXNativeTarget "YEM1N" */,
+			);
+			defaultConfigurationName = Release;
+		};
+		274492BE307785EF004D8E2E /* Build configuration list for PBXNativeTarget "YEM1NWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				274492BF307785EF004D8E2E /* Debug configuration for PBXNativeTarget "YEM1NWidgetExtension" */,
+				274492C0307785EF004D8E2E /* Release configuration for PBXNativeTarget "YEM1NWidgetExtension" */,
 			);
 			defaultConfigurationName = Release;
 		};
