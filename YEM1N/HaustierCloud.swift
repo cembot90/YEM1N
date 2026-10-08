@@ -130,6 +130,8 @@ extension CloudDienst {
 
 enum HaustierSync {
     nonisolated(unsafe) private static var wartend: Task<Void, Never>?
+    nonisolated(unsafe) private static var laeuft = false
+    nonisolated(unsafe) private static var nochmal = false
 
     private static var code: String { UserDefaults.standard.string(forKey: "familienCode") ?? "" }
     private static var modus: String { UserDefaults.standard.string(forKey: "modus") ?? "" }
@@ -147,8 +149,20 @@ enum HaustierSync {
         wartend = Task {
             try? await Task.sleep(nanoseconds: 1_500_000_000)
             guard !Task.isCancelled else { return }
-            await abgleich()
+            // Ein eigener Vorgang, damit ein späteres Abbrechen nicht die Cloud-Anfrage trifft.
+            await Task { await lauf() }.value
         }
+    }
+
+    /// Nie zwei Abgleiche gleichzeitig. Kommt währenddessen eine Änderung, läuft er danach noch einmal.
+    private static func lauf() async {
+        if laeuft { nochmal = true; return }
+        laeuft = true
+        repeat {
+            nochmal = false
+            await abgleich()
+        } while nochmal
+        laeuft = false
     }
 
     /// Holt die Fürsorge der Eltern, wendet sie an und legt den Stand in die Cloud.
@@ -227,11 +241,11 @@ struct ElternHaustierView: View {
                     .padding(20)
                 }
                 .scrollIndicators(.hidden)
-                .refreshable { await laden() }
+                .refreshable { await starteLaden() }
             }
             .navigationTitle("Haustier")
             .navigationBarTitleDisplayMode(.inline)
-            .task { await laden() }
+            .task { await starteLaden() }
         }
     }
 
@@ -333,6 +347,18 @@ struct ElternHaustierView: View {
         .multilineTextAlignment(.center)
     }
 
+    /// Das Laden läuft als eigener Vorgang. iOS bricht Aufgaben von Bildschirmen ab,
+    /// zum Beispiel beim Wischen nach unten oder beim Wechsel des Tabs. Das würde die Cloud-Anfrage treffen.
+    private func starteLaden() async {
+        await Task { await laden() }.value
+    }
+
+    private func istAbbruch(_ fehler: Error) -> Bool {
+        if fehler is CancellationError { return true }
+        if let ck = fehler as? CKError, ck.code == .operationCancelled { return true }
+        return Task.isCancelled
+    }
+
     private func laden() async {
         guard Familiencode.istGueltig(familienCode) else { return }
         laedt = true
@@ -350,17 +376,19 @@ struct ElternHaustierView: View {
             meldung = ""
             WidgetBruecke.zeige(haustier: tier)
         } catch {
+            if istAbbruch(error) { return }
             meldung = "Laden nicht möglich: \(CloudDienst.fehlertext(error))"
         }
     }
 
     private func geben(_ art: String) async {
         do {
-            _ = try await CloudDienst.sendePflege(code: familienCode, art: art)
+            _ = try await Task { try await CloudDienst.sendePflege(code: familienCode, art: art) }.value
             heutigePflege = try await CloudDienst.holePflege(code: familienCode)
                 .filter { $0.tag == heute }
             meldung = ""
         } catch {
+            if istAbbruch(error) { return }
             meldung = "Senden nicht möglich: \(CloudDienst.fehlertext(error))"
         }
     }
