@@ -2,10 +2,6 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>ITSAppUsesNonExemptEncryption</key>
-	<false/>
-	<key>NSCameraUsageDescription</key>
-	<string>Die Kamera wird nur zum Scannen von QR-Codes für den Familiencode oder den Klassencode genutzt. Es werden keine Bilder gespeichert.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>
