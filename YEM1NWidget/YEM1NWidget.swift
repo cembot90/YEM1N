@@ -153,6 +153,7 @@ struct YEM1NWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: HaustierProvider()) { eintrag in
             HaustierWidgetAnsicht(eintrag: eintrag)
+                .widgetURL(URL(string: "yem1n://haustier"))
                 .containerBackground(for: .widget) {
                     LinearGradient(colors: [Color(red: 0.0, green: 0.125, blue: 0.357),
                                             Color(red: 0.0, green: 0.045, blue: 0.16)],
