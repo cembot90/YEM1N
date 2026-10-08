@@ -1,5 +1,35 @@
 DEFINE SCHEMA
 
+    RECORD TYPE Haustier (
+        "___createTime" TIMESTAMP,
+        "___createdBy"  REFERENCE,
+        "___etag"       STRING,
+        "___modTime"    TIMESTAMP,
+        "___modifiedBy" REFERENCE,
+        "___recordID"   REFERENCE QUERYABLE,
+        familienCode    STRING QUERYABLE SEARCHABLE SORTABLE,
+        json            STRING,
+        GRANT WRITE TO "_creator",
+        GRANT CREATE TO "_icloud",
+        GRANT READ TO "_world"
+    );
+
+    RECORD TYPE HaustierPflege (
+        "___createTime" TIMESTAMP,
+        "___createdBy"  REFERENCE,
+        "___etag"       STRING,
+        "___modTime"    TIMESTAMP,
+        "___modifiedBy" REFERENCE,
+        "___recordID"   REFERENCE QUERYABLE,
+        absender        STRING QUERYABLE SEARCHABLE SORTABLE,
+        art             STRING QUERYABLE SEARCHABLE SORTABLE,
+        familienCode    STRING QUERYABLE SEARCHABLE SORTABLE,
+        tag             STRING QUERYABLE SEARCHABLE SORTABLE,
+        GRANT WRITE TO "_creator",
+        GRANT CREATE TO "_icloud",
+        GRANT READ TO "_world"
+    );
+
     RECORD TYPE JokerAnfrage (
         "___createTime" TIMESTAMP,
         "___createdBy"  REFERENCE,

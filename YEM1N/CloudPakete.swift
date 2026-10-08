@@ -193,7 +193,7 @@ extension CloudDienst {
     // Datenschutz: löscht alle Einträge dieses Familiencodes, die dieses Gerät angelegt hat
     static func loescheEigeneDaten(code: String) async -> Int {
         let typen = ["RundenErgebnis", "JokerAnfrage", "JokerAntwort", "JokerDaumen",
-                     "JokerNachschub", "JokerFreigabe", "Lernpaket"]
+                     "JokerNachschub", "JokerFreigabe", "Lernpaket", "Haustier", "HaustierPflege"]
         var geloescht = 0
         for typ in typen {
             let q = CKQuery(recordType: typ, predicate: NSPredicate(format: "familienCode == %@", code))
@@ -820,7 +820,7 @@ extension CloudDienst {
 
     // Merker, damit die Cloud neu eingerichtet wird, wenn sich Modus, Familiencode oder Elternteil ändern
     static func marke(modus: String, code: String) -> String {
-        modus + "|" + code + "|v4|" + (modus == "eltern" ? ichName() : "")
+        modus + "|" + code + "|v5|" + (modus == "eltern" ? ichName() : "")
     }
 
     // Mitteilung nur an den Elternteil, dessen Tipp mit 👍 bewertet wurde

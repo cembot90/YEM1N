@@ -15,8 +15,6 @@ import CoreImage.CIFilterBuiltins
 
 struct ElternTabs: View {
     @AppStorage("vorschulTabEltern") private var vorschul = false
-    @AppStorage(HaustierSpeicher.key) private var haustierDaten = Data()
-    @Environment(\.scenePhase) private var phase
     /// Das Widget springt mit "yem1n://haustier" zum Haustier.
     @State private var tab = "uebersicht"
 
@@ -36,9 +34,8 @@ struct ElternTabs: View {
                     .tabItem { Label("Vorschule", systemImage: "sparkles") }
                     .tag("vorschule")
             }
-            HaustierView()
+            ElternHaustierView()
                 .tabItem { Label("Haustier", systemImage: "pawprint.fill") }
-                .badge(HaustierDienst.braucheAufmerksamkeit(haustierDaten) ? 1 : 0)
                 .tag("haustier")
             JokerLigaView()
                 .tabItem { Label("Joker", systemImage: "suit.spade.fill") }
@@ -49,10 +46,6 @@ struct ElternTabs: View {
         }
         .onOpenURL { url in
             if url.scheme == "yem1n", url.host == "haustier" { tab = "haustier" }
-        }
-        .task { WidgetBruecke.aktualisieren() }
-        .onChange(of: phase) {
-            if phase == .active { WidgetBruecke.aktualisieren() }
         }
     }
 }

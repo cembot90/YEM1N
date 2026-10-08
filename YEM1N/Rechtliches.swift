@@ -10,7 +10,7 @@ import CloudKit
 enum Einwilligung {
     /// Wird erhöht, wenn sich die Datenschutzerklärung inhaltlich ändert.
     /// Dann fragt die App auf allen Geräten noch einmal.
-    static let aktuelleVersion = 1
+    static let aktuelleVersion = 2
     static let versionKey = "einwilligungVersion"
     static let datumKey = "einwilligungDatum"
 
@@ -48,7 +48,8 @@ enum Einwilligung {
 enum Loeschfrist {
     static let tage = 365
     static let letzterLaufKey = "loeschfristLetzterLauf"
-    static let typen = ["RundenErgebnis", "JokerAnfrage", "JokerAntwort", "JokerDaumen"]
+    static let typen = ["RundenErgebnis", "JokerAnfrage", "JokerAntwort", "JokerDaumen",
+                        "Haustier", "HaustierPflege"]
 
     static func abgelaufen(erstellt: Date, jetzt: Date = Date.now,
                            kalender: Calendar = Calendar(identifier: .gregorian)) -> Bool {
@@ -78,7 +79,9 @@ extension CloudDienst {
         for typ in Loeschfrist.typen {
             guard let liste = try? await holeRecords(typ, code: code, limit: 400) else { continue }
             let ids = liste.filter { r in
-                guard let erstellt = r.creationDate else { return false }
+                // Das Haustier ist ein langlebiger Eintrag. Für ihn zählt die letzte Änderung.
+                let stempel = typ == "Haustier" ? (r.modificationDate ?? r.creationDate) : r.creationDate
+                guard let erstellt = stempel else { return false }
                 return Loeschfrist.abgelaufen(erstellt: erstellt)
             }.map { $0.recordID }
             if ids.isEmpty { continue }
@@ -115,7 +118,7 @@ struct EinwilligungView: View {
     private var punkte: [String] {
         [
             "Die App speichert Übungen, Ergebnisse und Einstellungen auf diesem Gerät.",
-            "Nur mit einem Familiencode gehen Ergebnisse, Name des Kindes (freiwillig) und Joker-Nachrichten über iCloud an die Eltern. Für den Namen reicht ein Vorname oder Spitzname.",
+            "Nur mit einem Familiencode gehen Ergebnisse, Name des Kindes (freiwillig), Joker-Nachrichten und das Haustier (Name, Art, Zustand) über iCloud an die Eltern. Eltern können das Haustier dann füttern. Für Namen reicht ein Vorname oder Spitzname.",
             "Es gibt keine Werbung, keine Analysedienste und kein Benutzerkonto.",
             "Cloud-Einträge löscht die App nach 12 Monaten selbst. Du kannst sie jederzeit in den Einstellungen löschen und die Einwilligung widerrufen."
         ]
