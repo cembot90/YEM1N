@@ -39,6 +39,12 @@ enum Lernzeit {
 
 enum AppInfo {
     static let anleitungURL = "https://cembot90.github.io/YEM1N/anleitung.html"
+
+    /// Anleitung in der gewählten Farbwelt: Die Seite liest "farbwelt" aus der Adresse.
+    static var anleitungAdresse: URL? {
+        let rosa = UserDefaults.standard.string(forKey: "farbwelt") == "rosa"
+        return URL(string: anleitungURL + (rosa ? "?farbwelt=rosa" : ""))
+    }
     static let feedbackAdresse = "cembot@icloud.com"
 
     static var version: String {
@@ -118,8 +124,8 @@ struct AnleitungView: View {
 
     var body: some View {
         ZStack {
-            Color(red: 0.97, green: 0.98, blue: 1.0).ignoresSafeArea()
-            if let url = URL(string: AppInfo.anleitungURL) {
+            (Theme.rosa ? Color(red: 1.0, green: 0.96, blue: 0.98) : Color(red: 0.97, green: 0.98, blue: 1.0)).ignoresSafeArea()
+            if let url = AppInfo.anleitungAdresse {
                 WebAnsicht(url: url, laedt: $laedt, fehler: $fehler)
                     .opacity(fehler ? 0 : 1)
             }
@@ -156,6 +162,7 @@ struct AnleitungView: View {
         ("Münz-Hockey", "Mit dem Finger den Schläger in der linken Hälfte bewegen. Wer zuerst fünf Tore hat, gewinnt. Danach wird der Computer besser."),
         ("Lernzeit", "In den Einstellungen lässt sich eine tägliche Erinnerung ans Üben einschalten, mit fester Uhrzeit."),
         ("Für Eltern", "Die Übersicht zeigt den Wochenbericht, die Abzeichen und den Schwächen-Radar mit den Übungen, die am schwersten fallen. Unter Kinder in der Familie steht, wann jedes Kind zuletzt geübt hat. Alte Konten lassen sich mit dem Papierkorb entfernen."),
+        ("Eigene Aufgaben", "Fotos von Buchseiten kannst du selbst in Aufgaben verwandeln: Die Vorlage in der ausführlichen Anleitung (Abschnitt Eigene Aufgaben mit Claude erstellen) als erste Nachricht an Claude schicken, dann Fotos und einen Namen. Das JSON, das zurückkommt, fügst du im Tab Schule über Plus und Text einfügen ein. Prüfe ein paar Antworten, bevor dein Kind übt."),
         ("Neue Aufgaben", "Im Tab Schule nach unten ziehen oder Neue Aufgaben holen wählen. Dafür braucht das Gerät Internet."),
         ("Hilfe", "Die ausführliche Anleitung öffnet sich, sobald das Gerät online ist. Unter Info kannst du Feedback an den Admin schicken.")
     ]

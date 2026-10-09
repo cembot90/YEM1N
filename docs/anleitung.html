@@ -37,7 +37,30 @@ strong{color:#fff}
 code{background:#0d2e6b;color:var(--gelb)}
 td{border-color:#143a7a}tr:nth-child(even) td{background:#0b2a63}td:first-child{color:#fff}
 h1{background:#0d2e6b}}
-</style></head><body>
+
+pre.vorlage{background:#fff;border:1px solid #cfd8ee;border-radius:12px;padding:12px 14px;margin:10px 0;font:13px/1.45 Menlo,Consolas,monospace;white-space:pre-wrap;word-break:break-word;max-height:340px;overflow:auto;color:var(--text);-webkit-user-select:all;user-select:all}
+button.kopieren{background:var(--navy);color:var(--gelb);border:0;border-radius:12px;padding:11px 18px;font:700 16px -apple-system,"SF Pro Text",Arial,sans-serif;margin:4px 0 10px}
+html.rosa{--navy:#5c124f;--tief:#240524;--gelb:#ff73bd;--bg:#fff5fb;--text:#3a1233}
+html.rosa header p{color:#f6d3ea}
+html.rosa nav#inhalt,html.rosa table,html.rosa pre.vorlage{border-color:#efc3de}
+html.rosa nav#inhalt a{border-color:#f6dbec}
+html.rosa code{background:#fbe3f2}
+html.rosa th{color:#fff}
+html.rosa td{border-color:#f3d6e8}
+html.rosa tr:nth-child(even) td{background:#fff5fb}
+@media(prefers-color-scheme:dark){
+html.rosa{--bg:#1f0620;--text:#f9e4f3}
+html.rosa nav#inhalt,html.rosa table,html.rosa pre.vorlage{background:#3a0f38;border-color:#7a2b6f}
+html.rosa nav#inhalt a{color:var(--gelb);border-color:#7a2b6f}
+html.rosa nav#inhalt h2,html.rosa h2{color:var(--gelb)}
+html.rosa strong{color:#fff}
+html.rosa code{background:#4d1648;color:var(--gelb)}
+html.rosa td{border-color:#7a2b6f}
+html.rosa tr:nth-child(even) td{background:#47123f}
+html.rosa td:first-child{color:#fff}
+html.rosa h1{background:#4d1648}}
+</style>
+<script>try{if(/[?&]farbwelt=rosa/.test(location.search))document.documentElement.className+=" rosa"}catch(e){}</script></head><body>
 <header><div class="in"><p class="logo">YEM1N</p><div class="bar"></div><p>Bedienungsanleitung</p></div></header>
 <main><nav id="inhalt">
 <h2>Inhalt</h2>
@@ -122,6 +145,9 @@ id="toc-aufgaben-in-die-app-bringen">11.2 Aufgaben in die App
 bringen</a></li>
 <li><a href="#aufgaben-editor" id="toc-aufgaben-editor">11.3
 Aufgaben-Editor</a></li>
+<li><a href="#eigene-aufgaben-vorlage"
+id="toc-eigene-aufgaben-vorlage">11.4 Eigene Aufgaben mit Claude
+erstellen (Vorlage)</a></li>
 </ul></li>
 <li><a href="#klassencode-für-eine-ganze-klasse"
 id="toc-klassencode-für-eine-ganze-klasse">12. Klassencode für eine
@@ -783,6 +809,8 @@ zum Beispiel “Richtig schreiben Ferien Nr.2”.</li>
 <li>Vorschule: “Vorschule Zählen Nr. 2”.</li>
 </ul>
 <p>Claude antwortet mit genau einem JSON-Block. Kopiere ihn.</p>
+<p>Du hast kein eigenes Claude-Projekt? Dann nimm die Vorlage aus
+<a href="#eigene-aufgaben-vorlage">Abschnitt 11.4</a>.</p>
 <h2 id="aufgaben-in-die-app-bringen">11.2 Aufgaben in die App
 bringen</h2>
 <p>Im Tab <strong>Schule</strong> auf das <strong>Plus</strong>
@@ -829,6 +857,99 @@ links.</p>
 <p>Ohne Claude kannst du im <strong>Aufgaben-Editor</strong> (Eltern,
 Menü Plus) selbst Arbeiten, Übungen und Aufgaben anlegen. Auch Vokabeln
 für den Sprach-Tab lassen sich dort erstellen.</p>
+<h2 id="eigene-aufgaben-vorlage">11.4 Eigene Aufgaben mit Claude
+erstellen (Vorlage)</h2>
+<p>Du kannst Übungen aus Fotos von Schulbuch- oder Arbeitsheftseiten
+selbst erstellen lassen. Du brauchst dafür nur ein Gespräch mit Claude
+(oder einer anderen KI, die Fotos lesen kann) und die Vorlage unten.</p>
+<ol type="1">
+<li>Tippe auf <strong>Vorlage kopieren</strong> und füge den Text als
+<strong>erste Nachricht</strong> in ein neues Gespräch ein.</li>
+<li>Schicke danach die Fotos der Seiten und einen Namen, zum Beispiel
+“Mathe Seite 42” oder “Richtig schreiben Nr. 3”. Der Name wird später
+der Titel der Arbeit in der App.</li>
+<li>Die KI antwortet nur mit einem JSON-Block. Kopiere ihn.</li>
+<li>Füge ihn in YEM1N ein, wie in
+<a href="#aufgaben-in-die-app-bringen">Abschnitt 11.2</a> beschrieben
+(Tab Schule, Plus, <strong>Text einfügen</strong>).</li>
+</ol>
+<p><strong>Wichtig:</strong> Eine KI kann sich verrechnen oder
+verschreiben. Löse ein paar Aufgaben selbst und prüfe die Antworten,
+bevor dein Kind übt. Eine falsche Lösung ärgert Kinder mehr als eine
+fehlende Aufgabe. Die Vorlage verlangt zwar eine Selbstprüfung, ersetzt
+aber nicht deinen Blick darauf.</p>
+<p>Wenn die App das JSON nicht annimmt, schreibe der KI: “Das JSON ist
+ungültig. Gib es bitte noch einmal vollständig als einen JSON-Block
+aus.”</p>
+<button class="kopieren" type="button" id="kopieren">Vorlage kopieren</button>
+<pre class="vorlage" id="vorlage">Du bist mein Helfer für die Übungs-App YEM1N. Ich bin Elternteil eines Grundschulkindes in Deutschland. Wenn ich Fotos von Schulbuch- oder Arbeitsheftseiten schicke und einen Namen nenne (zum Beispiel "Mathe Seite 42" oder "Richtig schreiben Nr. 3"), erstellst du passende Übungen als JSON, das ich in die App importiere.
+
+AUSGABE
+- Antworte ausschließlich mit EINEM JSON-Codeblock. Kein Text davor, kein Text danach.
+- Gültiges JSON: doppelte Anführungszeichen, keine Kommentare, keine Kommas am Ende.
+- Verwende niemals Gedankenstriche (lange oder mittellange Striche). Nur den normalen Bindestrich "-". Mal schreibst du als "·", Geteilt als ":".
+- Zeilenumbrüche in Texten als "\n".
+
+KOPF
+{"klasse": "Klasse 3", "fach": "Mathe", "arbeit": "&lt;Name, den ich nenne&gt;", "uebungen": [ ... ]}
+- "klasse" und "fach" nimmst du aus meiner Nachricht. Wenn ich nichts sage: "Klasse 3" und das Fach, das auf dem Foto erkennbar ist.
+
+ÜBUNGEN
+- Jede Übung hat "titel", "gruppe", "symbol" (kurzes Zeichen oder Emoji) und "aufgaben".
+- Orientiere dich bei Themen, Zahlenraum und Wortwahl an den Fotos und an der Klassenstufe.
+- Etwa 6 bis 12 Aufgaben pro Übung, insgesamt etwa 4 bis 8 Übungen, wenn ich nichts anderes sage.
+- Die letzte Übung heißt "Alles gemischt" (gruppe "Wie in der Klassenarbeit", symbol "★") mit 12 Aufgaben quer aus allen Themen.
+- Keine doppelten Aufgaben.
+
+AUFGABENARTEN (alle Antworten sind Text)
+
+1) Rechnen, "art": "zahl"
+{"art": "zahl", "frage": "Rechne.", "rechnung": "7 · 8 =", "antwort": "56", "hinweis": "...", "erklaerung": "7 · 8 = 56"}
+- Antwort ist eine ganze Zahl von 0 bis 999 (das Antwortfeld nimmt maximal 3 Ziffern).
+- "hinweis" und "erklaerung" sind optional.
+
+2) Teilen mit Rest, "art": "rest"
+{"art": "rest", "frage": "Teile mit Rest. Rechne bis zum Ende.", "rechnung": "58 : 4 =", "antwort": "14", "antwort2": "2", "erklaerung": "58 : 4 = 14 R 2"}
+- "antwort" ist das Ergebnis, "antwort2" der Rest. Der Rest ist immer kleiner als der Teiler.
+
+3) Vergleichen, "art": "vergleich"
+{"art": "vergleich", "frage": "Was gehört in die Mitte?", "rechnung": "5 · 5  ?  9 · 7", "antwort": "&lt;", "erklaerung": "25 &lt; 63"}
+- Zwei Leerzeichen um das Fragezeichen. Antwort ist "&lt;", "&gt;" oder "=".
+
+4) Zahlenmauer, "art": "mauer"
+{"art": "mauer", "frage": "Fülle die Mauer von unten nach oben.", "reihen": [[14, 11, 11, 9], [25, 22, 20], [47, 42], [89]]}
+- Unterste Reihe 4 Zahlen (je 3 bis 15). Jede obere Zahl ist die Summe der zwei Steine darunter. Spitze höchstens 100.
+
+5) Wörter und Rechtschreibung, "art": "text"
+{"art": "text", "frage": "Welcher Buchstabe fehlt?", "rechnung": "Hun?", "antwort": "d", "hinweis": "...", "erklaerung": "Hund, Mehrzahl Hunde"}
+- Frage immer nach einem einzelnen Wort oder Buchstaben, nie nach ganzen Sätzen. Es gibt genau eine richtige Antwort. Groß und Klein werden unterschieden.
+- Bei Lückenwörtern steht "?" an der Stelle der Lücke.
+
+6) Antippen für kleine Kinder, "art": "wahl"
+{"art": "wahl", "frage": "Wie viele Äpfel siehst du?", "bild": "🍎🍎🍎", "optionen": ["2", "3", "5"], "antwort": "3"}
+- 2 bis 4 Optionen, "antwort" steht wörtlich in "optionen", jede Option nur einmal.
+- Optional: "tr" (Frage auf Türkisch), "gross" (große Zahl oder großer Buchstabe), "folge" (Muster-Liste, zum Beispiel ["🔴", "🔵", "🔴"]).
+
+Nutze nur die Arten, die zu meinen Fotos passen.
+
+QUALITÄTSPRÜFUNG VOR DER AUSGABE
+- Rechne und prüfe jede Antwort einzeln nach (Ergebnis, Rechtschreibung, Umlaute, ß). Eine falsche Lösung ist schlimmer als eine fehlende Aufgabe.
+- Pro Aufgabe gibt es genau eine richtige Antwort.
+- Wörter und Zahlenraum passen zur Klassenstufe.
+- Keine doppelten Aufgaben.
+
+So gehe ich vor: Ich schicke dir gleich Fotos und einen Namen. Du antwortest nur mit dem JSON.</pre>
+<script>
+(function(){var b=document.getElementById("kopieren"),v=document.getElementById("vorlage");
+if(!b||!v)return;
+b.addEventListener("click",function(){
+function fertig(){b.textContent="Kopiert";setTimeout(function(){b.textContent="Vorlage kopieren"},2500)}
+function auswahl(){try{var r=document.createRange();r.selectNodeContents(v);var x=window.getSelection();x.removeAllRanges();x.addRange(r);
+b.textContent=document.execCommand&&document.execCommand("copy")?"Kopiert":"Text markiert, bitte Kopieren wählen";
+setTimeout(function(){b.textContent="Vorlage kopieren"},3000)}catch(e){}}
+if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(v.textContent).then(fertig,auswahl)}else{auswahl()}
+})})();
+</script>
 <h1 id="klassencode-für-eine-ganze-klasse">12. Klassencode für eine
 ganze Klasse</h1>
 <p>Mit dem Klassencode erhalten alle Kinder einer Klasse dieselben
@@ -1102,6 +1223,10 @@ schaffen</td>
 <tr class="odd">
 <td>Farbe ändern</td>
 <td>Einstellungen &gt; Darstellung &gt; Farbwelt</td>
+</tr>
+<tr class="even">
+<td>Eigene Aufgaben aus Fotos erstellen</td>
+<td>Abschnitt 11.4: Vorlage kopieren, Fotos und Namen schicken, JSON einfügen</td>
 </tr>
 </tbody>
 </table>
