@@ -16,8 +16,28 @@ App Store Connect, TestFlight, Tests auf echten Geräten.
 Unit-Tests, dann Archive, dann Verteilung an TestFlight. Rote Tests stoppen die
 Auslieferung. `entwicklung` ist der Werkstattbereich ohne Auslieferung.
 
-Vor dem Push nach `main` muss klar sein, dass der Code baut. Wenn er noch nie
-kompiliert wurde, erst auf `entwicklung` ablegen und Cem bauen lassen.
+Kleine Änderungen (Texte, Anleitung, Farben, kleine Korrekturen) legt Claude direkt
+auf `main` ab, wenn der Code sehr wahrscheinlich baut. Größere Eingriffe in den
+Swift-Code (neue Funktionen, Datenmodell, CloudKit) kommen erst auf `entwicklung`,
+und Cem baut sie auf seinem Gerät, bevor es auf `main` geht. `entwicklung` und
+`main` werden immer per Fast-Forward gleichgezogen, die Historie wird nicht
+umgeschrieben. Cem reicht dann ein normales `git pull`.
+
+## TestFlight-Text zu jedem Build
+
+Nach jedem Push auf `main`, der eine neue App-Version ausliefert, schreibt Claude
+Cem sofort den Text für "Was soll getestet werden?" in TestFlight (Vorlage unten).
+Er enthält nur, was sich für Tester gegenüber dem letzten verteilten Build ändert,
+in einfachen Worten, mit wenigen Dingen zum Ausprobieren. Reine Änderungen an
+`docs/` ändern die App nicht und brauchen keinen Text. Die Buildnummer vergibt
+Xcode Cloud, Claude nennt sie nur, wenn Cem sie kennt.
+
+Vorlage:
+- Kopfzeile: "Neu in Build N (seit Build M):"
+- Abschnitte in Großbuchstaben je Neuerung, kurze Sätze
+- "Bitte besonders ausprobieren:" mit nummerierten Punkten
+- "Bekannte Einschränkungen:" nur wenn es welche gibt
+- Schluss: Feedback über TestFlight oder die Infoseite in den Einstellungen
 
 ## Bei jeder Funktionsänderung mitziehen
 
