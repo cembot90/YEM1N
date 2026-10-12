@@ -626,7 +626,7 @@ struct UebungInhalt: View {
             HStack(spacing: 12) {
                 ForEach(["<", ">", "="], id: \.self) { z in
                     Button {
-                        melde(a, ok: z == a.antwort, erklaerung: a.erklaerung)
+                        melde(a, ok: z == a.antwort, erklaerung: a.erklaerung, gegeben: z)
                     } label: {
                         Text(z)
                             .font(.system(size: 38, weight: .heavy, design: .rounded))
@@ -820,14 +820,14 @@ struct UebungInhalt: View {
                 return
             }
             melde(a, ok: gleich(eingabe, a.antwort) && gleich(eingabe2, a.antwort2),
-                  erklaerung: a.erklaerung)
+                  erklaerung: a.erklaerung, gegeben: "\(eingabe) Rest \(eingabe2)")
         case "text":
             let e = normalisiert(eingabe)
             guard !e.isEmpty else { return }
-            melde(a, ok: e == normalisiert(a.antwort), erklaerung: a.erklaerung)
+            melde(a, ok: e == normalisiert(a.antwort), erklaerung: a.erklaerung, gegeben: e)
         default:
             guard !eingabe.isEmpty else { return }
-            melde(a, ok: gleich(eingabe, a.antwort), erklaerung: a.erklaerung)
+            melde(a, ok: gleich(eingabe, a.antwort), erklaerung: a.erklaerung, gegeben: eingabe)
         }
     }
 
@@ -847,21 +847,26 @@ struct UebungInhalt: View {
             eingabe = ""
             Haptik.leicht()
             if mauerSchritt >= mauerAnzahl(a) {
-                melde(a, ok: true, erklaerung: "Die Mauer stimmt komplett.")
+                melde(a, ok: true, erklaerung: "Die Mauer stimmt komplett.", gegeben: "alles richtig")
             } else {
                 kurzerHinweis = "Richtig. Weiter nach oben."
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.9) { kurzerHinweis = nil }
             }
         } else {
+            let falscheZahl = eingabe
             mauerWerte[pos.reihe][pos.spalte] = soll
             eingabe = ""
             melde(a, ok: false,
-                  erklaerung: "Hier gehört \(soll) hin: \(unten[pos.spalte]) + \(unten[pos.spalte + 1]) = \(soll)")
+                  erklaerung: "Hier gehört \(soll) hin: \(unten[pos.spalte]) + \(unten[pos.spalte + 1]) = \(soll)",
+                  gegeben: falscheZahl,
+                  soll: "\(unten[pos.spalte]) + \(unten[pos.spalte + 1]) = \(soll)")
         }
     }
 
-    private func melde(_ a: Aufgabe, ok: Bool, erklaerung: String) {
+    private func melde(_ a: Aufgabe, ok: Bool, erklaerung: String, gegeben: String, soll: String = "") {
         a.richtig = ok
+        a.gegeben = gegeben
+        a.gegebenSoll = soll
         if ok { Spezial.gemeistert(a, in: context) } else { Spezial.falschBeantwortet(a) }
         bewertet = a
         bewertung = ok ? .richtig : .falsch
@@ -885,6 +890,8 @@ struct UebungInhalt: View {
 
     private func zeigeLoesung(_ a: Aufgabe) {
         a.angesehen = true          // richtig bleibt bewusst leer
+        a.gegeben = ""
+        a.gegebenSoll = ""
         bewertet = a
         bewertung = .loesung
         kurzerHinweis = nil
@@ -941,7 +948,10 @@ struct UebungInhalt: View {
                 richtig: gut,
                 gesamt: uebung.aufgaben.count,
                 angesehen: uebung.angesehenAnzahl,
-                quelle: "lokal"))
+                quelle: "lokal",
+                details: AntwortProtokoll.json(uebung.sortierteAufgaben.enumerated().map {
+                    $0.element.antwortDetail(nr: $0.offset + 1)
+                })))
             CloudSync.anstossen(context)
         }
     }
@@ -950,6 +960,8 @@ struct UebungInhalt: View {
         uebung.aufgaben.forEach {
             $0.richtig = nil
             $0.angesehen = false
+            $0.gegeben = ""
+            $0.gegebenSoll = ""
         }
         probeStart = Date.now
         bewertet = nil

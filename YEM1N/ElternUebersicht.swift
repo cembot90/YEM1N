@@ -97,6 +97,9 @@ struct ElternDashboardView: View {
     @State private var zeigePDF = false
 
     @State private var kindZuEntfernen: KindEintrag?
+    @State private var gewaehlteRunde: RundenErgebnis?
+    @State private var gewaehlteUebung: UebungAuswahl?
+    @State private var alleProbleme = false
 
     private var ergebnisse: [RundenErgebnis] {
         kindFilter.isEmpty ? alleErgebnisse : alleErgebnisse.filter { Kinder.gleich($0.kind, kindFilter) }
@@ -284,6 +287,16 @@ struct ElternDashboardView: View {
         return Array(schwach.sorted { $0.anteil < $1.anteil }.prefix(5))
     }
 
+    private var zeitraumText: String {
+        radarTage == 0 ? "Gesamter Zeitraum" : "Letzte \(radarTage) Tage"
+    }
+
+    /// Die einzelnen Aufgaben, die im gewählten Zeitraum falsch waren oder angeschaut wurden.
+    private var problemAufgaben: [ProblemAufgabe] {
+        AntwortProtokoll.problemAufgaben(radarBasis.map { (uebung: $0.uebung, zeitpunkt: $0.zeitpunkt, details: $0.details) },
+                                         limit: 30)
+    }
+
     private func radarZeile(_ e: SchwaecheEintrag) -> String {
         var t = "\(e.runden) \(e.runden == 1 ? "Runde" : "Runden")"
         if e.angesehen > 0 { t += ", \(e.angesehen) Lösungen angeschaut" }
@@ -307,6 +320,7 @@ struct ElternDashboardView: View {
                         abzeichenKarte
                         wochenberichtKarte
                         schwaecheKarte
+                        problemKarte
                         letzteRunden
                     }
                     if !kinderListe.isEmpty { kinderKarte }
@@ -320,6 +334,12 @@ struct ElternDashboardView: View {
         .task { await CloudSync.aktiv(context) }
         .task { await Wochenbericht.planen() }
         .sheet(isPresented: $zeigeEinstellungen) { EinstellungenView() }
+        .sheet(item: $gewaehlteRunde) { runde in RundeDetailView(runde: runde) }
+        .sheet(item: $gewaehlteUebung) { auswahl in
+            UebungDetailView(titel: auswahl.titel,
+                             runden: radarBasis.filter { $0.uebung == auswahl.titel },
+                             zeitraum: zeitraumText)
+        }
         .confirmationDialog(
             "Kind entfernen?",
             isPresented: Binding(get: { kindZuEntfernen != nil },
@@ -472,6 +492,7 @@ struct ElternDashboardView: View {
                     .foregroundStyle(Theme.textSanft)
             } else {
                 ForEach(schwaechste) { eintrag in
+                    Button { gewaehlteUebung = UebungAuswahl(titel: eintrag.titel) } label: {
                     VStack(alignment: .leading, spacing: 5) {
                         HStack {
                             Text(eintrag.titel)
@@ -481,6 +502,9 @@ struct ElternDashboardView: View {
                             Text("\(Int((eintrag.anteil * 100).rounded())) %")
                                 .font(.system(.subheadline, design: .rounded).weight(.heavy))
                                 .foregroundStyle(schwaecheFarbe(eintrag.anteil))
+                            Image(systemName: "chevron.right")
+                                .font(.caption.weight(.bold))
+                                .foregroundStyle(Theme.textSanft)
                         }
                         GeometryReader { geo in
                             ZStack(alignment: .leading) {
@@ -495,11 +519,56 @@ struct ElternDashboardView: View {
                             .font(.caption)
                             .foregroundStyle(Theme.textSanft)
                     }
+                    .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityHint("Zeigt die Aufgaben dieser Übung")
                 }
                 if let erste = schwaechste.first {
-                    Text("Tipp: Übt als Nächstes \(erste.titel). Das Training im Tab Schule wählt die schwächsten Übungen automatisch.")
+                    Text("Tipp: Übt als Nächstes \(erste.titel). Das Training im Tab Schule wählt die schwächsten Übungen automatisch. Tippe auf eine Übung, um die einzelnen Aufgaben zu sehen.")
                         .font(.footnote)
                         .foregroundStyle(Color.white)
+                }
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .glasKarte(radius: 26)
+    }
+
+    private var problemKarte: some View {
+        let liste = problemAufgaben
+        let sichtbar = alleProbleme ? liste : Array(liste.prefix(5))
+        return VStack(alignment: .leading, spacing: 8) {
+            Text("Aufgaben, die haken")
+                .font(.system(.headline, design: .rounded).weight(.heavy))
+                .foregroundStyle(Theme.gelb)
+            Text("\(zeitraumText), Zeitraum wie beim Schwächen-Radar. Hier steht, was dein Kind geschrieben hat.")
+                .font(.caption)
+                .foregroundStyle(Theme.textSanft)
+            if liste.isEmpty {
+                Text(radarBasis.contains(where: { !$0.details.isEmpty })
+                     ? "Keine falschen Antworten in diesem Zeitraum."
+                     : "Noch keine einzelnen Antworten. Sie kommen, sobald dein Kind mit der neuen App-Version übt.")
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.textSanft)
+            } else {
+                ForEach(sichtbar) { p in
+                    Button { gewaehlteUebung = UebungAuswahl(titel: p.uebung) } label: {
+                        ProblemZeile(problem: p)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    if p.id != sichtbar.last?.id {
+                        Divider().overlay(Color.white.opacity(0.12))
+                    }
+                }
+                if liste.count > 5 {
+                    Button(alleProbleme ? "Weniger zeigen" : "Alle \(liste.count) zeigen") {
+                        withAnimation(.snappy) { alleProbleme.toggle() }
+                    }
+                    .font(.system(.subheadline, design: .rounded).weight(.heavy))
+                    .foregroundStyle(Theme.gelb)
                 }
             }
         }
@@ -514,6 +583,7 @@ struct ElternDashboardView: View {
                 .font(.system(.headline, design: .rounded).weight(.heavy))
                 .foregroundStyle(Theme.gelb)
             ForEach(Array(ergebnisse.prefix(8)), id: \.eintragID) { e in
+                Button { gewaehlteRunde = e } label: {
                 HStack(spacing: 12) {
                     VStack(alignment: .leading, spacing: 3) {
                         Text(e.uebung)
@@ -544,9 +614,19 @@ struct ElternDashboardView: View {
                             }
                         }
                     }
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(Theme.textSanft)
                 }
                 .padding(.vertical, 6)
+                .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityHint("Zeigt alle Antworten dieser Runde")
             }
+            Text("Tippe auf eine Runde, um jede Antwort zu sehen.")
+                .font(.caption)
+                .foregroundStyle(Theme.textSanft)
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)

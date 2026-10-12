@@ -97,7 +97,10 @@ enum Beispieldaten {
                                           arbeit: "Klassenarbeit Nr. 1", uebung: titel,
                                           richtig: richtig, gesamt: gesamt,
                                           angesehen: angesehen, zeitpunkt: zeit,
-                                          quelle: "demo"))
+                                          quelle: "demo",
+                                          details: AntwortProtokoll.beispiel(uebung: titel, gesamt: gesamt,
+                                                                             richtig: richtig,
+                                                                             angesehen: angesehen)))
         }
     }
 

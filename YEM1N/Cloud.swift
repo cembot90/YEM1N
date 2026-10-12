@@ -224,17 +224,35 @@ enum CloudDienst {
         r["sterne"] = e.sterne as CKRecordValue
         r["kind"] = e.kind as CKRecordValue
         r["zeitpunkt"] = e.zeitpunkt as CKRecordValue
+        if !e.details.isEmpty { r["details"] = e.details as CKRecordValue }
         do {
             _ = try await db.save(r)
         } catch let fehler as CKError where fehler.code == .serverRecordChanged {
             // Ergebnis ist schon in der Cloud
+        } catch let fehler as CKError where r["details"] != nil && fehlerWegenNeuemFeld(fehler) {
+            // Das Feld "details" ist in der Cloud noch nicht eingerichtet.
+            // Dann geht das Ergebnis ohne die einzelnen Antworten hoch, damit nichts hängen bleibt.
+            r["details"] = nil
+            do {
+                _ = try await db.save(r)
+            } catch let zweiter as CKError where zweiter.code == .serverRecordChanged {
+                // Ergebnis ist schon in der Cloud
+            }
         }
+    }
+
+    /// true, wenn CloudKit ein unbekanntes Feld ablehnt (Schema in Production noch nicht ausgerollt).
+    static func fehlerWegenNeuemFeld(_ fehler: CKError) -> Bool {
+        if fehler.code == .invalidArguments || fehler.code == .serverRejectedRequest { return true }
+        let t = fehler.localizedDescription.lowercased()
+        return t.contains("field") || t.contains("schema")
     }
 
     // MARK: Einrichtung (Datensatztypen anlegen und Mitteilungen abonnieren)
 
-    private static func schemaBeispiel(_ typ: String, _ felder: [String: CKRecordValue]) async throws {
-        let id = CKRecord.ID(recordName: "schema-" + typ)
+    private static func schemaBeispiel(_ typ: String, id name: String? = nil,
+                                       _ felder: [String: CKRecordValue]) async throws {
+        let id = CKRecord.ID(recordName: name ?? "schema-" + typ)
         let r = CKRecord(recordType: typ, recordID: id)
         for (k, v) in felder { r[k] = v }
         do {
@@ -260,6 +278,12 @@ enum CloudDienst {
                                                    "richtig": 1 as CKRecordValue, "gesamt": 1 as CKRecordValue,
                                                    "angesehen": 0 as CKRecordValue, "sterne": 3 as CKRecordValue,
                                                    "zeitpunkt": Date() as CKRecordValue])
+        // Eigener Beispiel-Eintrag für das Feld "details" (einzelne Antworten einer Runde).
+        // Legt das Feld in der Entwicklungsumgebung an. In Production schlägt das fehl, solange
+        // das Schema dort noch nicht ausgerollt ist. Das darf die Einrichtung nicht stoppen.
+        try? await schemaBeispiel("RundenErgebnis", id: "schema-RundenErgebnis-details",
+                                 ["familienCode": code, "eintragID": "schema-details" as CKRecordValue,
+                                  "details": "[]" as CKRecordValue])
         try await schemaBeispiel("JokerNachschub", ["familienCode": code, "kind": "Test" as CKRecordValue])
         try await schemaBeispiel("JokerFreigabe", ["familienCode": code, "anzahl": 3 as CKRecordValue])
         try await schemaBeispiel("Haustier", ["familienCode": code, "json": "{}" as CKRecordValue])
@@ -370,6 +394,7 @@ enum CloudSync {
                                        quelle: "cloud")
                 e.eintragID = id
                 e.kind = kindName
+                e.details = (r["details"] as? String) ?? ""
                 context.insert(e)
                 ids.insert(id)
             }

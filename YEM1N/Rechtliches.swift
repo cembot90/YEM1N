@@ -10,7 +10,7 @@ import CloudKit
 enum Einwilligung {
     /// Wird erhöht, wenn sich die Datenschutzerklärung inhaltlich ändert.
     /// Dann fragt die App auf allen Geräten noch einmal.
-    static let aktuelleVersion = 2
+    static let aktuelleVersion = 3
     static let versionKey = "einwilligungVersion"
     static let datumKey = "einwilligungDatum"
 

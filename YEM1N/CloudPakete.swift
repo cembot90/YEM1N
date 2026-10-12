@@ -820,7 +820,7 @@ extension CloudDienst {
 
     // Merker, damit die Cloud neu eingerichtet wird, wenn sich Modus, Familiencode oder Elternteil ändern
     static func marke(modus: String, code: String) -> String {
-        modus + "|" + code + "|v5|" + (modus == "eltern" ? ichName() : "")
+        modus + "|" + code + "|v6|" + (modus == "eltern" ? ichName() : "")
     }
 
     // Mitteilung nur an den Elternteil, dessen Tipp mit 👍 bewertet wurde

@@ -84,6 +84,8 @@ final class Aufgabe {
     var angesehen: Bool = false       // Lösung wurde angezeigt (zählt weder richtig noch falsch)
     var quellKey: String = ""         // bei Kopien im Fehlerheft: Verweis auf die Originalaufgabe
     var gemeistert: Bool = false      // Fehler wurde im Fehlerheft richtig wiederholt
+    var gegeben: String = ""          // was das Kind zuletzt eingegeben hat (für die Eltern-Übersicht)
+    var gegebenSoll: String = ""      // nur Zahlenmauer: was an der falschen Stelle richtig gewesen wäre
     var uebung: Uebung?
 
     var erledigt: Bool { richtig != nil || angesehen }
@@ -139,10 +141,11 @@ final class RundenErgebnis {
     var quelle: String = "lokal"
     var gesendet: Bool = false
     var kind: String = ""
+    var details: String = ""          // JSON mit den einzelnen Antworten, siehe AntwortProtokoll
 
     init(klasse: String, fach: String, arbeit: String, uebung: String,
          richtig: Int, gesamt: Int, angesehen: Int,
-         zeitpunkt: Date = Date.now, quelle: String) {
+         zeitpunkt: Date = Date.now, quelle: String, details: String = "") {
         self.klasse = klasse
         self.fach = fach
         self.arbeit = arbeit
@@ -153,11 +156,13 @@ final class RundenErgebnis {
         self.sterne = sterneFuer(gut: richtig, gesamt: gesamt)
         self.zeitpunkt = zeitpunkt
         self.quelle = quelle
+        self.details = details
         self.kind = (UserDefaults.standard.string(forKey: "kindName") ?? "")
             .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     var anteil: Double { gesamt > 0 ? Double(richtig) / Double(gesamt) : 0 }
+    var antworten: [AntwortDetail] { AntwortProtokoll.liste(aus: details) }
 }
 
 func sterneFuer(gut: Int, gesamt: Int) -> Int {
