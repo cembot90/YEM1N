@@ -19,6 +19,7 @@ struct MatheApp: App {
     let container: ModelContainer
 
     init() {
+        Sprecher.shared.aufwaermen()
         // Geräte, die schon einen Namen eingetragen haben, brauchen den Einrichtungsassistenten nicht
         let vorgaben = UserDefaults.standard
         if vorgaben.object(forKey: "profilFertig") == nil {

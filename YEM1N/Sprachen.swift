@@ -427,23 +427,151 @@ enum SprachHelfer {
 final class Sprecher {
     static let shared = Sprecher()
     private let synth = AVSpeechSynthesizer()
+    private var stimmen: [String: AVSpeechSynthesisVoice] = [:]
+    private var sitzungBereit = false
+
+    init() {
+        // Neue Stimmen (vom Nutzer in den Einstellungen geladen) sofort berücksichtigen
+        NotificationCenter.default.addObserver(
+            forName: AVSpeechSynthesizer.availableVoicesDidChangeNotification,
+            object: nil, queue: .main
+        ) { [weak self] _ in self?.stimmen.removeAll() }
+    }
 
     func hatStimme(_ code: String) -> Bool {
-        AVSpeechSynthesisVoice(language: code) != nil
+        stimme(code) != nil
+    }
+
+    /// Beste installierte Stimme: Premium vor Erweitert vor Standard,
+    /// gleiche Region (de-DE) vor gleicher Sprache (de-AT, de-CH).
+    func stimme(_ code: String) -> AVSpeechSynthesisVoice? {
+        if let s = stimmen[code] { return s }
+        let sprache = String(code.prefix(2))
+        let kandidaten = AVSpeechSynthesisVoice.speechVoices().filter {
+            $0.language.hasPrefix(sprache) && !$0.voiceTraits.contains(.isNoveltyVoice)
+        }
+        let beste = kandidaten.max { a, b in
+            punkte(a, code) < punkte(b, code)
+        } ?? AVSpeechSynthesisVoice(language: code)
+        stimmen[code] = beste
+        return beste
+    }
+
+    private func punkte(_ v: AVSpeechSynthesisVoice, _ code: String) -> Int {
+        var p = 0
+        switch v.quality {
+        case .premium: p += 300
+        case .enhanced: p += 200
+        default: p += 100
+        }
+        if v.language == code { p += 10 }
+        if v.voiceTraits.contains(.isPersonalVoice) { p -= 1000 }
+        return p
+    }
+
+    /// Qualität der Stimme, die gerade benutzt wird (für den Hinweis in den Einstellungen)
+    func qualitaet(_ code: String) -> AVSpeechSynthesisVoiceQuality? {
+        stimme(code)?.quality
+    }
+
+    /// Beim App-Start einmal aufrufen, damit das erste Vorlesen sofort kommt
+    func aufwaermen() {
+        // Auf dem Hauptthread, damit die Stimmen-Liste nur von einer Stelle aus benutzt wird
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            // Stimmen schon beim Start heraussuchen. Kein stilles Probe-Sprechen,
+            // das würde beim Kind laufende Musik unterbrechen.
+            _ = self.stimme("de-DE")
+            _ = self.stimme("tr-TR")
+            _ = self.stimme("en-GB")
+        }
+    }
+
+    private func sitzungEinrichten() {
+        let sitzung = AVAudioSession.sharedInstance()
+        if !sitzungBereit {
+            try? sitzung.setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
+            sitzungBereit = true
+        }
+        // Aktivieren jedes Mal, falls ein Anruf oder Wecker die Sitzung beendet hat
+        try? sitzung.setActive(true)
     }
 
     func sprich(_ text: String, code: String) {
         let an = UserDefaults.standard.object(forKey: "sprachTon") as? Bool ?? true
         guard an, !text.isEmpty else { return }
-        let sitzung = AVAudioSession.sharedInstance()
-        try? sitzung.setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
-        try? sitzung.setActive(true)
-        synth.stopSpeaking(at: .immediate)
+        sitzungEinrichten()
+        if synth.isSpeaking { synth.stopSpeaking(at: .immediate) }
         let u = AVSpeechUtterance(string: text)
-        u.voice = AVSpeechSynthesisVoice(language: code)
-        u.rate = 0.42
-        u.pitchMultiplier = 1.05
+        u.voice = stimme(code)
+        // Normales Sprechtempo, nur einen Hauch langsamer für Kinder.
+        // Tonhöhe bleibt natürlich, verstellte Tonhöhe klingt schnell nach Roboter.
+        u.rate = AVSpeechUtteranceDefaultSpeechRate * 0.95
+        u.pitchMultiplier = 1.0
+        u.preUtteranceDelay = 0
+        u.postUtteranceDelay = 0
         synth.speak(u)
+    }
+}
+
+// MARK: Stimmen-Hinweis
+
+struct StimmenKarte: View {
+    @State private var stand = 0
+    private let sprachen: [(String, String)] = [("Deutsch", "de-DE"), ("Türkisch", "tr-TR"), ("Englisch", "en-GB")]
+
+    private func stufe(_ code: String) -> (String, Color) {
+        switch Sprecher.shared.qualitaet(code) {
+        case .premium?: return ("Premium", .green)
+        case .enhanced?: return ("Erweitert", .green)
+        case nil: return ("Fehlt", .red)
+        default: return ("Einfach", Theme.gelb)
+        }
+    }
+
+    private var alleGut: Bool {
+        sprachen.allSatisfy {
+            let q = Sprecher.shared.qualitaet($0.1)
+            return q == .premium || q == .enhanced
+        }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Vorlese-Stimmen")
+                .font(.system(.headline, design: .rounded).weight(.heavy))
+                .foregroundStyle(Color.white)
+            ForEach(sprachen, id: \.1) { name, code in
+                let s = stufe(code)
+                HStack {
+                    Text(name).foregroundStyle(Color.white)
+                    Spacer()
+                    Text(s.0)
+                        .font(.footnote.weight(.bold))
+                        .foregroundStyle(s.1)
+                }
+                .font(.subheadline)
+            }
+            .id(stand)
+            if !alleGut {
+                Text("Mit besseren Stimmen klingt das Vorlesen viel natürlicher. iPhone-Einstellungen öffnen, Bedienungshilfen, Gesprochene Inhalte, Stimmen. Dort die Sprache wählen und eine Stimme mit „Premium“ oder „Erweitert“ laden. YEM1N nimmt sie danach von selbst.")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.textSanft)
+            }
+            Button {
+                Sprecher.shared.sprich("Hallo! So klinge ich jetzt.", code: "de-DE")
+            } label: {
+                Label("Probe hören", systemImage: "speaker.wave.2.fill")
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(Theme.gelb)
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .glasKarte(radius: 22)
+        .onReceive(NotificationCenter.default.publisher(for: AVSpeechSynthesizer.availableVoicesDidChangeNotification)) { _ in
+            stand += 1
+        }
     }
 }
 
@@ -2135,6 +2263,7 @@ struct SprachEinstellungenView: View {
                         }
                         .buttonStyle(TastenStil())
                     }
+                    StimmenKarte()
                     VStack(alignment: .leading, spacing: 10) {
                         Text("Weitere Themen laden")
                             .font(.system(.headline, design: .rounded).weight(.heavy))
