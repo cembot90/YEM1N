@@ -566,6 +566,14 @@ struct UebungInhalt: View {
                         .font(.subheadline)
                         .foregroundStyle(Color.white)
                 }
+                if bewertung == .falsch, !istProbe, let a = bewertet,
+                   ErklaerFreund.lohntSich(art: a.art, rechnung: a.rechnung, erklaerung: a.erklaerung,
+                                           antwort: a.antwort, antwort2: a.antwort2, gegeben: a.gegeben) {
+                    ErklaerFreund(art: a.art, rechnung: a.rechnung, erklaerung: a.erklaerung,
+                                  antwort: a.antwort, antwort2: a.antwort2, gegeben: a.gegeben)
+                        .id(ObjectIdentifier(a))
+                        .padding(.top, 4)
+                }
                 if bewertung == .loesung {
                     Text("Zählt nicht als richtig.")
                         .font(.caption)

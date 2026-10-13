@@ -47,6 +47,9 @@ struct ElternTabs: View {
         .onOpenURL { url in
             if url.scheme == "yem1n", url.host == "haustier" { tab = "haustier" }
         }
+        .onReceive(NotificationCenter.default.publisher(for: .oeffneBericht)) { _ in
+            tab = "uebersicht"
+        }
     }
 }
 
@@ -93,8 +96,8 @@ struct ElternDashboardView: View {
     @State private var kindFilter = ""
     @State private var zeigeEinstellungen = false
     @State private var radarTage = 7
-    @State private var pdfURL: URL?
-    @State private var zeigePDF = false
+    @State private var zeigeBericht = false
+    @AppStorage("berichtGelesen") private var berichtGelesen: Double = 0
 
     @State private var kindZuEntfernen: KindEintrag?
     @State private var gewaehlteRunde: RundenErgebnis?
@@ -170,43 +173,13 @@ struct ElternDashboardView: View {
         .pickerStyle(.segmented)
     }
 
-    private var berichtText: String {
-        let kal = Calendar.current
-        let grenze = kal.date(byAdding: .day, value: -6, to: kal.startOfDay(for: Date.now)) ?? Date.distantPast
-        let diese = alleErgebnisse.filter { $0.zeitpunkt >= grenze }
-        let namen: [String] = kinder.isEmpty ? [""] : kinder
-        var zeilen: [String] = ["📊 YEM1N Wochenbericht"]
-        for name in namen {
-            let l = diese.filter { name.isEmpty || Kinder.gleich($0.kind, name) }
-            let titel = name.isEmpty ? "Diese Woche" : name
-            if l.isEmpty {
-                zeilen.append("")
-                zeilen.append("\(titel): keine Runden")
-                continue
-            }
-            let r = l.reduce(0) { $0 + $1.richtig }
-            let g = l.reduce(0) { $0 + $1.gesamt }
-            let st = l.reduce(0) { $0 + $1.sterne }
-            var tage = Set<Date>()
-            for e in l { tage.insert(kal.startOfDay(for: e.zeitpunkt)) }
-            let prozent = g > 0 ? Int((Double(r) / Double(g) * 100).rounded()) : 0
-            zeilen.append("")
-            zeilen.append("⭐ \(titel)")
-            zeilen.append("Runden: \(l.count) an \(tage.count) Tagen")
-            zeilen.append("Richtig: \(r) von \(g) (\(prozent) %)")
-            zeilen.append("Sterne: \(st)")
-            let gruppiert = Dictionary(grouping: l, by: { $0.uebung })
-            var bereiche: [(String, Double)] = []
-            for (u, liste) in gruppiert {
-                let rr = liste.reduce(0) { $0 + $1.richtig }
-                let gg = liste.reduce(0) { $0 + $1.gesamt }
-                if gg > 0 { bereiche.append((u, Double(rr) / Double(gg))) }
-            }
-            bereiche.sort { $0.1 > $1.1 }
-            if let stark = bereiche.first { zeilen.append("💪 Stark: \(stark.0)") }
-            if bereiche.count > 1, let schwach = bereiche.last { zeilen.append("🎯 Üben: \(schwach.0)") }
-        }
-        return zeilen.joined(separator: "\n")
+    private var berichte: [KindBericht] {
+        ElternBericht.berichte(runden: alleErgebnisse.map(\.berichtRunde), kinder: kinder)
+    }
+
+    private var neuerBericht: Bool {
+        ElternBericht.neuerBerichtDa(gelesen: berichtGelesen > 0 ? Date(timeIntervalSince1970: berichtGelesen) : nil,
+                                     hatRunden: alleErgebnisse.contains { $0.zeitpunkt >= ElternBericht.beginn() })
     }
 
     private var wochenberichtKarte: some View {
@@ -214,26 +187,23 @@ struct ElternDashboardView: View {
             Text("Wochenbericht")
                 .font(.system(.headline, design: .rounded).weight(.heavy))
                 .foregroundStyle(Theme.gelb)
-            Text(berichtText)
-                .font(.footnote)
-                .foregroundStyle(Color.white)
-            ShareLink(item: berichtText) {
-                Label("Bericht teilen", systemImage: "square.and.arrow.up")
+            ForEach(berichte, id: \.name) { b in
+                HStack {
+                    Text(b.name.isEmpty ? "Diese Woche" : b.name)
+                        .foregroundStyle(Color.white)
+                    Spacer()
+                    Text(b.runden == 0 ? "nicht geübt"
+                         : "\(b.runden) \(b.runden == 1 ? "Runde" : "Runden"), \(b.prozent) % richtig")
+                        .foregroundStyle(Theme.textSanft)
+                }
+                .font(.subheadline)
+            }
+            Button { zeigeBericht = true } label: {
+                Label("Bericht in Worten lesen", systemImage: "text.book.closed.fill")
                     .font(.system(.subheadline, design: .rounded).weight(.heavy))
                     .foregroundStyle(Theme.gelb)
             }
-            Button {
-                pdfURL = BerichtPDF.erstellen(berichtText)
-                zeigePDF = pdfURL != nil
-            } label: {
-                Label("Als PDF teilen", systemImage: "doc.richtext")
-                    .font(.system(.subheadline, design: .rounded).weight(.heavy))
-                    .foregroundStyle(Theme.gelb)
-            }
-            .sheet(isPresented: $zeigePDF) {
-                if let url = pdfURL { ShareSheet(items: [url]) }
-            }
-            Text("Jeden Sonntag um 18 Uhr erinnert dich eine Mitteilung daran.")
+            Text("Mit dem, was gut lief, wo es hakt, und einem Tipp für zu Hause. Jeden Sonntag um 18 Uhr erinnert dich eine Mitteilung daran.")
                 .font(.caption)
                 .foregroundStyle(Theme.textSanft)
         }
@@ -305,12 +275,20 @@ struct ElternDashboardView: View {
         return t
     }
 
+    /// Wer auf die Sonntags-Mitteilung getippt hat, landet direkt im Bericht.
+    private func oeffneBerichtWennGewuenscht() {
+        guard UserDefaults.standard.bool(forKey: Wochenbericht.oeffnenSchluessel) else { return }
+        UserDefaults.standard.set(false, forKey: Wochenbericht.oeffnenSchluessel)
+        zeigeBericht = true
+    }
+
     var body: some View {
         ZStack {
             HintergrundView()
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     kopf
+                    if neuerBericht { BerichtHinweis { zeigeBericht = true } }
                     if kinder.count > 1 { kindWahl }
                     if ergebnisse.isEmpty {
                         leer
@@ -333,6 +311,11 @@ struct ElternDashboardView: View {
         }
         .task { await CloudSync.aktiv(context) }
         .task { await Wochenbericht.planen() }
+        .sheet(isPresented: $zeigeBericht) { ElternBerichtView(berichte: berichte) }
+        .onAppear { oeffneBerichtWennGewuenscht() }
+        .onReceive(NotificationCenter.default.publisher(for: .oeffneBericht)) { _ in
+            oeffneBerichtWennGewuenscht()
+        }
         .sheet(isPresented: $zeigeEinstellungen) { EinstellungenView() }
         .sheet(item: $gewaehlteRunde) { runde in RundeDetailView(runde: runde) }
         .sheet(item: $gewaehlteUebung) { auswahl in

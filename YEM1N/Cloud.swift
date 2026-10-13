@@ -17,6 +17,8 @@ import CoreImage.CIFilterBuiltins
 
 extension Notification.Name {
     nonisolated static let cloudPush = Notification.Name("yem1nCloudPush")
+    /// Die Mitteilung zum Wochenbericht wurde angetippt.
+    nonisolated static let oeffneBericht = Notification.Name("yem1nOeffneBericht")
 }
 
 // Registriert das Gerät für Mitteilungen und meldet eingehende CloudKit-Pushes an die App.
@@ -57,6 +59,18 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         NotificationCenter.default.post(name: .cloudPush, object: nil)
         // Ohne .badge: Solange die App offen ist, soll kein roter Punkt entstehen
         return [.banner, .list, .sound]
+    }
+
+    // Tipp auf eine Mitteilung. Beim Wochenbericht geht es direkt zum Bericht.
+    nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                            didReceive response: UNNotificationResponse) async {
+        let ziel = response.notification.request.content.userInfo["ziel"] as? String
+        let kennung = response.notification.request.identifier
+        guard ziel == "bericht" || kennung == "wochenbericht" else { return }
+        await MainActor.run {
+            UserDefaults.standard.set(true, forKey: Wochenbericht.oeffnenSchluessel)
+            NotificationCenter.default.post(name: .oeffneBericht, object: nil)
+        }
     }
 }
 

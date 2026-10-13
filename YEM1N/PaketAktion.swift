@@ -78,21 +78,26 @@ enum PaketAktion {
 }
 
 enum Wochenbericht {
-    // Erinnerung jeden Sonntag um 18 Uhr, der Bericht selbst steht im Eltern-Dashboard
+    /// Merkt sich, dass die Mitteilung angetippt wurde, bis die Übersicht den Bericht öffnet.
+    static let oeffnenSchluessel = "oeffneBericht"
+    static let kennung = "wochenbericht"
+
+    // Erinnerung jeden Sonntag um 18 Uhr, ein Tipp darauf öffnet den Bericht in der App
     static func planen() async {
         let zentrale = UNUserNotificationCenter.current()
         let einstellungen = await zentrale.notificationSettings()
         guard einstellungen.authorizationStatus == .authorized else { return }
         let inhalt = UNMutableNotificationContent()
         inhalt.title = "📊 Euer YEM1N-Wochenbericht"
-        inhalt.body = "Die Woche ist geschafft. Tippe, um zu sehen, wie sie gelaufen ist."
+        inhalt.body = "Die Woche ist geschafft. Tippe, um den Bericht in Worten zu lesen: was gut lief und wo es noch hakt."
+        inhalt.userInfo = ["ziel": "bericht"]
         inhalt.sound = .default
         var d = DateComponents()
         d.weekday = 1
         d.hour = 18
         d.minute = 0
         let ausloeser = UNCalendarNotificationTrigger(dateMatching: d, repeats: true)
-        let anfrage = UNNotificationRequest(identifier: "wochenbericht", content: inhalt, trigger: ausloeser)
+        let anfrage = UNNotificationRequest(identifier: kennung, content: inhalt, trigger: ausloeser)
         try? await zentrale.add(anfrage)
     }
 }
