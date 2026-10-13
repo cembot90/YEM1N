@@ -368,6 +368,19 @@ struct EinstellungenView: View {
                     .listRowBackground(zeile)
 
                     Section {
+                        NavigationLink {
+                            StimmenView()
+                        } label: {
+                            Label("Vorlese-Stimmen", systemImage: "speaker.wave.2.fill")
+                        }
+                    } header: {
+                        Text("Vorlesen")
+                    } footer: {
+                        Text("Stimme wählen, Mann oder Frau, und bessere Stimmen laden.")
+                    }
+                    .listRowBackground(zeile)
+
+                    Section {
                         Button("Gerätemodus ändern (Kind oder Eltern)", role: .destructive) {
                             zeigeReset = true
                         }

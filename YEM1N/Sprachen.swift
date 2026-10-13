@@ -442,31 +442,62 @@ final class Sprecher {
         stimme(code) != nil
     }
 
-    /// Beste installierte Stimme: Premium vor Erweitert vor Standard,
-    /// gleiche Region (de-DE) vor gleicher Sprache (de-AT, de-CH).
+    /// Unter diesem Schlüssel merkt sich das Gerät die gewählte Stimme einer Sprache.
+    /// Leer heißt: automatisch die beste.
+    static func schluessel(_ code: String) -> String { "stimme." + code.prefix(2) }
+
+    /// Die Stimme zum Vorlesen: die von Hand gewählte, sonst die beste installierte.
     func stimme(_ code: String) -> AVSpeechSynthesisVoice? {
         if let s = stimmen[code] { return s }
-        let sprache = String(code.prefix(2))
-        let kandidaten = AVSpeechSynthesisVoice.speechVoices().filter {
-            $0.language.hasPrefix(sprache) && !$0.voiceTraits.contains(.isNoveltyVoice)
-        }
-        let beste = kandidaten.max { a, b in
-            punkte(a, code) < punkte(b, code)
-        } ?? AVSpeechSynthesisVoice(language: code)
-        stimmen[code] = beste
-        return beste
+        let gewaehlt = UserDefaults.standard.string(forKey: Self.schluessel(code)) ?? ""
+        let s = (gewaehlt.isEmpty ? nil : AVSpeechSynthesisVoice(identifier: gewaehlt))
+            ?? installierte(code).first
+            ?? AVSpeechSynthesisVoice(language: code)
+        stimmen[code] = s
+        return s
     }
 
-    private func punkte(_ v: AVSpeechSynthesisVoice, _ code: String) -> Int {
-        var p = 0
-        switch v.quality {
-        case .premium: p += 300
-        case .enhanced: p += 200
-        default: p += 100
-        }
-        if v.language == code { p += 10 }
-        if v.voiceTraits.contains(.isPersonalVoice) { p -= 1000 }
-        return p
+    /// Alle brauchbaren Stimmen einer Sprache, die beste zuerst.
+    /// Spaßstimmen (Roboter, Flüstern) und die eigene Stimme bleiben draußen.
+    func installierte(_ code: String) -> [AVSpeechSynthesisVoice] {
+        let sprache = String(code.prefix(2))
+        return AVSpeechSynthesisVoice.speechVoices()
+            .filter {
+                $0.language.hasPrefix(sprache)
+                    && !$0.voiceTraits.contains(.isNoveltyVoice)
+                    && !$0.voiceTraits.contains(.isPersonalVoice)
+            }
+            .sorted {
+                let a = Self.punkte(qualitaet: $0.quality.rawValue, gleicheRegion: $0.language == code)
+                let b = Self.punkte(qualitaet: $1.quality.rawValue, gleicheRegion: $1.language == code)
+                return a != b ? a > b : $0.name < $1.name
+            }
+    }
+
+    /// Rangfolge: Premium vor Erweitert vor Standard, bei gleicher Güte
+    /// die eigene Region (de-DE) vor anderen (de-AT, de-CH).
+    static func punkte(qualitaet: Int, gleicheRegion: Bool) -> Int {
+        qualitaet * 100 + (gleicheRegion ? 10 : 0)
+    }
+
+    /// Stimme von Hand wählen. nil heißt wieder automatisch.
+    func waehle(_ stimme: AVSpeechSynthesisVoice?, fuer code: String) {
+        UserDefaults.standard.set(stimme?.identifier ?? "", forKey: Self.schluessel(code))
+        stimmen[code] = nil
+    }
+
+    func gewaehlteID(_ code: String) -> String {
+        UserDefaults.standard.string(forKey: Self.schluessel(code)) ?? ""
+    }
+
+    /// Spricht einen Satz mit genau dieser Stimme, zum Probehören.
+    func probe(_ text: String, stimme: AVSpeechSynthesisVoice) {
+        sitzungEinrichten()
+        if synth.isSpeaking { synth.stopSpeaking(at: .immediate) }
+        let u = AVSpeechUtterance(string: text)
+        u.voice = stimme
+        u.rate = AVSpeechUtteranceDefaultSpeechRate * 0.95
+        synth.speak(u)
     }
 
     /// Qualität der Stimme, die gerade benutzt wird (für den Hinweis in den Einstellungen)
@@ -511,67 +542,6 @@ final class Sprecher {
         u.preUtteranceDelay = 0
         u.postUtteranceDelay = 0
         synth.speak(u)
-    }
-}
-
-// MARK: Stimmen-Hinweis
-
-struct StimmenKarte: View {
-    @State private var stand = 0
-    private let sprachen: [(String, String)] = [("Deutsch", "de-DE"), ("Türkisch", "tr-TR"), ("Englisch", "en-GB")]
-
-    private func stufe(_ code: String) -> (String, Color) {
-        switch Sprecher.shared.qualitaet(code) {
-        case .premium?: return ("Premium", .green)
-        case .enhanced?: return ("Erweitert", .green)
-        case nil: return ("Fehlt", .red)
-        default: return ("Einfach", Theme.gelb)
-        }
-    }
-
-    private var alleGut: Bool {
-        sprachen.allSatisfy {
-            let q = Sprecher.shared.qualitaet($0.1)
-            return q == .premium || q == .enhanced
-        }
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Vorlese-Stimmen")
-                .font(.system(.headline, design: .rounded).weight(.heavy))
-                .foregroundStyle(Color.white)
-            ForEach(sprachen, id: \.1) { name, code in
-                let s = stufe(code)
-                HStack {
-                    Text(name).foregroundStyle(Color.white)
-                    Spacer()
-                    Text(s.0)
-                        .font(.footnote.weight(.bold))
-                        .foregroundStyle(s.1)
-                }
-                .font(.subheadline)
-            }
-            .id(stand)
-            if !alleGut {
-                Text("Mit besseren Stimmen klingt das Vorlesen viel natürlicher. iPhone-Einstellungen öffnen, Bedienungshilfen, Gesprochene Inhalte, Stimmen. Dort die Sprache wählen und eine Stimme mit „Premium“ oder „Erweitert“ laden. YEM1N nimmt sie danach von selbst.")
-                    .font(.footnote)
-                    .foregroundStyle(Theme.textSanft)
-            }
-            Button {
-                Sprecher.shared.sprich("Hallo! So klinge ich jetzt.", code: "de-DE")
-            } label: {
-                Label("Probe hören", systemImage: "speaker.wave.2.fill")
-                    .font(.subheadline.weight(.bold))
-                    .foregroundStyle(Theme.gelb)
-            }
-        }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .glasKarte(radius: 22)
-        .onReceive(NotificationCenter.default.publisher(for: AVSpeechSynthesizer.availableVoicesDidChangeNotification)) { _ in
-            stand += 1
-        }
     }
 }
 
