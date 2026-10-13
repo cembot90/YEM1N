@@ -36,6 +36,10 @@ enum VorschulArt: String, CaseIterable, Identifiable, Hashable {
         }
     }
 
+    /// Übungen mit Zahlen. Nur für sie gilt der Zahlenraum.
+    static let rechnen: [VorschulArt] = [.zaehlen, .zahlen, .plus, .mehr, .nachbar]
+    static let spielen: [VorschulArt] = [.formen, .anlaut, .anders, .muster, .memory, .mix]
+
     var emoji: String {
         switch self {
         case .mix: return "🎲"
@@ -262,9 +266,11 @@ enum VorschulGenerator {
             let b = p[1]
             let c = p[2]
             let muster: [String]
-            switch stufe {
+            // Muster hängen nicht vom Zahlenraum ab, die Art wechselt zufällig
+            switch Int.random(in: 1...4) {
             case 1: muster = [a, b]
-            case 2: muster = Bool.random() ? [a, a, b] : [a, b, b]
+            case 2: muster = [a, a, b]
+            case 3: muster = [a, b, b]
             default: muster = [a, b, c]
             }
             let l = muster.count
@@ -407,13 +413,16 @@ struct VorschuleView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {
                         kopf
-                        auswahl
-                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 14)], spacing: 14) {
-                            ForEach(VorschulArt.allCases) { art in
-                                NavigationLink(value: art) { karte(art) }
-                                    .buttonStyle(TastenStil())
-                            }
+                        Picker("Sprache", selection: $sprache) {
+                            Text("Deutsch").tag("de")
+                            Text("Türkçe").tag("tr")
                         }
+                        .pickerStyle(.segmented)
+                        abschnitt("Zahlen und Rechnen")
+                        zahlenraum
+                        raster(VorschulArt.rechnen)
+                        abschnitt("Spielen und Entdecken")
+                        raster(VorschulArt.spielen)
                         pakete
                     }
                     .padding(20)
@@ -490,19 +499,33 @@ struct VorschuleView: View {
         }
     }
 
-    private var auswahl: some View {
-        VStack(spacing: 10) {
+    private func abschnitt(_ titel: String) -> some View {
+        Text(titel)
+            .font(.system(.title3, design: .rounded).weight(.heavy))
+            .foregroundStyle(Theme.gelb)
+            .padding(.top, 8)
+    }
+
+    private var zahlenraum: some View {
+        HStack(spacing: 12) {
+            Text("Zahlenraum")
+                .font(.system(.subheadline, design: .rounded).weight(.bold))
+                .foregroundStyle(Color.white)
             Picker("Zahlenraum", selection: $stufe) {
                 Text("Bis 5").tag(1)
                 Text("Bis 10").tag(2)
                 Text("Bis 20").tag(3)
             }
             .pickerStyle(.segmented)
-            Picker("Sprache", selection: $sprache) {
-                Text("Deutsch").tag("de")
-                Text("Türkçe").tag("tr")
+        }
+    }
+
+    private func raster(_ arten: [VorschulArt]) -> some View {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 14)], spacing: 14) {
+            ForEach(arten) { art in
+                NavigationLink(value: art) { karte(art) }
+                    .buttonStyle(TastenStil())
             }
-            .pickerStyle(.segmented)
         }
     }
 
@@ -756,14 +779,14 @@ struct VorschulMemory: View {
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
     @AppStorage("modus") private var modus = ""
-    @AppStorage("vorschulStufe") private var stufe = 2
     @State private var karten: [VorschulKarte] = []
     @State private var erste: Int?
     @State private var zuege = 0
     @State private var sperre = false
     @State private var fertig = false
 
-    private var paare: Int { stufe == 1 ? 3 : (stufe == 2 ? 4 : 6) }
+    // Memory hat nichts mit dem Zahlenraum zu tun, deshalb immer 4 Paare
+    private let paare = 4
 
     var body: some View {
         ZStack {
