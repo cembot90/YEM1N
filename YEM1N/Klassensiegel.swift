@@ -79,16 +79,68 @@ enum Klassensiegel {
         return pk.isValidSignature(sd, for: nachricht(code, json))
     }
 
+    enum SchluesselStand: Equatable {
+        case vertraut(Data)     // schon gemerkt, Cloud liefert denselben oder gerade keinen
+        case neu(Data)          // zum ersten Mal geholt, wird jetzt gemerkt
+        case fehlt              // weder gemerkt noch in der Cloud
+        case gewechselt         // Cloud liefert einen anderen als den gemerkten
+
+        var schluessel: Data? {
+            switch self {
+            case .vertraut(let d), .neu(let d): return d
+            case .fehlt, .gewechselt: return nil
+            }
+        }
+    }
+
+    // Reine Entscheidung ohne Cloud, damit sie sich testen lässt
+    static func bewerte(gemerkt: Data?, geholt: Data?) -> SchluesselStand {
+        if let m = gemerkt {
+            if let g = geholt, g != m { return .gewechselt }
+            return .vertraut(m)
+        }
+        guard let g = geholt else { return .fehlt }
+        return .neu(g)
+    }
+
     // Der öffentliche Schlüssel wird beim ersten Mal gemerkt. Danach muss die Cloud denselben liefern.
-    static func vertrauterSchluessel(_ code: String) async -> Data? {
+    static func schluesselStand(_ code: String) async -> SchluesselStand {
         let feld = "klassenPin-" + code
         let geholt = await CloudDienst.ladeKlassenSchluessel(code)
-        if let b64 = UserDefaults.standard.string(forKey: feld), let gemerkt = Data(base64Encoded: b64) {
-            if let g = geholt, g != gemerkt { return nil }
-            return gemerkt
+        let gemerkt = UserDefaults.standard.string(forKey: feld).flatMap { Data(base64Encoded: $0) }
+        let stand = bewerte(gemerkt: gemerkt, geholt: geholt)
+        if case .neu(let g) = stand {
+            UserDefaults.standard.set(g.base64EncodedString(), forKey: feld)
         }
-        guard let g = geholt else { return nil }
-        UserDefaults.standard.set(g.base64EncodedString(), forKey: feld)
-        return g
+        return stand
+    }
+
+    static func vertrauterSchluessel(_ code: String) async -> Data? {
+        await schluesselStand(code).schluessel
+    }
+
+    // Admin-Gerät: passt der eigene Schlüssel zu dem in der Cloud? nil heißt: kein Admin oder Cloud nicht erreichbar
+    static func adminPasstZurCloud(_ code: String) async -> Bool? {
+        guard let k = privaterSchluessel(code),
+              let wolke = await CloudDienst.ladeKlassenSchluessel(code) else { return nil }
+        return k.publicKey.rawRepresentation == wolke
+    }
+
+    // Warum Pakete der Klasse abgelehnt wurden, in Worten für die Eltern
+    enum Ablehnung: Hashable {
+        case ohneUnterschrift, keinSchluessel, schluesselGewechselt, unterschriftFalsch
+
+        var text: String {
+            switch self {
+            case .ohneUnterschrift:
+                return "Das Paket hat keine Unterschrift. Der Admin der Klasse sollte es noch einmal an den Klassencode senden."
+            case .keinSchluessel:
+                return "In der Cloud liegt kein Schlüssel für diesen Klassencode. Der Admin der Klasse sollte ein Paket neu senden."
+            case .schluesselGewechselt:
+                return "Der Schlüssel der Klasse hat sich geändert. Klassencode in den Einstellungen entfernen und neu eintragen."
+            case .unterschriftFalsch:
+                return "Die Unterschrift passt nicht zum Schlüssel der Klasse. Der Admin der Klasse sollte das Paket neu senden."
+            }
+        }
     }
 }

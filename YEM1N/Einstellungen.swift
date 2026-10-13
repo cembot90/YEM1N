@@ -39,6 +39,7 @@ struct EinstellungenView: View {
     @State private var zeigeKlassenQR = false
     @State private var klassenEingabe = ""
     @State private var klassenAdmin = false
+    @State private var klassenSchluesselPasst: Bool? = nil
     @State private var klassenInfo = ""
     @State private var zeigeLoeschen = false
     @State private var zeigeWiderruf = false
@@ -148,6 +149,11 @@ struct EinstellungenView: View {
                                     klassenAdmin = Klassensiegel.istAdmin("K-" + klassenCode)
                                 }
                             }
+                            if klassenAdmin && klassenSchluesselPasst == false {
+                                Text("Achtung: Der Schlüssel in der Cloud passt nicht zu diesem Gerät. Klassen-Geräte lehnen deine Pakete deshalb ab. Wurde der Code auf einem anderen Gerät zum Admin gemacht? Dann von dort senden oder einen neuen Klassencode erzeugen.")
+                                    .font(.footnote.weight(.semibold))
+                                    .foregroundStyle(Theme.koralle)
+                            }
                             if !klassenCode.isEmpty {
                                 Label(klassenAdmin ? "Dieses Gerät ist Admin" : "Nur Lesen, kein Admin-Schlüssel",
                                       systemImage: klassenAdmin ? "checkmark.seal.fill" : "lock.fill")
@@ -199,7 +205,10 @@ struct EinstellungenView: View {
                     } footer: {
                         Text("Über den Klassencode kommen nur Aufgabenpakete an, vom Admin digital unterschrieben. Ergebnisse und Joker bleiben in der Familie.")
                     }
-                    .task { klassenAdmin = Klassensiegel.istAdmin("K-" + klassenCode) }
+                    .task {
+                        klassenAdmin = Klassensiegel.istAdmin("K-" + klassenCode)
+                        klassenSchluesselPasst = klassenCode.isEmpty ? nil : await Klassensiegel.adminPasstZurCloud("K-" + klassenCode)
+                    }
                     .onChange(of: klassenCode) { klassenAdmin = Klassensiegel.istAdmin("K-" + klassenCode) }
                     .listRowBackground(zeile)
 

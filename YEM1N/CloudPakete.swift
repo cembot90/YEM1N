@@ -167,7 +167,9 @@ extension CloudDienst {
                          recordID: CKRecord.ID(recordName: "klassenkey-" + code))
         r["klassenCode"] = code as CKRecordValue
         r["publicKey"] = k.publicKey.rawRepresentation.base64EncodedString() as CKRecordValue
-        let erg = try await db.modifyRecords(saving: [r], deleting: [], savePolicy: .allKeys)
+        // Nie einen vorhandenen Schlüssel überschreiben: sonst passen alle Pakete und alle gemerkten Schlüssel
+        // der Klassen-Geräte nicht mehr. Liegt schon einer in der Cloud, schlägt das Speichern fehl.
+        let erg = try await db.modifyRecords(saving: [r], deleting: [], savePolicy: .ifServerRecordUnchanged)
         for (_, e) in erg.saveResults { _ = try e.get() }
         Schluesselbund.speichere(k.rawRepresentation, konto: Klassensiegel.konto(code))
         UserDefaults.standard.removeObject(forKey: "klassenPin-" + code)

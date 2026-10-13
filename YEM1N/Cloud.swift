@@ -435,6 +435,7 @@ enum CloudSync {
             }
             var neu = 0
             var ungueltig = 0
+            var gruende = Set<Klassensiegel.Ablehnung>()
             let meineKlasse = (UserDefaults.standard.string(forKey: "kindKlasse") ?? "")
                 .trimmingCharacters(in: .whitespaces).lowercased()
             for eintrag in koepfe {
@@ -444,11 +445,21 @@ enum CloudSync {
                 let text: String
                 if eintrag.herkunft.hasPrefix("K-") {
                     // Pakete aus der Klasse müssen vom Admin unterschrieben sein
-                    guard let signiert = try await CloudDienst.ladePaketSigniert(id: k.id),
-                          let oeffentlich = await Klassensiegel.vertrauterSchluessel(eintrag.herkunft),
-                          Klassensiegel.pruefe(code: eintrag.herkunft, json: signiert.json,
+                    guard let signiert = try await CloudDienst.ladePaketSigniert(id: k.id) else {
+                        ungueltig += 1
+                        gruende.insert(.ohneUnterschrift)
+                        continue
+                    }
+                    let stand = await Klassensiegel.schluesselStand(eintrag.herkunft)
+                    guard let oeffentlich = stand.schluessel else {
+                        ungueltig += 1
+                        gruende.insert(stand == .gewechselt ? .schluesselGewechselt : .keinSchluessel)
+                        continue
+                    }
+                    guard Klassensiegel.pruefe(code: eintrag.herkunft, json: signiert.json,
                                                sig: signiert.sig, oeffentlich: oeffentlich) else {
                         ungueltig += 1
+                        gruende.insert(.unterschriftFalsch)
                         continue
                     }
                     text = signiert.json
@@ -465,7 +476,8 @@ enum CloudSync {
             }
             if neu > 0 { try? context.save() }
             if ungueltig > 0 {
-                CloudStatus.shared.meldung = "\(ungueltig) Paket(e) der Klasse ohne gültige Unterschrift wurden ignoriert."
+                let warum = gruende.map { $0.text }.joined(separator: "\n")
+                CloudStatus.shared.meldung = "\(ungueltig) Paket(e) der Klasse ohne gültige Unterschrift wurden ignoriert.\n" + warum
             }
             return neu
         } catch {
@@ -1040,9 +1052,15 @@ struct CloudStatusKarte: View {
                 .font(.footnote)
                 .foregroundStyle(Theme.textSanft)
             if !Familiencode.istGueltig(familienCode) {
-                Text("Es fehlt noch ein Familiencode (Einstellungen).")
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(Theme.koralle)
+                if CloudDienst.klassenCloudCode != nil {
+                    Text("Nur Klassencode: Aufgaben der Klasse kommen an. Ergebnisse und Joker gibt es erst mit einem Familiencode.")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.textSanft)
+                } else {
+                    Text("Es fehlt noch ein Familiencode (Einstellungen).")
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(Theme.koralle)
+                }
             }
             Button {
                 Task {
