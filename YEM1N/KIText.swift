@@ -14,16 +14,18 @@ import FoundationModels
 // geprüfte Sätze und darf sie nur umformulieren. Jede Zahl in ihrer Antwort
 // muss schon in den Fakten stehen, sonst wird die Antwort verworfen.
 
-enum KIText {
+// Die Mindestversion der App liegt unter iOS 26. Alles, was Apples Sprachmodell
+// direkt anfasst, steckt deshalb in KIModell und wird nur ab iOS 26 benutzt.
+// Auf älteren Systemen ist die KI einfach "nicht verfügbar".
 
-    /// true, wenn das Sprachmodell auf diesem Gerät bereit ist und Deutsch kann.
+@available(iOS 26.0, *)
+enum KIModell {
     static var verfuegbar: Bool {
         let modell = SystemLanguageModel.default
         guard case .available = modell.availability else { return false }
         return modell.supportedLanguages.contains { $0.languageCode?.identifier == "de" }
     }
 
-    /// Kurzer Grund für die Anzeige in der Eltern-Übersicht.
     static var statusText: String {
         switch SystemLanguageModel.default.availability {
         case .available:
@@ -39,6 +41,28 @@ enum KIText {
         }
     }
 
+    static func antwort(anweisung: String, fakten: String) async throws -> String {
+        let sitzung = LanguageModelSession(instructions: anweisung)
+        let optionen = GenerationOptions(temperature: 0.4)
+        let antwort = try await sitzung.respond(to: fakten, options: optionen)
+        return antwort.content
+    }
+}
+
+enum KIText {
+
+    /// true, wenn das Sprachmodell auf diesem Gerät bereit ist und Deutsch kann.
+    static var verfuegbar: Bool {
+        if #available(iOS 26.0, *) { return KIModell.verfuegbar }
+        return false
+    }
+
+    /// Kurzer Grund für die Anzeige in der Eltern-Übersicht.
+    static var statusText: String {
+        if #available(iOS 26.0, *) { return KIModell.statusText }
+        return "Für die KI braucht das Gerät ein neueres iOS"
+    }
+
     /// Lässt die KI einen fertigen Text umformulieren.
     /// - Parameters:
     ///   - anweisung: Rolle und Stil, zum Beispiel "für ein Kind der 3. Klasse"
@@ -49,12 +73,9 @@ enum KIText {
     static func formuliere(anweisung: String, fakten: String, ersatz: String,
                            maxZeichen: Int = 400,
                            wartezeit: Duration = .seconds(6)) async -> (text: String, vonKI: Bool) {
-        guard verfuegbar else { return (ersatz, false) }
+        guard #available(iOS 26.0, *), verfuegbar else { return (ersatz, false) }
         let ergebnis = await mitZeitlimit(wartezeit) {
-            let sitzung = LanguageModelSession(instructions: anweisung)
-            let optionen = GenerationOptions(temperature: 0.4)
-            let antwort = try await sitzung.respond(to: fakten, options: optionen)
-            return antwort.content
+            try await KIModell.antwort(anweisung: anweisung, fakten: fakten)
         }
         guard let roh = ergebnis else { return (ersatz, false) }
         let text = bereinige(roh)
