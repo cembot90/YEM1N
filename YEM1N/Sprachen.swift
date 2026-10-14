@@ -430,12 +430,55 @@ final class Sprecher {
     private var stimmen: [String: AVSpeechSynthesisVoice] = [:]
     private var sitzungBereit = false
 
+    /// Alle Stimmen des Geräts, einmal geladen und dann gemerkt.
+    /// Die Abfrage bei iOS kann lange dauern, besonders während gerade eine Stimme
+    /// heruntergeladen wird. Deshalb läuft sie im Hintergrund und nie beim Zeichnen.
+    private var katalog: [AVSpeechSynthesisVoice]?
+    private var laedt = false
+    private var nochmal = false
+
     init() {
-        // Neue Stimmen (vom Nutzer in den Einstellungen geladen) sofort berücksichtigen
+        // Neue Stimmen (vom Nutzer in den Einstellungen geladen) im Hintergrund nachladen
         NotificationCenter.default.addObserver(
             forName: AVSpeechSynthesizer.availableVoicesDidChangeNotification,
             object: nil, queue: .main
-        ) { [weak self] _ in self?.stimmen.removeAll() }
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.neuLaden() }
+        }
+    }
+
+    /// Lädt die Stimmenliste im Hintergrund neu. Kommen mehrere Anstöße kurz
+    /// hintereinander, wird nur einmal zusätzlich geladen.
+    func neuLaden() {
+        if laedt {
+            nochmal = true
+            return
+        }
+        laedt = true
+        DispatchQueue.global(qos: .userInitiated).async {
+            let liste = AVSpeechSynthesisVoice.speechVoices()
+            DispatchQueue.main.async {
+                MainActor.assumeIsolated {
+                    self.katalog = liste
+                    self.stimmen.removeAll()
+                    self.laedt = false
+                    NotificationCenter.default.post(name: .stimmenGeladen, object: nil)
+                    if self.nochmal {
+                        self.nochmal = false
+                        self.neuLaden()
+                    }
+                }
+            }
+        }
+    }
+
+    /// Der gemerkte Stand. Nur ganz am Anfang, wenn noch nie geladen wurde,
+    /// wird einmal direkt gefragt.
+    private var alleStimmen: [AVSpeechSynthesisVoice] {
+        if let katalog { return katalog }
+        let liste = AVSpeechSynthesisVoice.speechVoices()
+        katalog = liste
+        return liste
     }
 
     func hatStimme(_ code: String) -> Bool {
@@ -450,7 +493,7 @@ final class Sprecher {
     func stimme(_ code: String) -> AVSpeechSynthesisVoice? {
         if let s = stimmen[code] { return s }
         let gewaehlt = UserDefaults.standard.string(forKey: Self.schluessel(code)) ?? ""
-        let s = (gewaehlt.isEmpty ? nil : AVSpeechSynthesisVoice(identifier: gewaehlt))
+        let s = (gewaehlt.isEmpty ? nil : alleStimmen.first { $0.identifier == gewaehlt })
             ?? installierte(code).first
             ?? AVSpeechSynthesisVoice(language: code)
         stimmen[code] = s
@@ -461,7 +504,7 @@ final class Sprecher {
     /// Spaßstimmen (Roboter, Flüstern) und die eigene Stimme bleiben draußen.
     func installierte(_ code: String) -> [AVSpeechSynthesisVoice] {
         let sprache = String(code.prefix(2))
-        return AVSpeechSynthesisVoice.speechVoices()
+        return alleStimmen
             .filter {
                 $0.language.hasPrefix(sprache)
                     && !$0.voiceTraits.contains(.isNoveltyVoice)
@@ -510,11 +553,9 @@ final class Sprecher {
         // Auf dem Hauptthread, damit die Stimmen-Liste nur von einer Stelle aus benutzt wird
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
-            // Stimmen schon beim Start heraussuchen. Kein stilles Probe-Sprechen,
+            // Stimmen schon beim Start im Hintergrund laden. Kein stilles Probe-Sprechen,
             // das würde beim Kind laufende Musik unterbrechen.
-            _ = self.stimme("de-DE")
-            _ = self.stimme("tr-TR")
-            _ = self.stimme("en-GB")
+            self.neuLaden()
         }
     }
 

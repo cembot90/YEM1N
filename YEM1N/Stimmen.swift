@@ -105,8 +105,7 @@ struct StimmenKarte: View {
             .glasKarte(radius: 22)
         }
         .buttonStyle(TastenStil())
-        .onAppear { stand += 1 }
-        .onReceive(NotificationCenter.default.publisher(for: AVSpeechSynthesizer.availableVoicesDidChangeNotification)) { _ in
+        .onReceive(NotificationCenter.default.publisher(for: .stimmenGeladen)) { _ in
             stand += 1
         }
     }
@@ -146,12 +145,13 @@ struct StimmenView: View {
         .navigationTitle("Vorlese-Stimmen")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $zeigeAnleitung) { StimmenAnleitung() }
-        .onReceive(NotificationCenter.default.publisher(for: AVSpeechSynthesizer.availableVoicesDidChangeNotification)) { _ in
+        .onReceive(NotificationCenter.default.publisher(for: .stimmenGeladen)) { _ in
             stand += 1
         }
         .onChange(of: phase) {
-            // Zurück aus den iPhone-Einstellungen: neu geladene Stimmen sofort zeigen
-            if phase == .active { stand += 1 }
+            // Zurück aus den iPhone-Einstellungen: Liste im Hintergrund neu laden.
+            // Die Seite zeigt so lange den alten Stand und bleibt bedienbar.
+            if phase == .active { Sprecher.shared.neuLaden() }
         }
     }
 

@@ -19,6 +19,8 @@ extension Notification.Name {
     nonisolated static let cloudPush = Notification.Name("yem1nCloudPush")
     /// Die Mitteilung zum Wochenbericht wurde angetippt.
     nonisolated static let oeffneBericht = Notification.Name("yem1nOeffneBericht")
+    /// Die Liste der Vorlese-Stimmen ist neu geladen.
+    nonisolated static let stimmenGeladen = Notification.Name("yem1nStimmenGeladen")
 }
 
 // Registriert das Gerät für Mitteilungen und meldet eingehende CloudKit-Pushes an die App.
