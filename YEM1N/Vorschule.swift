@@ -17,6 +17,10 @@ import CoreImage.CIFilterBuiltins
 
 enum VorschulArt: String, CaseIterable, Identifiable, Hashable {
     case mix, zaehlen, zahlen, plus, mehr, nachbar, formen, anlaut, anders, muster, memory
+    // Fit für die Schule: Vorläuferfähigkeiten aus den Bildungsplänen
+    case wuerfel, minus, zahlbild, teilen
+    case buchstabe, reime, silben
+    case lage, gefuehle, reihenfolge, tierwelt, verkehr, unterschied
 
     var id: String { rawValue }
 
@@ -33,12 +37,27 @@ enum VorschulArt: String, CaseIterable, Identifiable, Hashable {
         case .anders: return "Was passt nicht?"
         case .muster: return "Muster"
         case .memory: return "Memory"
+        case .wuerfel: return "Würfelbilder"
+        case .minus: return "Wegnehmen"
+        case .zahlbild: return "Zahl und Menge"
+        case .teilen: return "Gerecht teilen"
+        case .buchstabe: return "Buchstaben finden"
+        case .reime: return "Reime"
+        case .silben: return "Silben klatschen"
+        case .lage: return "Links, Mitte, rechts"
+        case .gefuehle: return "Gefühle"
+        case .reihenfolge: return "Was kommt danach?"
+        case .tierwelt: return "Wo lebt das Tier?"
+        case .verkehr: return "Sicher unterwegs"
+        case .unterschied: return "Finde das andere Bild"
         }
     }
 
     /// Übungen mit Zahlen. Nur für sie gilt der Zahlenraum.
-    static let rechnen: [VorschulArt] = [.zaehlen, .zahlen, .plus, .mehr, .nachbar]
-    static let spielen: [VorschulArt] = [.formen, .anlaut, .anders, .muster, .memory, .mix]
+    static let rechnen: [VorschulArt] = [.zaehlen, .wuerfel, .zahlen, .zahlbild, .plus, .minus, .mehr, .nachbar, .teilen]
+    static let sprache: [VorschulArt] = [.anlaut, .buchstabe, .reime, .silben]
+    static let spielen: [VorschulArt] = [.formen, .lage, .muster, .unterschied, .anders, .reihenfolge,
+                                         .gefuehle, .tierwelt, .verkehr, .memory, .mix]
 
     var emoji: String {
         switch self {
@@ -53,6 +72,19 @@ enum VorschulArt: String, CaseIterable, Identifiable, Hashable {
         case .anders: return "🧐"
         case .muster: return "🧩"
         case .memory: return "🃏"
+        case .wuerfel: return "🎯"
+        case .minus: return "🎈"
+        case .zahlbild: return "🔟"
+        case .teilen: return "🍪"
+        case .buchstabe: return "🅰️"
+        case .reime: return "🐭"
+        case .silben: return "👏"
+        case .lage: return "👈"
+        case .gefuehle: return "😊"
+        case .reihenfolge: return "🐣"
+        case .tierwelt: return "🌍"
+        case .verkehr: return "🚦"
+        case .unterschied: return "🔎"
         }
     }
 }
@@ -260,6 +292,10 @@ enum VorschulGenerator {
             return VorschulFrage(text: VorschulText(de: "Was passt nicht dazu?", tr: "Hangisi diğerlerine uymuyor?"),
                                  optionen: optionen, richtig: optionen.firstIndex(of: fremd) ?? 0)
 
+        case .wuerfel, .minus, .zahlbild, .teilen, .buchstabe, .reime, .silben,
+             .lage, .gefuehle, .reihenfolge, .tierwelt, .verkehr, .unterschied:
+            return VorschulMehr.eine(art, stufe: stufe)
+
         default:
             let p = ["🔴", "🔵", "🟡", "🟢", "🟣", "🟠", "⭐", "❤️", "🍎", "🐟"].shuffled()
             let a = p[0]
@@ -405,6 +441,7 @@ struct VorschuleView: View {
     @AppStorage("vorschulStufe") private var stufe = 2
     @AppStorage("vorschulSprache") private var sprache = "de"
     @AppStorage("kindName") private var kindName = ""
+    @AppStorage("modus") private var modus = ""
     @Namespace private var zoomRaum
 
     var body: some View {
@@ -419,9 +456,14 @@ struct VorschuleView: View {
                             Text("Türkçe").tag("tr")
                         }
                         .pickerStyle(.segmented)
+                        if modus != "eltern" {
+                            SchulstartPass()
+                        }
                         abschnitt("Zahlen und Rechnen")
                         zahlenraum
                         raster(VorschulArt.rechnen)
+                        abschnitt("Sprache und Laute")
+                        raster(VorschulArt.sprache)
                         abschnitt("Spielen und Entdecken")
                         raster(VorschulArt.spielen)
                         pakete
@@ -494,7 +536,7 @@ struct VorschuleView: View {
 
     private var kopf: some View {
         HeroKopf(kicker: "YEM1N", titel: "Vorschule",
-                 untertitel: kindName.isEmpty ? "Spielen und lernen" : "Hallo \(kindName)! Spielen und lernen",
+                 untertitel: kindName.isEmpty ? "Spielen und fit für die Schule werden" : "Hallo \(kindName)! Spielen und fit für die Schule werden",
                  bild: "🧸")
     }
 
