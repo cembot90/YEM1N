@@ -116,7 +116,7 @@ enum MitteilungsZiel {
         return n.subscriptionID ?? ""
     }
 
-    /// "bericht", "joker", "haustier", "schule" oder nil (dann bleibt die App, wo sie ist).
+    /// "bericht", "joker", "haustier", "schule", "duell" oder nil (dann bleibt die App, wo sie ist).
     nonisolated static func bereich(ziel: String?, kennung: String, abo: String) -> String? {
         if ziel == "bericht" || kennung == "wochenbericht" { return "bericht" }
         if abo.hasPrefix("JokerAnfrage") || abo.hasPrefix("JokerNachschub")
@@ -124,6 +124,7 @@ enum MitteilungsZiel {
             || abo.hasPrefix("JokerDaumen") { return "joker" }
         if abo.hasPrefix("HaustierPflege") { return "haustier" }
         if abo.hasPrefix("Lernpaket") { return "schule" }
+        if abo.hasPrefix("Duell") { return "duell" }
         return nil
     }
 }
@@ -406,6 +407,8 @@ enum CloudDienst {
         } catch {
             return "Mitteilungen einrichten nicht möglich: \(fehlertext(error))"
         }
+        // Das Duell kam später dazu und darf die Einrichtung nicht aufhalten
+        await DuellCloud.einrichten(code: code)
         return "Cloud ist bereit. Mitteilungen sind eingerichtet."
     }
 }

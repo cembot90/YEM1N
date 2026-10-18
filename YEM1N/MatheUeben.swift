@@ -309,6 +309,10 @@ struct UebungInhalt: View {
     @AppStorage("tagesziel") private var tagesziel = 2
     @State private var neuePokale: [Pokal] = []
     @State private var haustierText: String?
+    /// Antworten mit Stift oder Finger auf Karopapier schreiben statt tippen
+    @AppStorage(Handschrift.key) private var stift = Handschrift.standard
+    /// Neue Zahl, neues leeres Blatt
+    @State private var schreibRunde = 0
 
     private var istProbe: Bool { uebung.arbeit?.spezial == "probe" }
 
@@ -357,6 +361,8 @@ struct UebungInhalt: View {
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { bereiteVor() }
         .onChange(of: aktuell?.persistentModelID) { bereiteVor() }
+        .onChange(of: aktivesFeld) { schreibRunde += 1 }
+        .onChange(of: mauerSchritt) { schreibRunde += 1 }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button { zeigeNotiz = true } label: {
@@ -589,6 +595,15 @@ struct UebungInhalt: View {
                         .font(.subheadline)
                         .foregroundStyle(Color.white)
                 }
+                // Olli zeigt die Rechnung als Bild, nach einem Fehler oder beim Lösung zeigen
+                if bewertung != .richtig, !istProbe, let a = bewertet,
+                   let bild = ErklaerBildPlan.bild(art: a.art, rechnung: a.rechnung,
+                                                   erklaerung: a.erklaerung,
+                                                   antwort: a.antwort, antwort2: a.antwort2) {
+                    ErklaerBildKnopf(bild: bild)
+                        .id(ObjectIdentifier(a))
+                        .padding(.top, 4)
+                }
                 if bewertung == .falsch, !istProbe, let a = bewertet,
                    ErklaerFreund.lohntSich(art: a.art, rechnung: a.rechnung, erklaerung: a.erklaerung,
                                            antwort: a.antwort, antwort2: a.antwort2, gegeben: a.gegeben) {
@@ -677,7 +692,15 @@ struct UebungInhalt: View {
         } else if a.art == "text" {
             TextAntwortFeld(text: $eingabe) { pruefen(a) }
         } else {
-            ZahlenTastatur(text: aktuellerText, maxLaenge: 3) { pruefen(a) }
+            VStack(spacing: 12) {
+                EingabeUmschalter(stift: $stift)
+                if stift {
+                    SchreibFeld(text: aktuellerText, maxLaenge: 3) { pruefen(a) }
+                        .id(schreibRunde)
+                } else {
+                    ZahlenTastatur(text: aktuellerText, maxLaenge: 3) { pruefen(a) }
+                }
+            }
         }
     }
 
@@ -816,6 +839,7 @@ struct UebungInhalt: View {
 
     private func bereiteVor() {
         notiz = PKDrawing()
+        schreibRunde += 1
         eingabe = ""
         eingabe2 = ""
         aktivesFeld = 1

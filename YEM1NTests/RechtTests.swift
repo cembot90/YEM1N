@@ -85,6 +85,8 @@ struct RechtTests {
     @Test func nurDieRichtigenTypenWerdenAufgeraeumt() {
         #expect(Loeschfrist.typen.contains("RundenErgebnis"))
         #expect(Loeschfrist.typen.contains("JokerAnfrage"))
+        #expect(Loeschfrist.typen.contains(DuellCloud.typDuell) && Loeschfrist.typen.contains(DuellCloud.typAntwort),
+                "Auch Duelle werden nach der Frist gelöscht")
         #expect(!Loeschfrist.typen.contains("Lernpaket"), "Aufgabenpakete bleiben")
         #expect(!Loeschfrist.typen.contains("KlassenSchluessel"), "Der Klassenschlüssel bleibt")
     }

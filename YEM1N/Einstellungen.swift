@@ -502,6 +502,7 @@ struct AussehenEinstellungen: View {
     @AppStorage("farbwelt") private var farbwelt = "blau"
     @AppStorage("glasEffekt") private var glas = false
     @AppStorage("vorschulTab") private var vorschulKind = true
+    @AppStorage(Handschrift.key) private var stift = Handschrift.standard
 
     var body: some View {
         EinstellungsSeite(titel: "Farben und Darstellung") {
@@ -533,6 +534,16 @@ struct AussehenEinstellungen: View {
                 Text(modus == "eltern"
                      ? "Glas-Effekte aus macht die App auf älteren iPhones flüssiger. Die Vorschule findest du im Reiter Lernen."
                      : "Glas-Effekte aus macht die App auf älteren iPhones flüssiger. Das Aussehen wird dann etwas flacher.")
+            }
+            .listRowBackground(zeilenGrund)
+
+            Section {
+                Toggle("Antworten mit dem Stift schreiben", isOn: $stift)
+                    .tint(Theme.gelb)
+            } header: {
+                Text("Eingabe")
+            } footer: {
+                Text("Zahlen werden mit dem Apple Pencil oder dem Finger auf ein Karoblatt geschrieben, wie im Heft. Das iPad liest die Schrift selbst, nichts geht ins Internet. Beim Üben lässt sich jederzeit auf die Tasten umschalten.")
             }
             .listRowBackground(zeilenGrund)
         }

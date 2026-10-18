@@ -854,6 +854,7 @@ struct KindTabs: View {
         case "joker": tab = "ich"
         case "haustier": tab = "haustier"
         case "schule": tab = "schule"
+        case "duell": tab = "ich"
         default: break
         }
     }

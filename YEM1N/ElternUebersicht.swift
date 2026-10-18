@@ -54,6 +54,7 @@ struct ElternTabs: View {
         case "joker": tab = "joker"
         case "haustier": tab = "haustier"
         case "schule": tab = "lernen"
+        case "duell": tab = "lernen"
         default: break
         }
     }

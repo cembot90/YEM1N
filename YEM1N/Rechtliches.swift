@@ -10,7 +10,7 @@ import CloudKit
 enum Einwilligung {
     /// Wird erhöht, wenn sich die Datenschutzerklärung inhaltlich ändert.
     /// Dann fragt die App auf allen Geräten noch einmal.
-    static let aktuelleVersion = 3
+    static let aktuelleVersion = 4
     static let versionKey = "einwilligungVersion"
     static let datumKey = "einwilligungDatum"
 
@@ -49,7 +49,7 @@ enum Loeschfrist {
     static let tage = 365
     static let letzterLaufKey = "loeschfristLetzterLauf"
     static let typen = ["RundenErgebnis", "JokerAnfrage", "JokerAntwort", "JokerDaumen",
-                        "Haustier", "HaustierPflege"]
+                        "Haustier", "HaustierPflege", "Duell", "DuellAntwort"]
 
     static func abgelaufen(erstellt: Date, jetzt: Date = Date.now,
                            kalender: Calendar = Calendar(identifier: .gregorian)) -> Bool {

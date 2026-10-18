@@ -17,6 +17,7 @@ struct KindIchView: View {
     private var lokale: [RundenErgebnis]
     @State private var zeigeErfolge = false
     @State private var zeigeSpiele = false
+    @State private var zeigeDuell = false
     private let joker = JokerStand.shared
 
     private var tier: Haustier? { HaustierSpeicher.dekodiere(haustierDaten) }
@@ -57,6 +58,13 @@ struct KindIchView: View {
                     .buttonStyle(TastenStil())
                     .einblenden(2)
                 }
+                // Das Duell ist Üben und kostet keine Münzen, darum steht es auch ohne Spiele da
+                Button { zeigeDuell = true } label: {
+                    BereichsKarte(bild: "⚔️", titel: "Duell",
+                                  text: "Kopfrechnen gegen deine Familie")
+                }
+                .buttonStyle(TastenStil())
+                .einblenden(3)
 
                 AbschnittsTitel("Einstellungen und Hilfe")
                 ZeilenGruppe {
@@ -85,6 +93,11 @@ struct KindIchView: View {
                     .preferredColorScheme(.dark)
                     .tint(Theme.gelb)
             }
+            .sheet(isPresented: $zeigeDuell) {
+                DuellView(zeigeSchliessen: true)
+                    .preferredColorScheme(.dark)
+                    .tint(Theme.gelb)
+            }
         }
     }
 }
@@ -95,7 +108,7 @@ struct ElternLernenView: View {
     @State private var offen: LernBereich?
 
     enum LernBereich: String, Identifiable {
-        case schule, sprachen, vorschule
+        case schule, sprachen, vorschule, duell
         var id: String { rawValue }
     }
 
@@ -131,6 +144,12 @@ struct ElternLernenView: View {
                 }
                 .buttonStyle(TastenStil())
                 .einblenden(5)
+                Button { offen = .duell } label: {
+                    BereichsKarte(bild: "⚔️", titel: "Duell",
+                                  text: "Kopfrechnen gegen dein Kind, jeder auf seiner Stufe")
+                }
+                .buttonStyle(TastenStil())
+                .einblenden(6)
 
                 AbschnittsTitel("Aufgaben verwalten")
                 ZeilenGruppe {
@@ -157,6 +176,8 @@ struct ElternLernenView: View {
                     VollbildRahmen(titel: "Sprachen") { SprachStartView() }
                 case .vorschule:
                     VollbildRahmen(titel: "Vorschule") { VorschuleView() }
+                case .duell:
+                    VollbildRahmen(titel: "Duell") { DuellView() }
                 }
             }
         }
