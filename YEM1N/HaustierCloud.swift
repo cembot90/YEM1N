@@ -208,6 +208,8 @@ struct ElternHaustierView: View {
     @State private var heutigePflege: [PflegeEintrag] = []
     @State private var laedt = false
     @State private var meldung = ""
+    /// Zählt hoch, damit das 3D-Tier nach Leckerli oder Spielen hüpft.
+    @State private var stups = 0
 
     private var heute: String { Haustier.tagKennung(Date.now) }
 
@@ -267,13 +269,10 @@ struct ElternHaustierView: View {
 
     private func karte(_ h: Haustier) -> some View {
         VStack(spacing: 10) {
-            ZStack(alignment: .top) {
-                Text(h.emoji).font(.system(size: h.stufe.groesse))
-                if let hut = HaustierHut.finde(h.hut)?.emoji, h.stufe != .ei {
-                    Text(hut).font(.system(size: h.stufe.groesse * 0.4)).offset(y: -h.stufe.groesse * 0.2)
-                }
-            }
-            .padding(.top, 14)
+            Haustier3DView(art: h.art, stufe: h.stufe, stimmung: h.stimmung,
+                           hut: h.stufe == .ei ? "" : h.hut, stups: stups)
+                .frame(height: 250)
+                .accessibilityLabel("\(h.name), \(h.stufe.name)")
             Text(h.name)
                 .font(.system(.title, design: .rounded).weight(.heavy))
                 .foregroundStyle(Color.white)
@@ -387,6 +386,8 @@ struct ElternHaustierView: View {
             heutigePflege = try await CloudDienst.holePflege(code: familienCode)
                 .filter { $0.tag == heute }
             meldung = ""
+            stups += 1
+            Haptik.erfolg()
         } catch {
             if istAbbruch(error) { return }
             meldung = "Senden nicht möglich: \(CloudDienst.fehlertext(error))"

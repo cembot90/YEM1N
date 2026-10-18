@@ -438,6 +438,8 @@ struct HaustierView: View {
     @State private var wahlName = ""
     @State private var antippSpruch: String?
     @State private var huepf = false
+    /// Zählt hoch, wenn das 3D-Tier vor Freude hüpfen soll, zum Beispiel nach einem Leckerli.
+    @State private var stups = 0
     @State private var zeigeWechsel = false
 
     private var gespeichert: Haustier? { HaustierSpeicher.dekodiere(daten) }
@@ -582,19 +584,13 @@ struct HaustierView: View {
             Text(h.name)
                 .font(.system(.title, design: .rounded).weight(.black))
                 .foregroundStyle(Theme.gelb)
-            ZStack(alignment: .top) {
-                Text(h.emoji)
-                    .font(.system(size: h.stufe.groesse))
-                    .scaleEffect(huepf ? 1.14 : 1.0)
-                    .rotationEffect(.degrees(huepf ? 4 : 0))
-                    .padding(.top, h.hut.isEmpty ? 0 : h.stufe.groesse * 0.22)
-                if let hut = HaustierHut.finde(h.hut) {
-                    Text(hut.emoji)
-                        .font(.system(size: h.stufe.groesse * 0.45))
-                        .offset(y: -h.stufe.groesse * 0.02)
-                }
-            }
-            .onTapGesture { antippen(h) }
+            // Das Tier in 3D: antippen lässt es hüpfen, waagrecht ziehen dreht es
+            Haustier3DView(art: h.art, stufe: h.stufe, stimmung: h.stimmung, hut: h.hut,
+                           stups: stups) { antippen(h) }
+                .frame(height: 280)
+                .accessibilityElement()
+                .accessibilityLabel("\(h.name), \(h.stufe.name)")
+                .accessibilityAddTraits(.isButton)
             Text("\(h.stimmung.emoji) \(antippSpruch ?? h.spruch)")
                 .font(.system(.subheadline, design: .rounded).weight(.semibold))
                 .foregroundStyle(Color.white)
@@ -666,6 +662,7 @@ struct HaustierView: View {
                     aendere { x in
                         if x.leckerli(bezahlen: { Muenzen.bezahlen($0) }) {
                             antippSpruch = "Lecker! Danke."
+                            stups += 1
                         }
                     }
                 }
@@ -674,6 +671,7 @@ struct HaustierView: View {
                     aendere { x in
                         if x.spielen(bezahlen: { Muenzen.bezahlen($0) }) {
                             antippSpruch = "Das macht Spaß!"
+                            stups += 1
                         }
                     }
                 }
