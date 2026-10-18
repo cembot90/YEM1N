@@ -85,9 +85,14 @@ struct LernAufgabe: Equatable {
     var optionen: [String] = []
     /// Ein kleines Bild über der Aufgabe, siehe AufgabenBild
     var bild = ""
+    /// Nur bei "mauer": die Steine von unten nach oben
+    var reihen: [[Int]] = []
 
     /// Zwei Aufgaben mit gleichem Schlüssel gelten als dieselbe.
-    var schluessel: String { [art, frage, rechnung, bild, antwort].joined(separator: "|") }
+    var schluessel: String {
+        [art, frage, rechnung, bild, antwort, reihen.map { $0.map(String.init).joined(separator: ",") }.joined(separator: ";")]
+            .joined(separator: "|")
+    }
 }
 
 struct LernThema: Identifiable {
@@ -145,6 +150,18 @@ enum Lern {
                            optionen: ([richtig] + andere).shuffled(), bild: bild)
     }
 
+    /// Größer, kleiner oder gleich. Die Seiten stehen als Text da, die Werte rechnet der Aufrufer.
+    static func vergleich(_ links: String, _ a: Int, _ rechts: String, _ b: Int) -> LernAufgabe {
+        let zeichen = a < b ? "<" : (a > b ? ">" : "=")
+        let l = links == String(a) ? links : "\(links) = \(a)"
+        let r = rechts == String(b) ? rechts : "\(rechts) = \(b)"
+        return LernAufgabe(art: "vergleich", frage: "Was gehört in die Mitte?",
+                           rechnung: "\(links)  ?  \(rechts)", antwort: zeichen,
+                           erklaerung: links == String(a) && rechts == String(b)
+                               ? "\(links) \(zeichen) \(rechts)"
+                               : "\(l) und \(r), also \(a) \(zeichen) \(b)")
+    }
+
     static func zahl(_ frage: String, _ rechnung: String, _ antwort: Int,
                      erklaerung: String = "", hinweis: String = "") -> LernAufgabe {
         LernAufgabe(art: "zahl", frage: frage, rechnung: rechnung, antwort: String(antwort),
@@ -159,8 +176,9 @@ enum Lernwelt {
     static let anzahl = 10
 
     static var themen: [LernThema] {
-        LehrplanMathe.themen + LehrplanDeutsch.themen + LehrplanEnglisch.themen
-            + LehrplanMusik.themen + LehrplanKunst.themen
+        LehrplanMathe.themen + LehrplanMatheMehr.themen
+            + LehrplanDeutsch.themen + LehrplanDeutschMehr.themen + LehrplanLesen.themen
+            + LehrplanEnglisch.themen + LehrplanMusik.themen + LehrplanKunst.themen
     }
 
     static func themenFuer(_ fach: LehrFach, klasse: Int, land: Bundesland) -> [LernThema] {
@@ -218,9 +236,13 @@ enum Lernwelt {
         context.insert(u)
         u.arbeit = arbeit
         for (i, la) in aufgaben(t).enumerated() {
+            var reihenJSON = ""
+            if !la.reihen.isEmpty, let d = try? JSONEncoder().encode(la.reihen) {
+                reihenJSON = String(data: d, encoding: .utf8) ?? ""
+            }
             let a = Aufgabe(art: la.art, frage: la.frage, rechnung: la.rechnung, hinweis: la.hinweis,
                             erklaerung: la.erklaerung, antwort: la.antwort, antwort2: la.antwort2,
-                            reihenJSON: "", reihenfolge: i)
+                            reihenJSON: reihenJSON, reihenfolge: i)
             a.optionen = la.optionen.joined(separator: "\n")
             a.bild = la.bild
             context.insert(a)

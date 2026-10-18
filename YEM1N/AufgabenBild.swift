@@ -17,6 +17,10 @@ import Foundation
 //   form:dreieck      eine Form (kreis, dreieck, quadrat, rechteck, oval, stern)
 //   mischen:blau+gelb zwei Farbkleckse, die gemischt werden
 //   farbe:orange      ein Farbfeld
+//   strichliste:7     Striche in Fünferbündeln
+//   rechteck:5x3      Rechteck aus Kästchen, 5 breit und 3 hoch
+//   uhr:8:30          Uhr mit Zeigern
+//   toene:c1|g1       zwei Töne zum Anhören und Vergleichen
 
 struct WahlKnoepfe: View {
     let optionen: [String]
@@ -120,6 +124,22 @@ struct AufgabenBild: View {
             klecks(t.wert)
                 .scaleEffect(1.3)
                 .padding(10)
+        case "strichliste":
+            StrichlisteBild(anzahl: Int(t.wert) ?? 0)
+                .frame(height: 70)
+        case "rechteck":
+            let masse = t.wert.components(separatedBy: "x").compactMap { Int($0) }
+            KaestchenRechteck(breite: masse.first ?? 1, hoehe: masse.count > 1 ? masse[1] : 1)
+        case "uhr":
+            let zeit = t.wert.components(separatedBy: ":").compactMap { Int($0) }
+            UhrBild(stunde: zeit.first ?? 12, minute: zeit.count > 1 ? zeit[1] : 0)
+                .frame(width: 150, height: 150)
+        case "toene":
+            let zwei = t.wert.components(separatedBy: "|")
+            HStack(spacing: 14) {
+                tonKnopf("Ton 1", note: zwei.first ?? "")
+                tonKnopf("Ton 2", note: zwei.count > 1 ? zwei[1] : "")
+            }
         default:
             EmptyView()
         }
@@ -132,6 +152,20 @@ struct AufgabenBild: View {
             .overlay(Circle().stroke(Color.white.opacity(0.7), lineWidth: 2))
             .shadow(color: Malfarbe.farbe(name).opacity(0.5), radius: 8)
             .accessibilityLabel(Malfarbe.name(name))
+    }
+
+    private func tonKnopf(_ titel: String, note: String) -> some View {
+        Button {
+            TonGeber.shared.spiele(note: note)
+        } label: {
+            Label(titel, systemImage: "play.fill")
+                .font(.system(.headline, design: .rounded).weight(.heavy))
+                .foregroundStyle(Theme.navy)
+                .padding(.vertical, 12)
+                .padding(.horizontal, 18)
+                .background(Theme.gelb, in: Capsule())
+        }
+        .buttonStyle(TastenStil())
     }
 
     private func vorlesen(_ text: String, sprache: String, titel: String) -> some View {
@@ -271,6 +305,114 @@ struct NotenwertBild: View {
             }
         }
         .accessibilityLabel("Eine Note")
+    }
+}
+
+// MARK: - Strichliste, Kästchen und Uhr
+
+/// Striche wie an der Tafel: vier senkrecht, der fünfte quer darüber
+struct StrichlisteBild: View {
+    let anzahl: Int
+
+    var body: some View {
+        Canvas { ctx, groesse in
+            let hoehe: CGFloat = 46
+            let oben = (groesse.height - hoehe) / 2
+            let abstand: CGFloat = 10
+            let buendelBreite = 4 * abstand + 18
+            let buendel = (anzahl + 4) / 5
+            let gesamt = CGFloat(buendel) * buendelBreite
+            var x = max(8, (groesse.width - gesamt) / 2)
+            var rest = anzahl
+            while rest > 0 {
+                let hier = min(rest, 5)
+                let senkrecht = min(hier, 4)
+                for i in 0..<senkrecht {
+                    var p = Path()
+                    let px = x + CGFloat(i) * abstand
+                    p.move(to: CGPoint(x: px, y: oben))
+                    p.addLine(to: CGPoint(x: px, y: oben + hoehe))
+                    ctx.stroke(p, with: .color(Theme.gelb), style: StrokeStyle(lineWidth: 3.5, lineCap: .round))
+                }
+                if hier == 5 {
+                    var quer = Path()
+                    quer.move(to: CGPoint(x: x - 6, y: oben + hoehe - 6))
+                    quer.addLine(to: CGPoint(x: x + 3 * abstand + 6, y: oben + 6))
+                    ctx.stroke(quer, with: .color(Theme.gelb), style: StrokeStyle(lineWidth: 3.5, lineCap: .round))
+                }
+                x += buendelBreite
+                rest -= hier
+            }
+        }
+        .accessibilityLabel("Eine Strichliste")
+    }
+}
+
+/// Ein Rechteck aus gleich großen Kästchen
+struct KaestchenRechteck: View {
+    let breite: Int
+    let hoehe: Int
+
+    var body: some View {
+        let seite: CGFloat = breite > 8 || hoehe > 6 ? 18 : 24
+        VStack(spacing: 2) {
+            ForEach(0..<max(hoehe, 1), id: \.self) { _ in
+                HStack(spacing: 2) {
+                    ForEach(0..<max(breite, 1), id: \.self) { _ in
+                        RoundedRectangle(cornerRadius: 3, style: .continuous)
+                            .fill(Theme.gelb.opacity(0.85))
+                            .frame(width: seite, height: seite)
+                    }
+                }
+            }
+        }
+        .padding(4)
+        .overlay(RoundedRectangle(cornerRadius: 5).stroke(Color.white, lineWidth: 2))
+        .accessibilityLabel("Ein Rechteck aus \(breite) mal \(hoehe) Kästchen")
+    }
+}
+
+/// Eine Uhr mit Stunden- und Minutenzeiger
+struct UhrBild: View {
+    let stunde: Int
+    let minute: Int
+
+    var body: some View {
+        Canvas { ctx, groesse in
+            let r = min(groesse.width, groesse.height) / 2 - 4
+            let m = CGPoint(x: groesse.width / 2, y: groesse.height / 2)
+            ctx.fill(Path(ellipseIn: CGRect(x: m.x - r, y: m.y - r, width: 2 * r, height: 2 * r)),
+                     with: .color(Color.white))
+            ctx.stroke(Path(ellipseIn: CGRect(x: m.x - r, y: m.y - r, width: 2 * r, height: 2 * r)),
+                       with: .color(Theme.gelb), lineWidth: 4)
+            for i in 0..<12 {
+                let w = Double(i) * .pi / 6
+                var strich = Path()
+                strich.move(to: CGPoint(x: m.x + CGFloat(sin(w)) * (r - 4), y: m.y - CGFloat(cos(w)) * (r - 4)))
+                strich.addLine(to: CGPoint(x: m.x + CGFloat(sin(w)) * (r - 12), y: m.y - CGFloat(cos(w)) * (r - 12)))
+                ctx.stroke(strich, with: .color(Color.black.opacity(0.75)), lineWidth: i % 3 == 0 ? 3 : 1.5)
+                let zahl = i == 0 ? 12 : i
+                ctx.draw(Text("\(zahl)").font(.system(size: 12, weight: .bold, design: .rounded))
+                            .foregroundStyle(Color.black),
+                         at: CGPoint(x: m.x + CGFloat(sin(w)) * (r - 24), y: m.y - CGFloat(cos(w)) * (r - 24)))
+            }
+            let minutenWinkel = Double(minute) / 60 * 2 * .pi
+            let stundenWinkel = (Double(stunde % 12) + Double(minute) / 60) / 12 * 2 * .pi
+            var lang = Path()
+            lang.move(to: m)
+            lang.addLine(to: CGPoint(x: m.x + CGFloat(sin(minutenWinkel)) * (r - 16),
+                                     y: m.y - CGFloat(cos(minutenWinkel)) * (r - 16)))
+            ctx.stroke(lang, with: .color(Color(red: 0.1, green: 0.3, blue: 0.8)),
+                       style: StrokeStyle(lineWidth: 3.5, lineCap: .round))
+            var kurz = Path()
+            kurz.move(to: m)
+            kurz.addLine(to: CGPoint(x: m.x + CGFloat(sin(stundenWinkel)) * (r * 0.5),
+                                     y: m.y - CGFloat(cos(stundenWinkel)) * (r * 0.5)))
+            ctx.stroke(kurz, with: .color(Color(red: 0.85, green: 0.15, blue: 0.15)),
+                       style: StrokeStyle(lineWidth: 6, lineCap: .round))
+            ctx.fill(Path(ellipseIn: CGRect(x: m.x - 5, y: m.y - 5, width: 10, height: 10)), with: .color(Color.black))
+        }
+        .accessibilityLabel("Eine Uhr")
     }
 }
 

@@ -24,7 +24,15 @@ enum LehrplanEnglisch {
             thema("e4-monate", "Months: Monate", "🗓️", "January, February ...", klasse: 4, katalog: "monate"),
             thema("e4-zeit", "Seasons: Jahreszeiten", "🌷", "spring, summer ...", klasse: 4, katalog: "zeit"),
             thema("e4-wildtiere", "Wild animals: Wilde Tiere", "🦁", "lion, tiger, monkey ...", klasse: 4, katalog: "wildtiere"),
-            thema("e4-freizeit", "Hobbies: Freizeit", "⚽", "ball, game, music ...", klasse: 4, katalog: "freizeit")
+            thema("e4-freizeit", "Hobbies: Freizeit", "⚽", "ball, game, music ...", klasse: 4, katalog: "freizeit"),
+            thema("e3-koerper", "Body: Körper", "🧍", "head, hand, foot ...", klasse: 3, katalog: "koerper"),
+            thema("e3-essen", "Food: Essen und Trinken", "🍞", "bread, milk, water ...", klasse: 3, katalog: "essen"),
+            thema("e3-hallo", "Hello! Begrüßen und Danken", "👋", "hello, thank you, sorry ...", klasse: 3, katalog: "hallo"),
+            thema("e4-zuhause", "Home: Zuhause", "🏠", "house, bed, kitchen ...", klasse: 4, katalog: "zuhause"),
+            thema("e4-fahrzeuge", "Transport: Fahrzeuge", "🚗", "car, bus, train ...", klasse: 4, katalog: "fahrzeuge"),
+            thema("e4-stadt", "Town: Stadt und Orte", "🏙️", "shop, park, school ...", klasse: 4, katalog: "stadt"),
+            thema("e4-tun", "Actions: Tätigkeiten", "🏃", "run, swim, read ...", klasse: 4, katalog: "taetigkeiten"),
+            thema("e4-gegenteile", "Opposites: Gegenteile", "↔️", "big, small, hot, cold ...", klasse: 4, katalog: "gegenteile")
         ]
     }
 
@@ -33,7 +41,7 @@ enum LehrplanEnglisch {
         LernThema(id: id, fach: .englisch, titel: titel, emoji: emoji, beschreibung: text,
                   klasse: klasse, lehrplan: lehrplan,
                   tipp: "Tippe auf den Lautsprecher und sprich das englische Wort laut nach.",
-                  erzeuge: { vokabel(katalog) })
+                  erzeuge: { LehrplanEnglisch.vokabel(katalog) })
     }
 
     /// Deutsch und Englisch aus dem eingebauten Katalog, ohne eigene Themen aus dem Editor
@@ -58,6 +66,13 @@ enum LehrplanEnglisch {
                              falsch: ["goodbye", "thank you"])
         }
         let w = Lern.eins(liste)
+        // Hören: Das Wort klingt, das Kind tippt das passende Bild an
+        let mitBild = liste.filter { !$0.emoji.isEmpty && !$0.emoji.unicodeScalars.allSatisfy { $0.properties.numericType != nil } }
+        if mitBild.count >= 3, !w.emoji.isEmpty, mitBild.contains(where: { $0.en == w.en }), Lern.wahr(0.33) {
+            return Lern.wahl(frage: "Hör gut zu! Welches Bild passt?", richtig: w.emoji,
+                             falsch: mitBild.map { $0.emoji }, bild: "englisch:\(w.en)",
+                             erklaerung: "\(w.en) heißt \(w.de) \(w.emoji).")
+        }
         if Lern.wahr(0.5) {
             let vorne = w.emoji.isEmpty ? "" : w.emoji + " "
             return Lern.wahl(frage: "Wie heißt das auf Englisch?", rechnung: vorne + w.de,
@@ -97,8 +112,73 @@ enum LehrplanMusik {
             LernThema(id: "mu4-begriffe", fach: .musik, titel: "piano, forte und mehr", emoji: "🎚️",
                       beschreibung: "Wie laut und wie schnell?", klasse: 4, erzeuge: begriff),
             LernThema(id: "mu4-komponisten", fach: .musik, titel: "Berühmte Komponisten", emoji: "🎹",
-                      beschreibung: "Wer hat das komponiert?", klasse: 4, erzeuge: komponist)
+                      beschreibung: "Wer hat das komponiert?", klasse: 4, erzeuge: komponist),
+            LernThema(id: "mu1-hochtief", fach: .musik, titel: "Hoch oder tief?", emoji: "🐦",
+                      beschreibung: "Zwei Töne anhören und vergleichen", klasse: 1,
+                      tipp: "Ein hoher Ton klingt wie ein Vogel, ein tiefer wie ein Bär.", erzeuge: hochTief),
+            LernThema(id: "mu3-tonleiter", fach: .musik, titel: "Die Tonleiter", emoji: "🪜",
+                      beschreibung: "c, d, e, f, g, a, h, c", klasse: 3,
+                      tipp: "Die Tonleiter geht c, d, e, f, g, a, h und dann wieder c.", erzeuge: tonleiter),
+            LernThema(id: "mu4-stimmen", fach: .musik, titel: "Singstimmen", emoji: "🎤",
+                      beschreibung: "Sopran, Alt, Tenor und Bass", klasse: 4, erzeuge: stimmen)
         ]
+    }
+
+    static func hochTief() -> LernAufgabe {
+        var a = Lern.eins(Noten.alle)
+        var b = Lern.eins(Noten.alle)
+        while abs((Noten.stufe[a] ?? 0) - (Noten.stufe[b] ?? 0)) < 3 {
+            a = Lern.eins(Noten.alle)
+            b = Lern.eins(Noten.alle)
+        }
+        let ersterHoeher = (Noten.stufe[a] ?? 0) > (Noten.stufe[b] ?? 0)
+        let fragHoeher = Lern.wahr(0.5)
+        let richtig = (ersterHoeher == fragHoeher) ? "Ton 1" : "Ton 2"
+        return LernAufgabe(art: "wahl", frage: fragHoeher ? "Hör dir beide Töne an. Welcher ist höher?"
+                                                          : "Hör dir beide Töne an. Welcher ist tiefer?",
+                           antwort: richtig, erklaerung: "\(richtig) klingt \(fragHoeher ? "höher" : "tiefer").",
+                           optionen: ["Ton 1", "Ton 2"], bild: "toene:\(a)|\(b)")
+    }
+
+    static let leiter = ["c", "d", "e", "f", "g", "a", "h"]
+
+    static func tonleiter() -> LernAufgabe {
+        if Lern.wahr(0.1) {
+            return Lern.zahl("Wie viele Töne hat die Tonleiter von c bis zum nächsten c?", "", 8,
+                             erklaerung: "c, d, e, f, g, a, h, c: das sind 8 Töne.")
+        }
+        let i = Lern.z(0...6)
+        if Lern.wahr(0.5) {
+            let richtig = leiter[(i + 1) % 7]
+            return Lern.wahl(frage: "Welcher Ton kommt danach?", rechnung: "\(leiter[i]), ?", richtig: richtig,
+                             falsch: leiter, erklaerung: "Nach \(leiter[i]) kommt \(richtig).")
+        }
+        let richtig = leiter[(i + 6) % 7]
+        return Lern.wahl(frage: "Welcher Ton kommt davor?", rechnung: "?, \(leiter[i])", richtig: richtig,
+                         falsch: leiter, erklaerung: "Vor \(leiter[i]) kommt \(richtig).")
+    }
+
+    static let stimmlagen: [(String, String)] = [
+        ("Sopran", "die hohe Frauenstimme"), ("Alt", "die tiefe Frauenstimme"),
+        ("Tenor", "die hohe Männerstimme"), ("Bass", "die tiefe Männerstimme")
+    ]
+
+    static func stimmen() -> LernAufgabe {
+        switch Lern.z(0...2) {
+        case 0:
+            let (name, text) = Lern.eins(stimmlagen)
+            return Lern.wahl(frage: "Wie heißt \(text)?", richtig: name, falsch: stimmlagen.map { $0.0 },
+                             erklaerung: "\(name) ist \(text).")
+        case 1:
+            let (name, text) = Lern.eins(stimmlagen)
+            return Lern.wahl(frage: "Was ist ein \(name)?", richtig: text, falsch: stimmlagen.map { $0.1 },
+                             erklaerung: "\(name) ist \(text).")
+        default:
+            let hoch = Lern.wahr(0.5)
+            return Lern.wahl(frage: hoch ? "Welche Stimme singt am höchsten?" : "Welche Stimme singt am tiefsten?",
+                             richtig: hoch ? "Sopran" : "Bass", falsch: stimmlagen.map { $0.0 },
+                             erklaerung: hoch ? "Der Sopran singt am höchsten." : "Der Bass singt am tiefsten.")
+        }
     }
 
     static let instrumente: [(String, String)] = [
@@ -255,8 +335,58 @@ enum LehrplanKunst {
             LernThema(id: "ku3-techniken", fach: .kunst, titel: "Techniken und Bildarten", emoji: "✂️",
                       beschreibung: "Collage, Aquarell, Porträt ...", klasse: 3, erzeuge: technik),
             LernThema(id: "ku4-kuenstler", fach: .kunst, titel: "Berühmte Künstler", emoji: "🖼️",
-                      beschreibung: "Wer hat das gemacht?", klasse: 4, erzeuge: kuenstler)
+                      beschreibung: "Wer hat das gemacht?", klasse: 4, erzeuge: kuenstler),
+            LernThema(id: "ku2-helldunkel", fach: .kunst, titel: "Heller und dunkler", emoji: "🌗",
+                      beschreibung: "Farben mit Weiß und Schwarz mischen", klasse: 2, erzeuge: hellDunkel),
+            LernThema(id: "ku1-werkzeuge", fach: .kunst, titel: "Malwerkzeuge", emoji: "🖌️",
+                      beschreibung: "Pinsel, Schere, Lineal und mehr", klasse: 1, erzeuge: werkzeug),
+            LernThema(id: "ku4-bildaufbau", fach: .kunst, titel: "Bildaufbau", emoji: "🏞️",
+                      beschreibung: "Vordergrund, Hintergrund und Formate", klasse: 4, erzeuge: bildaufbau)
         ]
+    }
+
+    static func hellDunkel() -> LernAufgabe {
+        let code = Lern.eins(["rot", "blau", "gruen", "violett", "orange", "braun"])
+        let heller = Lern.wahr(0.5)
+        return LernAufgabe(art: "wahl", frage: "Womit machst du \(n(code)) \(heller ? "heller" : "dunkler")?",
+                           antwort: heller ? "Weiß" : "Schwarz",
+                           erklaerung: heller ? "Mit Weiß wird eine Farbe heller." : "Mit Schwarz wird eine Farbe dunkler.",
+                           optionen: ["Weiß", "Schwarz"], bild: "farbe:\(code)")
+    }
+
+    static let werkzeuge: [(String, String)] = [
+        ("🖌️", "Pinsel"), ("✂️", "Schere"), ("🖍️", "Wachsmalstift"), ("✏️", "Bleistift"),
+        ("📏", "Lineal"), ("🧽", "Schwamm"), ("🎨", "Farbpalette")
+    ]
+
+    static func werkzeug() -> LernAufgabe {
+        if Lern.wahr(0.5) {
+            let (bild, name) = Lern.eins(werkzeuge)
+            return Lern.wahl(frage: "Wie heißt das?", richtig: name, falsch: werkzeuge.map { $0.1 },
+                             bild: "emoji:\(bild)", erklaerung: "Das ist ein\(name == "Schere" || name == "Farbpalette" ? "e" : "") \(name).")
+        }
+        let f = Lern.eins([("Womit schneidest du Papier?", "Schere"), ("Womit malst du mit Wasserfarben?", "Pinsel"),
+                           ("Womit ziehst du gerade Linien?", "Lineal"), ("Worauf mischst du Farben?", "Farbpalette"),
+                           ("Womit wischst du Farbe vom Tisch?", "Schwamm")])
+        return Lern.wahl(frage: f.0, richtig: f.1, falsch: werkzeuge.map { $0.1 }, erklaerung: "Dafür brauchst du: \(f.1).")
+    }
+
+    static let aufbauFragen: [(String, String, [String])] = [
+        ("Was ganz vorne im Bild ist, liegt im ...", "Vordergrund", ["Hintergrund", "Mittelgrund"]),
+        ("Was ganz hinten im Bild ist, liegt im ...", "Hintergrund", ["Vordergrund", "Mittelgrund"]),
+        ("Was zwischen vorne und hinten liegt, ist der ...", "Mittelgrund", ["Vordergrund", "Hintergrund"]),
+        ("Wie malt man Dinge, die weit weg sind?", "kleiner", ["größer", "genauso groß"]),
+        ("Wie wirken Farben in der Ferne oft?", "heller und blasser", ["dunkler und kräftiger", "ganz schwarz"]),
+        ("Ein Bild, das breiter als hoch ist, hat ein ...", "Querformat", ["Hochformat", "Rundformat"]),
+        ("Ein Bild, das höher als breit ist, hat ein ...", "Hochformat", ["Querformat", "Rundformat"]),
+        ("Wo ist bei einem Landschaftsbild meist der Himmel?", "oben", ["unten", "in der Mitte"]),
+        ("Die Linie, an der Himmel und Erde sich treffen, heißt ...", "Horizont", ["Rahmen", "Kante"]),
+        ("Was ist bei einem Porträt die Hauptsache?", "ein Mensch", ["eine Landschaft", "eine Vase"])
+    ]
+
+    static func bildaufbau() -> LernAufgabe {
+        let (frage, richtig, falsch) = Lern.eins(aufbauFragen)
+        return Lern.wahl(frage: frage, richtig: richtig, falsch: falsch, erklaerung: "Richtig ist: \(richtig).")
     }
 
     static let farbNamen: [String: String] = ["rot": "Rot", "gelb": "Gelb", "blau": "Blau", "gruen": "Grün",

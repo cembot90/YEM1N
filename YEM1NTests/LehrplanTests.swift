@@ -227,6 +227,104 @@ struct LehrplanTests {
         #expect(m["rot+blau"] == "Violett")
     }
 
+    // MARK: Weitere Themen
+
+    @Test func zahlenmauernStimmenSteinFuerStein() {
+        for id in ["m2-mauer", "m3-mauer"] {
+            guard let t = Lernwelt.themen.first(where: { $0.id == id }) else {
+                Issue.record("\(id) fehlt")
+                continue
+            }
+            for _ in 0..<40 {
+                let a = t.erzeuge()
+                #expect(a.art == "mauer")
+                for i in 1..<a.reihen.count {
+                    for j in 0..<a.reihen[i].count {
+                        #expect(a.reihen[i][j] == a.reihen[i - 1][j] + a.reihen[i - 1][j + 1])
+                    }
+                }
+                let spitze = a.reihen.last?.first ?? 0
+                #expect(spitze <= (id == "m2-mauer" ? 100 : 999), "\(id): Spitze \(spitze)")
+            }
+        }
+    }
+
+    @Test func vergleicheHabenDasRichtigeZeichen() {
+        #expect(Lern.vergleich("3 + 4", 7, "9", 9).antwort == "<")
+        #expect(Lern.vergleich("12", 12, "8", 8).antwort == ">")
+        #expect(Lern.vergleich("2 · 6", 12, "3 · 4", 12).antwort == "=")
+        for t in Lernwelt.themen {
+            for _ in 0..<10 {
+                let a = t.erzeuge()
+                guard a.art == "vergleich" else { continue }
+                #expect(["<", ">", "="].contains(a.antwort))
+                #expect(a.rechnung.components(separatedBy: "  ?  ").count == 2, a.rechnung)
+            }
+        }
+    }
+
+    @Test func falscheTrennungenSindNieDieRichtige() {
+        for w in LehrplanDeutschMehr.trennWoerter {
+            let falsch = LehrplanDeutschMehr.falscheTrennungen(w)
+            #expect(!falsch.isEmpty, w)
+            #expect(!falsch.contains(w), w)
+            for f in falsch {
+                #expect(f.replacingOccurrences(of: "-", with: "") == w.replacingOccurrences(of: "-", with: ""))
+            }
+        }
+        #expect(LehrplanDeutschMehr.falscheTrennungen("Zu-cker").contains("Zuc-ker"))
+    }
+
+    @Test func lueckenErgebenDasGanzeWort() {
+        for (luecke, _, _, richtig, ganz) in LehrplanDeutschMehr.doppeltWoerter {
+            #expect(luecke.replacingOccurrences(of: "?", with: richtig) == ganz, ganz)
+        }
+        for (luecke, richtig, _) in LehrplanDeutschMehr.sssWoerter {
+            #expect(luecke.filter { $0 == "?" }.count == 1)
+            #expect(["s", "ss", "ß"].contains(richtig))
+        }
+        for (luecke, richtig, falsch, _) in LehrplanDeutschMehr.ableitWoerter {
+            #expect(luecke.filter { $0 == "?" }.count == 1)
+            #expect(richtig != falsch)
+        }
+        for (_, b, ganz, artikel) in LehrplanDeutschMehr.komposita {
+            #expect(ganz.lowercased().hasSuffix(b.lowercased()), ganz)
+            #expect(["der", "die", "das"].contains(artikel))
+        }
+    }
+
+    @Test func selbstlauteWerdenRichtigGefunden() {
+        #expect(LehrplanDeutschMehr.vokalStellen("Hund") == [1])
+        #expect(LehrplanDeutschMehr.vokalStellen("Haus").isEmpty, "au ist ein Doppellaut")
+        #expect(LehrplanDeutschMehr.vokalStellen("Tomate") == [1, 3, 5])
+    }
+
+    @Test func satzgliederStehenImSatz() {
+        for (satz, subjekt, praedikat) in LehrplanDeutschMehr.gliederSaetze {
+            let w = LehrplanDeutschMehr.woerter(satz)
+            #expect(w.contains(subjekt) && w.contains(praedikat), satz)
+        }
+    }
+
+    @Test func leseFragenHabenEineEindeutigeAntwort() {
+        for texte in [LehrplanLesen.klasse1, LehrplanLesen.klasse2, LehrplanLesen.klasse3, LehrplanLesen.klasse4] {
+            for t in texte {
+                #expect(!t.fragen.isEmpty, t.titel)
+                for (frage, richtig, falsch) in t.fragen {
+                    #expect(!falsch.contains(richtig), frage)
+                    #expect(falsch.count >= 2, frage)
+                }
+            }
+        }
+    }
+
+    @Test func steigerungenSindNieUnterDenFalschen() {
+        for _ in 0..<80 {
+            let a = LehrplanDeutschMehr.steigern()
+            #expect(a.optionen.filter { $0 == a.antwort }.count == 1)
+        }
+    }
+
     // MARK: Speichern als Übung
 
     @Test func eineFertigeUebungBekommtNeueAufgabenUndBehaeltDieSterne() throws {
