@@ -184,3 +184,34 @@ struct SpielArtTests {
         }
     }
 }
+
+@MainActor
+struct JagdStickTests {
+    @Test func inDerMitteStehtDerHaseStill() {
+        let w = JagdStick.wert(versatz: CGVector(dx: 6, dy: 0))
+        #expect(w.dx == 0)
+        #expect(JagdStick.wert(versatz: .zero).dx == 0)
+    }
+
+    @Test func ganzZurSeiteIstVollesTempo() {
+        #expect(abs(JagdStick.wert(versatz: CGVector(dx: 200, dy: 0)).dx - 1) < 0.001)
+        #expect(abs(JagdStick.wert(versatz: CGVector(dx: -200, dy: 0)).dx + 1) < 0.001)
+    }
+
+    @Test func halbGezogenIstLangsamer() {
+        let w = JagdStick.wert(versatz: CGVector(dx: JagdStick.radius / 2, dy: 0)).dx
+        #expect(w > 0.3 && w < 0.7)
+    }
+
+    @Test func nachObenSpringtDerHase() {
+        #expect(JagdStick.springt(JagdStick.wert(versatz: CGVector(dx: 0, dy: 60))))
+        #expect(!JagdStick.springt(JagdStick.wert(versatz: CGVector(dx: 0, dy: 20))))
+    }
+
+    @Test func derKnopfBleibtImRing() {
+        let k = JagdStick.knopf(versatz: CGVector(dx: 300, dy: 400))
+        #expect(abs(hypot(k.dx, k.dy) - JagdStick.radius) < 0.001)
+        let klein = JagdStick.knopf(versatz: CGVector(dx: 10, dy: 10))
+        #expect(klein.dx == 10 && klein.dy == 10)
+    }
+}

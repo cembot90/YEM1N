@@ -50,10 +50,18 @@ final class JagdSzene: SKScene, SpielSzene {
 
     private var vy: CGFloat = 0
     private var amBoden = true
-    private var links = false
-    private var rechts = false
+    /// Wert des Analogsticks von -1 (links) bis 1 (rechts).
+    private var stickX: CGFloat = 0
+    private var stickSprung = false
+    private var tasteSprung = false
     private var haelt = false
     private var sprungNeu = false
+    private weak var stickFinger: UITouch?
+    private var stickMitte = CGPoint(x: 140, y: 110)
+    private let stickRing = SKShapeNode(circleOfRadius: JagdStick.radius)
+    private let stickKnopf = SKShapeNode(circleOfRadius: 34)
+    private let sprungKnopf = SKShapeNode(circleOfRadius: 60)
+    private let stickRuhe = CGPoint(x: 140, y: 110)
     private var leben = B.maxLeben
     private var unverwundbar: CGFloat = 0
     private var laeuft = false
@@ -126,24 +134,41 @@ final class JagdSzene: SKScene, SpielSzene {
         zeichneLeben()
     }
 
+    /// Links ein Analogstick, der dort erscheint, wo der Finger aufsetzt. Rechts ein großer Sprungknopf.
     private func baueTasten() {
-        let eintraege: [(String, CGFloat, CGFloat)] = [
-            ("<", 80, 36), (">", 190, 36), ("Sprung", B.breite - 110, 44)
-        ]
-        for (text, x, radius) in eintraege {
-            let kreis = SKShapeNode(circleOfRadius: radius)
-            kreis.position = CGPoint(x: x, y: 40)
-            kreis.fillColor = UIColor.white.withAlphaComponent(0.14)
-            kreis.strokeColor = UIColor.white.withAlphaComponent(0.4)
-            kreis.lineWidth = 3
-            kreis.zPosition = 25
-            addChild(kreis)
-            let label = SKLabelNode(text: text)
-            SpielHilfe.beschrifte(label, groesse: text.count > 1 ? 16 : 30,
-                                  farbe: UIColor.white.withAlphaComponent(0.8), fett: true)
-            label.verticalAlignmentMode = .center
-            kreis.addChild(label)
-        }
+        stickRing.fillColor = UIColor.white.withAlphaComponent(0.12)
+        stickRing.strokeColor = UIColor.white.withAlphaComponent(0.45)
+        stickRing.lineWidth = 4
+        stickRing.zPosition = 25
+        stickRing.position = stickRuhe
+        addChild(stickRing)
+
+        stickKnopf.fillColor = UIColor(Theme.gelb)
+        stickKnopf.strokeColor = UIColor.white.withAlphaComponent(0.8)
+        stickKnopf.lineWidth = 3
+        stickKnopf.zPosition = 26
+        stickKnopf.position = stickRuhe
+        addChild(stickKnopf)
+
+        sprungKnopf.fillColor = UIColor.white.withAlphaComponent(0.14)
+        sprungKnopf.strokeColor = UIColor.white.withAlphaComponent(0.5)
+        sprungKnopf.lineWidth = 4
+        sprungKnopf.zPosition = 25
+        sprungKnopf.position = CGPoint(x: B.breite - 120, y: 110)
+        addChild(sprungKnopf)
+        let pfeil = SKLabelNode(text: "⬆︎")
+        SpielHilfe.beschrifte(pfeil, groesse: 44, farbe: .white, fett: true)
+        pfeil.verticalAlignmentMode = .center
+        sprungKnopf.addChild(pfeil)
+        zeigeStick(versatz: .zero, aktiv: false)
+    }
+
+    private func zeigeStick(versatz: CGVector, aktiv: Bool) {
+        stickRing.position = stickMitte
+        let k = JagdStick.knopf(versatz: versatz)
+        stickKnopf.position = CGPoint(x: stickMitte.x + k.dx, y: stickMitte.y + k.dy)
+        stickRing.alpha = aktiv ? 1 : 0.55
+        stickKnopf.alpha = aktiv ? 1 : 0.6
     }
 
     private func zeichneLeben() {
@@ -250,33 +275,65 @@ final class JagdSzene: SKScene, SpielSzene {
             infoLabel.text = ""
             untertitelLabel.text = ""
         }
+        for t in touches where stickFinger == nil {
+            let p = t.location(in: self)
+            if p.x < B.breite * 0.45 {
+                // Der Stick setzt sich dorthin, wo der Finger aufsetzt, ganz auf dem Bildschirm
+                stickFinger = t
+                stickMitte = CGPoint(x: min(max(p.x, JagdStick.radius + 10), B.breite * 0.45),
+                                     y: min(max(p.y, JagdStick.radius + 10), B.hoehe * 0.6))
+                zeigeStick(versatz: .zero, aktiv: true)
+            }
+        }
         lies(event)
     }
 
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) { lies(event) }
-    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) { lies(event) }
-    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) { lies(event) }
 
-    /// Liest alle Finger. Links unten laufen, rechts die Hälfte springen.
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+        loese(touches)
+        lies(event)
+    }
+
+    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
+        loese(touches)
+        lies(event)
+    }
+
+    /// Lässt der Finger den Stick los, springt der Knopf zurück in die Mitte.
+    private func loese(_ touches: Set<UITouch>) {
+        guard let f = stickFinger, touches.contains(f) else { return }
+        stickFinger = nil
+        stickMitte = stickRuhe
+        zeigeStick(versatz: .zero, aktiv: false)
+    }
+
+    /// Liest alle Finger: der Stick links zum Laufen (und nach oben zum Springen), rechts der Sprungknopf.
     private func lies(_ event: UIEvent?) {
-        var l = false
-        var r = false
-        var j = false
+        var x: CGFloat = 0
+        var stickHoch = false
+        var taste = false
         for t in event?.allTouches ?? [] where t.phase != .ended && t.phase != .cancelled {
-            let x = t.location(in: self).x
-            if x < B.breite * 0.14 {
-                l = true
-            } else if x < B.breite * 0.30 {
-                r = true
-            } else if x > B.breite * 0.55 {
-                j = true
+            let p = t.location(in: self)
+            if let f = stickFinger, t === f {
+                let versatz = CGVector(dx: p.x - stickMitte.x, dy: p.y - stickMitte.y)
+                let wert = JagdStick.wert(versatz: versatz)
+                x = wert.dx
+                stickHoch = JagdStick.springt(wert)
+                zeigeStick(versatz: versatz, aktiv: true)
+            } else if p.x > B.breite * 0.55 {
+                taste = true
             }
         }
-        links = l
-        rechts = r
+        if stickFinger == nil { zeigeStick(versatz: .zero, aktiv: false) }
+        stickX = x
+        sprungKnopf.fillColor = UIColor.white.withAlphaComponent(taste ? 0.32 : 0.14)
+        let j = taste || stickHoch
         if j && !haelt { sprungNeu = true }
         if !j && haelt && vy > 0 { vy *= 0.6 }
         haelt = j
+        stickSprung = stickHoch
+        tasteSprung = taste
     }
 
     // MARK: Spielschleife
@@ -304,7 +361,7 @@ final class JagdSzene: SKScene, SpielSzene {
     }
 
     private func bewegeSpieler(_ dt: CGFloat) {
-        let richtung: CGFloat = (rechts ? 1 : 0) - (links ? 1 : 0)
+        let richtung: CGFloat = stickX
         var pos = spieler.position
         let alteUnterkante = pos.y - B.spielerHoehe / 2
         pos.x = min(max(pos.x + richtung * B.laufTempo * dt, 28), B.breite - 28)
@@ -498,8 +555,12 @@ final class JagdSzene: SKScene, SpielSzene {
         punkte = 0
         ebene = 1
         unverwundbar = 1.0
-        links = false
-        rechts = false
+        stickX = 0
+        stickSprung = false
+        tasteSprung = false
+        stickFinger = nil
+        stickMitte = stickRuhe
+        zeigeStick(versatz: .zero, aktiv: false)
         haelt = false
         sprungNeu = false
         baueEbene()

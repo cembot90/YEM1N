@@ -125,3 +125,42 @@ enum JagdBalance {
         return JagdEbene(plattformen: platten, muenzen: muenzen)
     }
 }
+
+// MARK: - Analogstick
+// Reine Rechnung für den Stick der Münzjagd, damit sie sich testen lässt.
+
+enum JagdStick {
+    /// So weit lässt sich der Knopf aus der Mitte ziehen.
+    static let radius: CGFloat = 70
+    /// Kleine Bewegungen um die Mitte zählen nicht, sonst läuft der Hase von allein.
+    static let totzone: CGFloat = 0.15
+    /// Ab so weit nach oben springt der Hase.
+    static let sprungSchwelle: CGFloat = 0.6
+
+    /// Wandelt den Abstand vom Mittelpunkt in Werte von -1 bis 1 um.
+    static func wert(versatz: CGVector) -> CGVector {
+        let laenge = hypot(versatz.dx, versatz.dy)
+        guard laenge > 0 else { return CGVector(dx: 0, dy: 0) }
+        let faktor = min(laenge, radius) / laenge
+        var x = versatz.dx * faktor / radius
+        let y = versatz.dy * faktor / radius
+        if abs(x) < totzone {
+            x = 0
+        } else {
+            // Nach der Totzone wieder weich von 0 bis 1 anlaufen
+            x = (abs(x) - totzone) / (1 - totzone) * (x < 0 ? -1 : 1)
+        }
+        return CGVector(dx: x, dy: y)
+    }
+
+    /// Wo der Knopf gezeichnet wird: nie weiter als der Radius von der Mitte.
+    static func knopf(versatz: CGVector) -> CGVector {
+        let laenge = hypot(versatz.dx, versatz.dy)
+        guard laenge > radius else { return versatz }
+        return CGVector(dx: versatz.dx / laenge * radius, dy: versatz.dy / laenge * radius)
+    }
+
+    static func springt(_ wert: CGVector) -> Bool {
+        wert.dy >= sprungSchwelle
+    }
+}
