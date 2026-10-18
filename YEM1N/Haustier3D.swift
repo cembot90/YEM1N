@@ -27,6 +27,7 @@ struct Haustier3DView: UIViewRepresentable {
     func makeUIView(context: Context) -> SCNView {
         let ansicht = SCNView(frame: .zero)
         ansicht.backgroundColor = .clear
+        ansicht.isOpaque = false
         ansicht.antialiasingMode = .multisampling4X
         ansicht.allowsCameraControl = false
         ansicht.autoenablesDefaultLighting = false
@@ -82,8 +83,8 @@ struct Haustier3DView: UIViewRepresentable {
         }
 
         func huepfe() {
-            guard let tier else { return }
-            tier.removeAction(forKey: "huepfen")
+            // Während eines Sprungs keinen zweiten starten, sonst landet das Tier schief
+            guard let tier, tier.action(forKey: "huepfen") == nil else { return }
             tier.runAction(Haustier3DBauer.sprung(), forKey: "huepfen")
         }
 
@@ -488,9 +489,11 @@ enum Haustier3DBauer {
         m.lightingModel = .constant
         m.diffuse.contents = emojiBild(h.emoji)
         m.isDoubleSided = true
+        m.writesToDepthBuffer = false
         flaeche.firstMaterial = m
         let n = SCNNode(geometry: flaeche)
         n.position = pos
+        n.renderingOrder = 10
         return n
     }
 
