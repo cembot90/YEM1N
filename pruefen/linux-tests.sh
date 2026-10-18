@@ -1,5 +1,6 @@
 #!/bin/bash
-# Prüft die Logik ohne Oberfläche unter Linux: Lernwelt, Vorschule, Stimmen.
+# Prüft die Logik ohne Oberfläche unter Linux: Lernwelt, Vorschule, Stimmen,
+# Erklärbilder, Duell und Handschrift.
 # SwiftUI, SwiftData und AVFoundation gibt es dort nicht. Deshalb schneidet
 # stimmen/sammeln/auszug.py nur die reinen Typen aus den App-Dateien aus.
 # Braucht Swift 6.1 oder neuer (SWIFTC=/pfad/zu/swiftc) und Python 3.
@@ -29,7 +30,11 @@ a = sys.argv[1]
 s = open(f"{a}/lern.swift").read()
 i = s.index("    static func gespeichert(")
 j = s.index("        return u\n    }\n", i) + len("        return u\n    }\n")
-open(f"{a}/lern.swift", "w").write(s[:i] + s[j:])  # SwiftData-Teil weglassen
+s = s[:i] + s[j:]  # SwiftData-Teil weglassen
+# In der App ist alles auf dem Hauptthread. Ohne diese Voreinstellung unter Linux
+# braucht es die Markierung nicht.
+s = s.replace("@MainActor () -> LernAufgabe", "() -> LernAufgabe")
+open(f"{a}/lern.swift", "w").write(s)
 t = open("YEM1NTests/LehrplanTests.swift").read().replace("@testable import YEM1N", "").replace("import SwiftData", "")
 t = t[:t.index("    // MARK: Speichern als Übung")] + "}\n"
 open(f"{a}/LehrplanTests.swift", "w").write(t)
@@ -59,4 +64,37 @@ ohneApp $T/StimmenTests.swift > "$arbeit/StimmenTests.swift"
   $Y/VorleseText.swift $Y/GeraeteStimmeDaten.swift \
   "$arbeit/VorschuleTests.swift" "$arbeit/StimmenTests.swift" "$arbeit/start.swift"
 laufen "$arbeit/vor"
+
+echo "== Erklärbilder, Duell, Handschrift"
+python3 stimmen/sammeln/auszug.py $Y "$arbeit/rest.swift" \
+  ErklaerBild.swift:ErklaerBild,ErklaerBildPlan MatheEditor.swift:MatheRechner \
+  Duell.swift:DuellStufe,DuellAufgabe,DuellStand,DuellRegeln,DuellLauf \
+  DuellCloud.swift:DuellHerausforderung,DuellAntwort,DuellPost \
+  Cloud.swift:MitteilungsZiel Handschrift.swift:Handschrift
+python3 - "$arbeit" <<'PY'
+import sys
+a = sys.argv[1]
+s = open(f"{a}/rest.swift").read()
+# Texterkennung und Zeichnen gibt es unter Linux nicht
+for anfang in ["    nonisolated static func erkenne(", "    static func bild(von zeichnung: PKDrawing)"]:
+    i = s.index(anfang)
+    j = s.index("\n    }\n", i) + 7
+    s = s[:i] + s[j:]
+s += """
+final class UIDevice {
+    nonisolated(unsafe) static let current = UIDevice()
+    enum Art { case phone, pad }
+    var userInterfaceIdiom: Art { .phone }
+}
+final class CKNotification {
+    init?(fromRemoteNotificationDictionary: [AnyHashable: Any]) { return nil }
+    var subscriptionID: String? { nil }
+}
+"""
+open(f"{a}/rest.swift", "w").write(s)
+PY
+for f in ErklaerBildTests DuellTests HandschriftTests; do ohneApp $T/$f.swift > "$arbeit/$f.swift"; done
+"$SWIFTC" -parse-as-library -O -o "$arbeit/rest" "$arbeit/rest.swift" "$arbeit/helfer.swift" \
+  "$arbeit/ErklaerBildTests.swift" "$arbeit/DuellTests.swift" "$arbeit/HandschriftTests.swift" "$arbeit/start.swift"
+laufen "$arbeit/rest"
 exit $fehler

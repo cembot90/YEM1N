@@ -602,7 +602,7 @@ final class Sprecher {
                 Task {
                     let geklappt = await GeraeteVorleser.shared.sprich(
                         text, paket: paket, stimmung: stimmung, tonhoehe: tonhoehe,
-                        nochGueltig: { [weak self] in self?.satzNummer == meine })
+                        nochGueltig: { self.satzNummer == meine })
                     if !geklappt, self.satzNummer == meine {
                         self.sprichMitIOS(text, code: code, tonhoehe: tonhoehe)
                     }
@@ -622,7 +622,7 @@ final class Sprecher {
         let meine = satzNummer
         Task {
             _ = await GeraeteVorleser.shared.sprich(satz, paket: paket, stimmung: .normal, tonhoehe: 1,
-                                                    nochGueltig: { [weak self] in self?.satzNummer == meine })
+                                                    nochGueltig: { self.satzNummer == meine })
         }
     }
 

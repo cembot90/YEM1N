@@ -108,7 +108,8 @@ struct LernThema: Identifiable {
     /// false bei Extras außerhalb des Lehrplans, etwa Englisch in Klasse 1 und 2
     var lehrplan = true
     var tipp = ""
-    let erzeuge: () -> LernAufgabe
+    /// Läuft wie die ganze Oberfläche auf dem Hauptthread
+    let erzeuge: @MainActor () -> LernAufgabe
 
     func klasse(in land: Bundesland) -> Int { abweichend[land] ?? klasse }
 }

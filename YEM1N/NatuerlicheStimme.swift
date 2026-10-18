@@ -253,6 +253,12 @@ final class GeraeteStimmen {
         }
     }
 
+    /// Neuer Stand beim Laden, nur solange noch geladen wird
+    func melde(_ id: String, _ anteil: Double) {
+        guard case .laedt = zustaende[id] ?? .fehlt else { return }
+        zustaende[id] = .laedt(anteil)
+    }
+
     func abbrechen(_ p: GeraetePaket) {
         aufgaben[p.id]?.cancel()
     }
@@ -272,11 +278,10 @@ final class GeraeteStimmen {
         guard let url = p.url else { throw TarAuspacker.Fehler(text: "Die Adresse der Stimme fehlt.") }
         let id = anzeige.id
         let zeigtFortschritt = p.id == anzeige.id
-        let bote = LadeBote { [weak self] anteil in
+        let bote = LadeBote { anteil in
             guard zeigtFortschritt else { return }
             Task { @MainActor in
-                guard let self, case .laedt = self.zustaende[id] ?? .fehlt else { return }
-                self.zustaende[id] = .laedt(anteil)
+                GeraeteStimmen.shared.melde(id, anteil)
             }
         }
         let (datei, antwort) = try await URLSession.shared.download(from: url, delegate: bote)

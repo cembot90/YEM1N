@@ -8,10 +8,17 @@ import Testing
 @MainActor
 struct ErklaerBildTests {
 
-    private func bild(_ art: String = "zahl", _ rechnung: String, erklaerung: String = "",
+    /// Mit Art, zum Beispiel bild("rest", "58 : 4 =", "14", rest: "2")
+    private func bild(_ art: String, _ rechnung: String, erklaerung: String = "",
                       _ antwort: String, rest: String = "") -> ErklaerBild? {
         ErklaerBildPlan.bild(art: art, rechnung: rechnung, erklaerung: erklaerung,
                              antwort: antwort, antwort2: rest)
+    }
+
+    /// Ohne Art ist es eine Zahlaufgabe, zum Beispiel bild("7 · 8 =", "56")
+    private func bild(_ rechnung: String, erklaerung: String = "", _ antwort: String,
+                      rest: String = "") -> ErklaerBild? {
+        bild("zahl", rechnung, erklaerung: erklaerung, antwort, rest: rest)
     }
 
     // MARK: Mal
