@@ -154,19 +154,23 @@ final class ElfmeterSzene: SKScene, SpielSzene {
     }
 
     private func zeichneTor() {
+        // Das Netz sitzt unten am Tor, damit es beim Treffer nach oben wackelt, nicht verrutscht
+        netz.position = CGPoint(x: R.torMitte, y: R.torUnten)
         netz.zPosition = 2
         addChild(netz)
         let gitter = CGMutablePath()
-        var x = R.torLinks
-        while x <= R.torRechts {
-            gitter.move(to: CGPoint(x: x, y: R.torUnten))
-            gitter.addLine(to: CGPoint(x: x, y: R.torOben))
+        let halb = (R.torRechts - R.torLinks) / 2
+        let hoch = R.torOben - R.torUnten
+        var x = -halb
+        while x <= halb {
+            gitter.move(to: CGPoint(x: x, y: 0))
+            gitter.addLine(to: CGPoint(x: x, y: hoch))
             x += 26
         }
-        var y = R.torUnten
-        while y <= R.torOben {
-            gitter.move(to: CGPoint(x: R.torLinks, y: y))
-            gitter.addLine(to: CGPoint(x: R.torRechts, y: y))
+        var y: CGFloat = 0
+        while y <= hoch {
+            gitter.move(to: CGPoint(x: -halb, y: y))
+            gitter.addLine(to: CGPoint(x: halb, y: y))
             y += 22
         }
         let maschen = SKShapeNode(path: gitter)
@@ -314,7 +318,7 @@ final class ElfmeterSzene: SKScene, SpielSzene {
 
     private func schiesse(ziel: CGPoint, flugzeit: Double) {
         bereit = false
-        torwart.removeAction(forKey: "wippen")
+        torwart.removeAllActions()
         let (ergebnis, torwartZiel) = R.ergebnis(ziel: ziel, torwartX: torwart.position.x,
                                                   flugzeit: flugzeit, level: level,
                                                   zufall: Double.random(in: 0...1))
@@ -349,7 +353,7 @@ final class ElfmeterSzene: SKScene, SpielSzene {
             let neu = R.punkte(winkel: winkel, serie: serie)
             punkte += neu
             ball.run(.moveBy(x: 0, y: 14, duration: 0.15))
-            netz.run(.sequence([.scaleY(to: 1.04, duration: 0.08), .scaleY(to: 1.0, duration: 0.2)]))
+            netz.run(.sequence([.scaleY(to: 1.03, duration: 0.08), .scaleY(to: 1.0, duration: 0.2)]))
             SpielEffekte.konfetti(in: self, ort: ziel)
             SpielEffekte.aufspringen(in: self, ort: CGPoint(x: R.breite / 2, y: 228),
                                      text: winkel ? "WINKEL! +\(neu)" : "TOR! +\(neu)")

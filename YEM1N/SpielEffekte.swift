@@ -91,7 +91,7 @@ enum SpielEffekte {
         let e = SKEmitterNode()
         e.particleTexture = punktTextur
         e.particleBirthRate = 600
-        e.numParticlesToEmit = anzahl
+        e.numParticlesToEmit = max(1, anzahl)
         e.particleLifetime = 0.55
         e.particleLifetimeRange = 0.2
         e.emissionAngleRange = .pi * 2
@@ -118,7 +118,7 @@ enum SpielEffekte {
             let e = SKEmitterNode()
             e.particleTexture = konfettiTextur
             e.particleBirthRate = 900
-            e.numParticlesToEmit = anzahl / farben.count
+            e.numParticlesToEmit = max(1, anzahl / farben.count)
             e.particleLifetime = 1.8
             e.particleLifetimeRange = 0.6
             e.emissionAngle = .pi / 2

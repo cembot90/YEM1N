@@ -238,6 +238,8 @@ final class EinhornSzene: SKScene, SpielSzene {
         let tempo = R.tempo(level: level)
         var bleiben: [Objekt] = []
         for o in objekte {
+            // Ist das Spiel gerade vorbei, nicht weiter fangen
+            if vorbei { break }
             o.knoten.position.x -= tempo * dt
             let abstand = hypot(o.knoten.position.x - einhorn.position.x, o.knoten.position.y - einhorn.position.y)
             if abstand < R.fangAbstand {
@@ -254,7 +256,7 @@ final class EinhornSzene: SKScene, SpielSzene {
             }
             bleiben.append(o)
         }
-        objekte = bleiben
+        if !vorbei { objekte = bleiben }
     }
 
     private func erzeuge() {
@@ -319,6 +321,8 @@ final class EinhornSzene: SKScene, SpielSzene {
     }
 
     private func neuStarten() {
+        for o in objekte { o.knoten.removeFromParent() }
+        objekte = []
         vorbei = false
         punkte = 0
         leben = R.maxLeben
