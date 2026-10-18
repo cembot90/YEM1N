@@ -18,7 +18,8 @@ nonisolated struct GeraetePaket: Identifiable, Hashable, Sendable {
     let ordner: String
     let bytes: Int
     let sha256: String
-    /// Nummern der Sprecher im Modell. Thorsten kann auch fröhlich und leise.
+    /// Nummern der Sprecher im Modell, für Stimmen, die fröhlich oder leise sprechen können.
+    /// Die jetzigen Stimmen haben nur einen Sprecher.
     let sprecherNormal: Int
     let sprecherFroh: Int
     let sprecherLeise: Int
@@ -44,10 +45,11 @@ nonisolated struct GeraetePaket: Identifiable, Hashable, Sendable {
         sprecherNormal: 0, sprecherFroh: 0, sprecherLeise: 0)
 
     static let stimmen: [GeraetePaket] = [
-        // Thorsten-Voice mit Gefühlen: 0 fröhlich, 4 neutral, 7 flüsternd
-        GeraetePaket(id: "de-thorsten-1", sprache: "de", name: "Thorsten", ordner: "de-thorsten",
-                     bytes: 76_707_840, sha256: "b6b0312098cc9b4fa80ff98226444cbd270a28a9dcfd5b56a71886b4932ca185",
-                     sprecherNormal: 4, sprecherFroh: 0, sprecherLeise: 7),
+        // Thorsten-Voice, die klare Studiofassung. Die Fassung mit Gefühlen
+        // (de-thorsten-1) hatte zu viel Hall und wird nicht mehr geladen.
+        GeraetePaket(id: "de-thorsten-2", sprache: "de", name: "Thorsten", ordner: "de-thorsten",
+                     bytes: 63_160_320, sha256: "7efb961d95490934553771c35766dcce579e8449a2bc2616106e98532f328c51",
+                     sprecherNormal: 0, sprecherFroh: 0, sprecherLeise: 0),
         GeraetePaket(id: "tr-fahrettin-1", sprache: "tr", name: "Fahrettin", ordner: "tr-fahrettin",
                      bytes: 63_160_320, sha256: "f092809a87d8a1d1d15710963097c273d728550f73d3ff8abcf27d6141b3ad6d",
                      sprecherNormal: 0, sprecherFroh: 0, sprecherLeise: 0)
@@ -104,6 +106,16 @@ nonisolated enum StimmOrt {
         try Data().write(to: marke(p, in: wurzel))
     }
 
+    /// Räumt Marken alter Fassungen weg, zum Beispiel de-thorsten-1.
+    /// Der Ordner selbst wird beim Laden der neuen Fassung ersetzt.
+    static func aufraeumen(in wurzel: URL = wurzel) {
+        let aktuell = Set(([GeraetePaket.aussprache] + GeraetePaket.stimmen).map { $0.id + ".fertig" })
+        let dateien = (try? FileManager.default.contentsOfDirectory(atPath: wurzel.path)) ?? []
+        for d in dateien where d.hasSuffix(".fertig") && !aktuell.contains(d) {
+            try? FileManager.default.removeItem(at: wurzel.appendingPathComponent(d))
+        }
+    }
+
     static func entfernen(_ p: GeraetePaket, in wurzel: URL = wurzel) {
         try? FileManager.default.removeItem(at: marke(p, in: wurzel))
         try? FileManager.default.removeItem(at: ordner(p, in: wurzel))
@@ -111,7 +123,7 @@ nonisolated enum StimmOrt {
 }
 
 /// Liest ein einfaches tar-Archiv (ustar, ohne Kompression) Stück für Stück,
-/// damit auch 80 MB nicht auf einmal in den Speicher müssen.
+/// damit auch große Stimmen nicht auf einmal in den Speicher müssen.
 nonisolated enum TarAuspacker {
     struct Fehler: Error, LocalizedError {
         let text: String

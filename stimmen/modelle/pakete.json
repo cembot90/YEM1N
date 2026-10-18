@@ -1,5 +1,5 @@
 [
   {"id": "espeak-1", "art": "aussprache", "quelle": "vits-piper-de_DE-thorsten_emotional-medium", "sprachen": ["de", "tr", "en"], "bytes": 1228800, "sha256": "678402ce9945a6f2cbeb05050cfabfaf631c297a06ddc20eebdaad869f20aad0"},
-  {"id": "de-thorsten-1", "art": "stimme", "quelle": "vits-piper-de_DE-thorsten_emotional-medium", "modell": "de_DE-thorsten_emotional-medium.onnx", "ordner": "de-thorsten", "bytes": 76707840, "sha256": "b6b0312098cc9b4fa80ff98226444cbd270a28a9dcfd5b56a71886b4932ca185"},
+  {"id": "de-thorsten-2", "art": "stimme", "quelle": "vits-piper-de_DE-thorsten-medium", "modell": "de_DE-thorsten-medium.onnx", "ordner": "de-thorsten", "bytes": 63160320, "sha256": "7efb961d95490934553771c35766dcce579e8449a2bc2616106e98532f328c51"},
   {"id": "tr-fahrettin-1", "art": "stimme", "quelle": "vits-piper-tr_TR-fahrettin-medium", "modell": "tr_TR-fahrettin-medium.onnx", "ordner": "tr-fahrettin", "bytes": 63160320, "sha256": "f092809a87d8a1d1d15710963097c273d728550f73d3ff8abcf27d6141b3ad6d"}
 ]

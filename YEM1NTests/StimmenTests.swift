@@ -47,14 +47,24 @@ struct StimmenTests {
         #expect(GeraetePaket.fuer(sprache: "en") == nil)
     }
 
-    @Test func thorstenKannFroehlichUndLeise() {
+    @Test func thorstenIstDieKlareFassung() {
         guard let p = GeraetePaket.fuer(sprache: "de") else {
             Issue.record("Thorsten fehlt")
             return
         }
-        #expect(p.sprecher(.normal) == 4)
-        #expect(p.sprecher(.froh) == 0)
-        #expect(p.sprecher(.leise) == 7)
+        // Die Fassung mit Gefühlen hatte zu viel Hall
+        #expect(p.id == "de-thorsten-2")
+        #expect(p.sprecher(.normal) == 0 && p.sprecher(.froh) == 0 && p.sprecher(.leise) == 0)
+    }
+
+    @Test func alteFassungenWerdenAufgeraeumt() throws {
+        let wurzel = Self.ordner()
+        defer { try? FileManager.default.removeItem(at: wurzel) }
+        try Data().write(to: wurzel.appendingPathComponent("de-thorsten-1.fertig"))
+        try Data().write(to: wurzel.appendingPathComponent("espeak-1.fertig"))
+        StimmOrt.aufraeumen(in: wurzel)
+        #expect(!FileManager.default.fileExists(atPath: wurzel.appendingPathComponent("de-thorsten-1.fertig").path))
+        #expect(FileManager.default.fileExists(atPath: wurzel.appendingPathComponent("espeak-1.fertig").path))
     }
 
     // MARK: Auspacken

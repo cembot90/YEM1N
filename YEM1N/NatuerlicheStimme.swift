@@ -45,14 +45,15 @@ enum NatuerlicheStimme {
 
 // MARK: - Abspielen
 
-/// Spielt Aufnahmen und Tonspuren der Gerätestimme ab. Die Tonhöhe lässt sich
-/// verstellen, damit das Haustier auch mit diesen Stimmen hell und klein klingt.
+/// Spielt Aufnahmen und Tonspuren der Gerätestimme ab. Für das Haustier läuft
+/// der Ton etwas schneller, dann klingt es hell und klein. Normal geht der Ton
+/// unverändert durch, ohne Effekt, damit nichts hallt oder blechern klingt.
 final class StimmAbspieler {
     static let shared = StimmAbspieler()
 
     private let engine = AVAudioEngine()
     private let spieler = AVAudioPlayerNode()
-    private let hoehe = AVAudioUnitTimePitch()
+    private let hoehe = AVAudioUnitVarispeed()
     private var format: AVAudioFormat?
 
     init() {
@@ -87,7 +88,8 @@ final class StimmAbspieler {
 
     private func stelle(_ tonhoehe: Float) {
         let t = min(max(tonhoehe, 0.5), 2.0)
-        hoehe.pitch = 1200 * log2(t)
+        // Höher und schneller zugleich, wie ein schneller abgespieltes Band
+        hoehe.rate = t
         hoehe.bypass = abs(t - 1) < 0.01
     }
 
@@ -212,6 +214,7 @@ final class GeraeteStimmen {
     @ObservationIgnored private var aufgaben: [String: Task<Void, Never>] = [:]
 
     init() {
+        StimmOrt.aufraeumen()
         NotificationCenter.default.addObserver(
             forName: UIApplication.didReceiveMemoryWarningNotification, object: nil, queue: .main
         ) { _ in
