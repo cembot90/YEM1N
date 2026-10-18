@@ -210,6 +210,16 @@ struct ElternHaustierView: View {
     @State private var meldung = ""
     /// Zählt hoch, damit das 3D-Tier nach Leckerli oder Spielen hüpft.
     @State private var stups = 0
+    // Die Eule Olli erklärt den Eltern beim ersten Besuch, was sie beitragen können
+    @AppStorage(Eule.elternEinfuehrungKey) private var einfuehrungGesehen = false
+    @State private var einfuehrungSchritt = 0
+    /// Was Olli gerade sagt. nil heißt: Das Tier hat das Wort.
+    @State private var euleText: String?
+    @State private var tippNummer = 0
+    @State private var euleSpricht = 0
+    @State private var tierSatz: String?
+    @State private var antippNummer = 0
+    @AppStorage(Eule.tonKey) private var laut = true
 
     private var heute: String { Haustier.tagKennung(Date.now) }
 
@@ -247,7 +257,10 @@ struct ElternHaustierView: View {
             }
             .navigationTitle("Haustier")
             .navigationBarTitleDisplayMode(.inline)
-            .task { await starteLaden() }
+            .task {
+                await starteLaden()
+                await zeigeWichtigenTipp()
+            }
         }
     }
 
@@ -268,28 +281,134 @@ struct ElternHaustierView: View {
     }
 
     private func karte(_ h: Haustier) -> some View {
-        VStack(spacing: 10) {
-            Haustier3DView(art: h.art, stufe: h.stufe, stimmung: h.stimmung,
-                           hut: h.stufe == .ei ? "" : h.hut, stups: stups,
-                           schlaeft: h.stufe != .ei && HaustierZeit.schlaeft(Date.now))
-                .frame(height: 250)
-                .accessibilityLabel("\(h.name), \(h.stufe.name)")
+        let schlaeft = h.stufe != .ei && HaustierZeit.schlaeft(Date.now)
+        return VStack(spacing: 10) {
             Text(h.name)
                 .font(.system(.title, design: .rounded).weight(.heavy))
                 .foregroundStyle(Color.white)
             Text("\(h.stufe.name) · \(h.stimmung.emoji)")
                 .font(.system(.subheadline, design: .rounded).weight(.semibold))
                 .foregroundStyle(Theme.textSanft)
-            Text(h.spruch)
-                .font(.system(.callout, design: .rounded))
-                .foregroundStyle(Color.white)
-                .multilineTextAlignment(.center)
+            Haustier3DView(art: h.art, stufe: h.stufe, stimmung: h.stimmung,
+                           hut: h.stufe == .ei ? "" : h.hut, stups: stups,
+                           schlaeft: schlaeft,
+                           eule: h.stufe == .ei ? .kreisen : .schweben,
+                           euleSpricht: euleSpricht,
+                           beiEule: { euleAntippen() },
+                           beiTipp: { tierAntippen(h, schlaeft: schlaeft) })
+                .frame(height: 250)
+                .accessibilityLabel("\(h.name), \(h.stufe.name)")
+            blase(h, schlaeft: schlaeft)
+                .padding(.top, 4)
+            if einfuehrungGesehen && euleText == nil {
+                FragOlliKnopf { euleAntippen() }
+            }
             balken("Satt", wert: h.satt / 100, farbe: Theme.mint)
             balken("Laune", wert: h.laune / 100, farbe: Theme.gelb)
         }
         .padding(20)
         .frame(maxWidth: .infinity)
         .background { HeroFlaeche(radius: 30) }
+        .animation(.spring(response: 0.4, dampingFraction: 0.85), value: euleText)
+        .animation(.spring(response: 0.4, dampingFraction: 0.85), value: einfuehrungGesehen)
+    }
+
+    // MARK: Olli und das Tier
+
+    @ViewBuilder
+    private func blase(_ h: Haustier, schlaeft: Bool) -> some View {
+        if !einfuehrungGesehen {
+            let schritte = Eule.elternEinfuehrung
+            let i = min(einfuehrungSchritt, schritte.count - 1)
+            SprechBlase(bild: Eule.bild, wer: Eule.name, text: schritte[i], spitzeLinks: true,
+                        schritt: i, schritte: schritte.count,
+                        weiter: { einfuehrungWeiter() },
+                        ueberspringen: { einfuehrungEnde() })
+        } else if let euleText {
+            SprechBlase(bild: Eule.bild, wer: Eule.name, text: euleText, spitzeLinks: true,
+                        schliessen: { self.euleText = nil })
+        } else {
+            SprechBlase(bild: h.emoji, wer: h.name,
+                        text: tierSatz ?? TierStimme.vonSelbst(h, schlaeft: schlaeft),
+                        tonhoehe: TierStimme.tonhoehe, vorlesen: !schlaeft)
+        }
+    }
+
+    private var leckerliFrei: Bool {
+        !HaustierPflege.gegeben(HaustierPflege.leckerli, heute: heute, vorhandene: heutigePflege)
+    }
+
+    private var spielFrei: Bool {
+        !HaustierPflege.gegeben(HaustierPflege.spielen, heute: heute, vorhandene: heutigePflege)
+    }
+
+    private func euleAntippen() {
+        Haptik.leicht()
+        if !einfuehrungGesehen {
+            let schritte = Eule.elternEinfuehrung
+            sprichEule(schritte[min(einfuehrungSchritt, schritte.count - 1)])
+            return
+        }
+        let liste = Eule.elternTipps(fuer: tier.map { aktuell($0, Date.now) },
+                                     leckerliFrei: leckerliFrei, spielFrei: spielFrei)
+        guard !liste.isEmpty else { return }
+        let satz = liste[tippNummer % liste.count]
+        tippNummer += 1
+        tierSatz = nil
+        euleText = satz
+        sprichEule(satz)
+    }
+
+    private func sprichEule(_ text: String) {
+        euleSpricht += 1
+        if laut { Sprecher.shared.sprich(Eule.sprechbar(text), code: "de-DE") }
+    }
+
+    private func einfuehrungWeiter() {
+        Haptik.leicht()
+        if einfuehrungSchritt >= Eule.elternEinfuehrung.count - 1 {
+            einfuehrungEnde()
+        } else {
+            einfuehrungSchritt += 1
+            euleSpricht += 1
+        }
+    }
+
+    private func einfuehrungEnde() {
+        Sprecher.shared.still()
+        einfuehrungGesehen = true
+        einfuehrungSchritt = 0
+        tippNummer = 0
+        stups += 1
+    }
+
+    private func tierAntippen(_ h: Haustier, schlaeft: Bool) {
+        Haptik.leicht()
+        guard einfuehrungGesehen else { return }
+        let satz = TierStimme.antippen(h, schlaeft: schlaeft, nummer: antippNummer)
+        antippNummer += 1
+        tierSagt(satz, hoerbar: !schlaeft)
+    }
+
+    private func tierSagt(_ satz: String, hoerbar: Bool = true) {
+        euleText = nil
+        tierSatz = satz
+        if hoerbar && laut {
+            Sprecher.shared.sprich(Eule.sprechbar(satz), code: "de-DE", tonhoehe: TierStimme.tonhoehe)
+        }
+    }
+
+    /// Nach dem Laden meldet sich Olli, wenn gerade etwas passt, zum Beispiel ein freies Leckerli.
+    private func zeigeWichtigenTipp() async {
+        guard einfuehrungGesehen, euleText == nil, let h = tier,
+              let satz = Eule.elternLageTipps(fuer: aktuell(h, Date.now), leckerliFrei: leckerliFrei,
+                                              spielFrei: spielFrei).first else { return }
+        do { try await Task.sleep(for: .milliseconds(600)) } catch { return }
+        tierSatz = nil
+        euleText = satz
+        // Der erste Tipp in der Liste ist genau dieser, beim Antippen kommt der nächste
+        tippNummer = 1
+        euleSpricht += 1
     }
 
     private func balken(_ titel: String, wert: Double, farbe: Color) -> some View {
@@ -337,14 +456,19 @@ struct ElternHaustierView: View {
     }
 
     private var fuss: some View {
-        Group {
+        VStack(spacing: 12) {
+            Toggle("Olli und das Tier sprechen laut", isOn: $laut)
+                .font(.system(.subheadline, design: .rounded).weight(.semibold))
+                .foregroundStyle(Color.white)
+                .tint(Theme.gelb)
+                .padding(.horizontal, 4)
             if let stand {
                 Text("Stand vom \(stand.formatted(date: .abbreviated, time: .shortened)). Zum Aktualisieren nach unten ziehen.")
+                    .font(.caption)
+                    .foregroundStyle(Theme.textSanft)
+                    .multilineTextAlignment(.center)
             }
         }
-        .font(.caption)
-        .foregroundStyle(Theme.textSanft)
-        .multilineTextAlignment(.center)
     }
 
     /// Das Laden läuft als eigener Vorgang. iOS bricht Aufgaben von Bildschirmen ab,
@@ -389,6 +513,7 @@ struct ElternHaustierView: View {
             meldung = ""
             stups += 1
             Haptik.erfolg()
+            tierSagt(art == HaustierPflege.leckerli ? "Mmh, lecker! Danke!" : "Juhu, spielen macht Spaß!")
         } catch {
             if istAbbruch(error) { return }
             meldung = "Senden nicht möglich: \(CloudDienst.fehlertext(error))"

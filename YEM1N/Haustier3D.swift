@@ -11,6 +11,16 @@ import UIKit
 // nichts außerhalb des Haupt-Threads passiert.
 // ============================================================
 
+/// Wie die Eule Olli auf der Bühne fliegt.
+enum EulenFlug: Equatable {
+    /// Keine Eule
+    case aus
+    /// Kreist über dem Ei und passt darauf auf
+    case kreisen
+    /// Schwebt neben dem geschlüpften Tier
+    case schweben
+}
+
 struct Haustier3DView: UIViewRepresentable {
     let art: String
     let stufe: HaustierStufe
@@ -23,6 +33,12 @@ struct Haustier3DView: UIViewRepresentable {
     var tanz: Int = 0
     /// Abends und nachts schläft das Tier mit geschlossenen Augen.
     var schlaeft: Bool = false
+    /// Die Eule Olli: kreist über dem Ei oder schwebt neben dem Tier.
+    var eule: EulenFlug = .aus
+    /// Zählt hoch, wenn Olli etwas sagt. Sie nickt dann.
+    var euleSpricht: Int = 0
+    /// Wird aufgerufen, wenn jemand auf die Eule tippt.
+    var beiEule: (() -> Void)? = nil
     /// Wird aufgerufen, wenn das Kind auf das Tier tippt.
     var beiTipp: (() -> Void)? = nil
 
@@ -43,6 +59,8 @@ struct Haustier3DView: UIViewRepresentable {
         Haustier3DBauer.licht(in: szene)
         szene.rootNode.addChildNode(Haustier3DBauer.kamera())
         szene.rootNode.addChildNode(context.coordinator.wurzel)
+        // Die Eule hängt nicht am Tier, damit sie beim Drehen mit dem Finger ruhig bleibt
+        szene.rootNode.addChildNode(context.coordinator.euleWurzel)
         ansicht.scene = szene
 
         let tipp = UITapGestureRecognizer(target: context.coordinator, action: #selector(Koordinator.getippt(_:)))
@@ -55,14 +73,23 @@ struct Haustier3DView: UIViewRepresentable {
         context.coordinator.stups = stups
         context.coordinator.tanz = tanz
         context.coordinator.beiTipp = beiTipp
+        context.coordinator.beiEule = beiEule
+        context.coordinator.euleSpricht = euleSpricht
         context.coordinator.zeige(art: art, stufe: stufe, stimmung: stimmung, hut: hut, schlaeft: schlaeft)
+        context.coordinator.zeigeEule(eule)
         return ansicht
     }
 
     func updateUIView(_ ansicht: SCNView, context: Context) {
         let k = context.coordinator
         k.beiTipp = beiTipp
+        k.beiEule = beiEule
         k.zeige(art: art, stufe: stufe, stimmung: stimmung, hut: hut, schlaeft: schlaeft)
+        k.zeigeEule(eule)
+        if euleSpricht != k.euleSpricht {
+            k.euleSpricht = euleSpricht
+            k.euleNickt()
+        }
         if stups != k.stups {
             k.stups = stups
             k.huepfe()
@@ -80,7 +107,37 @@ struct Haustier3DView: UIViewRepresentable {
         var stups = 0
         var tanz = 0
         var beiTipp: (() -> Void)?
+        let euleWurzel = SCNNode()
+        var euleFlug: EulenFlug = .aus
+        var euleSpricht = 0
+        var beiEule: (() -> Void)?
         private var startWinkel: Float = 0
+
+        func zeigeEule(_ flug: EulenFlug) {
+            guard flug != euleFlug else { return }
+            euleFlug = flug
+            for k in euleWurzel.childNodes { k.removeFromParentNode() }
+            if flug != .aus { euleWurzel.addChildNode(Haustier3DBauer.eule(flug: flug)) }
+        }
+
+        /// Olli nickt, wenn sie etwas sagt.
+        func euleNickt() {
+            guard let modell = euleWurzel.childNode(withName: "eule", recursively: true) else { return }
+            modell.removeAction(forKey: "nicken")
+            modell.eulerAngles = SCNVector3(0, 0, 0)
+            modell.scale = SCNVector3(1, 1, 1)
+            modell.runAction(Haustier3DBauer.nicken(), forKey: "nicken")
+        }
+
+        /// true, wenn der Knoten zur Eule gehört.
+        private func gehoertZurEule(_ knoten: SCNNode) -> Bool {
+            var n: SCNNode? = knoten
+            while let k = n {
+                if k === euleWurzel { return true }
+                n = k.parent
+            }
+            return false
+        }
 
         func zeige(art: String, stufe: HaustierStufe, stimmung: HaustierStimmung, hut: String, schlaeft: Bool) {
             let neu = "\(art)|\(stufe.rawValue)|\(stimmung)|\(hut)|\(schlaeft)"
@@ -131,7 +188,17 @@ struct Haustier3DView: UIViewRepresentable {
         }
 
         @objc func getippt(_ g: UITapGestureRecognizer) {
-            if let v = g.view { schaue(nach: g.location(in: v), in: v.bounds.size) }
+            guard let v = g.view else { return }
+            let punkt = g.location(in: v)
+            // Wer die Eule trifft, bekommt einen Tipp. Das Tier bleibt dann ruhig.
+            if euleFlug != .aus, let ansicht = v as? SCNView,
+               let vorne = ansicht.hitTest(punkt, options: nil).first,
+               gehoertZurEule(vorne.node) {
+                euleNickt()
+                beiEule?()
+                return
+            }
+            schaue(nach: punkt, in: v.bounds.size)
             huepfe()
             beiTipp?()
         }
@@ -632,6 +699,147 @@ enum Haustier3DBauer {
         }
         ring.runAction(.repeatForever(.rotateBy(x: 0, y: CGFloat.pi * 2, z: 0, duration: 6)))
         return ring
+    }
+
+    // MARK: Die Eule Olli
+
+    /// Olli aus weichen Formen. Sie dreht ihr Gesicht immer zur Kamera und flattert.
+    static func eule(flug: EulenFlug) -> SCNNode {
+        let wurzel = SCNNode()
+        // Hält die Position. Beim Kreisen dreht sich der Ring darüber.
+        let halter = SCNNode()
+        // Dreht das Gesicht zur Kamera, nur um die senkrechte Achse
+        let ausrichten = SCNNode()
+        let blick = SCNBillboardConstraint()
+        blick.freeAxes = .Y
+        ausrichten.constraints = [blick]
+        halter.addChildNode(ausrichten)
+        // Schaut sich ab und zu um
+        let schauen = SCNNode()
+        ausrichten.addChildNode(schauen)
+        let modell = eulenModell()
+        modell.name = "eule"
+        schauen.addChildNode(modell)
+        ausrichten.addChildNode(trefferFlaeche(radius: 0.5))
+
+        let hoch = SCNAction.moveBy(x: 0, y: 0.12, z: 0, duration: 0.9)
+        hoch.timingMode = .easeInEaseOut
+        let runter = SCNAction.moveBy(x: 0, y: -0.12, z: 0, duration: 0.9)
+        runter.timingMode = .easeInEaseOut
+        halter.runAction(.repeatForever(.sequence([hoch, runter])), forKey: "schweben")
+
+        switch flug {
+        case .kreisen:
+            // Ein großer, langsamer Kreis über dem Ei
+            let ring = SCNNode()
+            ring.position = SCNVector3(0, 1.15, 0)
+            halter.position = SCNVector3(1.35, 0, 0)
+            ring.addChildNode(halter)
+            ring.runAction(.repeatForever(.rotateBy(x: 0, y: CGFloat.pi * 2, z: 0, duration: 10)), forKey: "kreisen")
+            wurzel.addChildNode(ring)
+        case .schweben, .aus:
+            // Links oben neben dem Tier, so stört sie keinen Hut
+            halter.position = SCNVector3(-1.5, 1.15, 0.2)
+            wurzel.addChildNode(halter)
+            schauen.runAction(umschauen(), forKey: "umschauen")
+        }
+        return wurzel
+    }
+
+    static func eulenModell() -> SCNNode {
+        let braun = UIColor(red: 0.58, green: 0.40, blue: 0.27, alpha: 1)
+        let dunkelBraun = UIColor(red: 0.42, green: 0.28, blue: 0.19, alpha: 1)
+        let creme = UIColor(red: 0.99, green: 0.92, blue: 0.78, alpha: 1)
+        let orange = UIColor(red: 1.0, green: 0.68, blue: 0.22, alpha: 1)
+        let dunkel = UIColor(red: 0.12, green: 0.10, blue: 0.16, alpha: 1)
+
+        let m = SCNNode()
+        let figur = SCNNode()
+        figur.scale = SCNVector3(0.72, 0.72, 0.72)
+        m.addChildNode(figur)
+
+        // Körper mit hellem Bauch
+        figur.addChildNode(kugel(0.36, braun, SCNVector3(0, 0, 0), skala: SCNVector3(1, 1.12, 0.92)))
+        figur.addChildNode(kugel(0.25, creme, SCNVector3(0, -0.1, 0.2), skala: SCNVector3(1, 1.1, 0.55)))
+        // Zwei helle Augenscheiben, darin große dunkle Augen mit Glanzpunkt
+        for x: Float in [-1, 1] {
+            figur.addChildNode(kugel(0.15, creme, SCNVector3(0.14 * x, 0.14, 0.26), skala: SCNVector3(1, 1, 0.45)))
+        }
+        let augen = SCNNode()
+        augen.position = SCNVector3(0, 0.14, 0)
+        for x: Float in [-1, 1] {
+            let auge = kugel(0.085, dunkel, SCNVector3(0.14 * x, 0, 0.32), skala: SCNVector3(1, 1, 0.6), glanz: 0.9)
+            auge.addChildNode(kugel(0.03, .white, SCNVector3(0.025, 0.035, 0.05), glanz: 0))
+            augen.addChildNode(auge)
+        }
+        augen.addAnimation(blinzeln(), forKey: "blinzeln")
+        figur.addChildNode(augen)
+        // Der Schnabel zeigt nach unten
+        figur.addChildNode(kegel(unten: 0.055, hoehe: 0.14, orange, SCNVector3(0, 0.02, 0.36),
+                                 winkel: SCNVector3(2.7, 0, 0)))
+        // Federohren
+        for x: Float in [-1, 1] {
+            figur.addChildNode(kegel(unten: 0.08, hoehe: 0.2, dunkelBraun, SCNVector3(0.2 * x, 0.42, 0.02),
+                                     winkel: SCNVector3(0, 0, -0.5 * x)))
+        }
+        // Flügel mit Gelenk an der Schulter, damit sie richtig auf und ab schlagen
+        for x: Float in [-1, 1] {
+            let gelenk = SCNNode()
+            gelenk.position = SCNVector3(0.3 * x, 0.08, -0.02)
+            gelenk.addChildNode(kugel(0.2, dunkelBraun, SCNVector3(0.14 * x, -0.1, 0), skala: SCNVector3(0.55, 1.1, 0.7)))
+            gelenk.addAnimation(eulenFlattern(x: x), forKey: "flattern")
+            figur.addChildNode(gelenk)
+        }
+        // Füße
+        for x: Float in [-1, 1] {
+            figur.addChildNode(kugel(0.06, orange, SCNVector3(0.1 * x, -0.4, 0.12), skala: SCNVector3(1.2, 0.6, 1.3)))
+        }
+        return m
+    }
+
+    /// Unsichtbare Kugel um die Eule, damit auch kleine Finger sie gut treffen.
+    static func trefferFlaeche(radius: CGFloat) -> SCNNode {
+        let g = SCNSphere(radius: radius)
+        let m = SCNMaterial()
+        m.colorBufferWriteMask = []
+        m.writesToDepthBuffer = false
+        g.firstMaterial = m
+        return SCNNode(geometry: g)
+    }
+
+    /// Schnell flattern, kurz gleiten, wieder flattern.
+    static func eulenFlattern(x: Float) -> CAAnimation {
+        let a = CAKeyframeAnimation(keyPath: "eulerAngles.z")
+        let oben = 0.75 * x
+        a.values = [0, oben, 0, oben, 0, oben, 0, 0]
+        a.keyTimes = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 1]
+        a.duration = 1.4
+        a.repeatCount = .infinity
+        a.isAdditive = true
+        a.timingFunctions = Array(repeating: CAMediaTimingFunction(name: .easeInEaseOut), count: 7)
+        return a
+    }
+
+    static func umschauen() -> SCNAction {
+        let links = SCNAction.rotateTo(x: 0, y: 0.45, z: 0.08, duration: 0.5, usesShortestUnitArc: true)
+        links.timingMode = .easeInEaseOut
+        let rechts = SCNAction.rotateTo(x: 0, y: -0.45, z: -0.08, duration: 0.7, usesShortestUnitArc: true)
+        rechts.timingMode = .easeInEaseOut
+        let mitte = SCNAction.rotateTo(x: 0, y: 0, z: 0, duration: 0.5, usesShortestUnitArc: true)
+        mitte.timingMode = .easeInEaseOut
+        return .repeatForever(.sequence([.wait(duration: 4, withRange: 3), links, .wait(duration: 0.5),
+                                         rechts, .wait(duration: 0.5), mitte]))
+    }
+
+    /// Olli nickt zweimal und plustert sich kurz auf, wenn sie spricht.
+    static func nicken() -> SCNAction {
+        let vor = SCNAction.rotateBy(x: 0.22, y: 0, z: 0, duration: 0.12)
+        vor.timingMode = .easeOut
+        let zurueck = SCNAction.rotateBy(x: -0.22, y: 0, z: 0, duration: 0.14)
+        zurueck.timingMode = .easeIn
+        let nick = SCNAction.sequence([vor, zurueck])
+        let plustern = SCNAction.sequence([.scale(to: 1.12, duration: 0.12), .scale(to: 1.0, duration: 0.2)])
+        return .group([.sequence([nick, nick]), plustern])
     }
 
     // MARK: Bewegungen

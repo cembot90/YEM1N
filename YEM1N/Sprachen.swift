@@ -569,7 +569,13 @@ final class Sprecher {
         try? sitzung.setActive(true)
     }
 
-    func sprich(_ text: String, code: String) {
+    /// Hört sofort auf zu sprechen, zum Beispiel wenn die Einführung übersprungen wird.
+    func still() {
+        if synth.isSpeaking { synth.stopSpeaking(at: .immediate) }
+    }
+
+    /// `tonhoehe` bleibt normalerweise bei 1. Nur das Haustier spricht etwas höher.
+    func sprich(_ text: String, code: String, tonhoehe: Float = 1.0) {
         let an = UserDefaults.standard.object(forKey: "sprachTon") as? Bool ?? true
         guard an, !text.isEmpty else { return }
         sitzungEinrichten()
@@ -578,8 +584,9 @@ final class Sprecher {
         u.voice = stimme(code)
         // Normales Sprechtempo, nur einen Hauch langsamer für Kinder.
         // Tonhöhe bleibt natürlich, verstellte Tonhöhe klingt schnell nach Roboter.
+        // Ausnahme ist das Haustier: Eine kleine, hohe Stimme passt zu ihm.
         u.rate = AVSpeechUtteranceDefaultSpeechRate * 0.95
-        u.pitchMultiplier = 1.0
+        u.pitchMultiplier = min(max(tonhoehe, 0.5), 2.0)
         u.preUtteranceDelay = 0
         u.postUtteranceDelay = 0
         synth.speak(u)

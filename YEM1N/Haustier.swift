@@ -439,13 +439,23 @@ struct HaustierView: View {
     @State private var wahlArt = "katze"
     @State private var wahlName = ""
     @State private var antippSpruch: String?
-    @State private var huepf = false
+    @State private var antippNummer = 0
     /// Zählt hoch, wenn das 3D-Tier vor Freude hüpfen soll, zum Beispiel nach einem Leckerli.
     @State private var stups = 0
     /// Zählt hoch für den Freudentanz nach einer geschafften Runde.
     @State private var tanz = 0
     @AppStorage(HaustierZeit.freudeKey) private var freude = false
     @State private var zeigeWechsel = false
+    @AppStorage("familienCode") private var familienCode = ""
+    // Die Eule Olli: Einführung beim ersten Besuch, danach Tipps
+    @AppStorage(Eule.einfuehrungKey) private var einfuehrungGesehen = false
+    @State private var einfuehrungSchritt = 0
+    /// Was Olli gerade sagt. nil heißt: Das Tier hat das Wort.
+    @State private var euleText: String?
+    @State private var tippNummer = 0
+    /// Zählt hoch, wenn Olli spricht. Sie nickt dann in 3D.
+    @State private var euleSpricht = 0
+    @AppStorage(Eule.tonKey) private var laut = true
 
     private var gespeichert: Haustier? { HaustierSpeicher.dekodiere(daten) }
 
@@ -478,6 +488,17 @@ struct HaustierView: View {
                 tanz += 1
                 Haptik.erfolg()
             }
+            .task {
+                // Beim ersten Besuch stellt sich Olli vor, sonst gibt sie einen Tipp, wenn einer passt
+                if einfuehrungGesehen {
+                    await zeigeWichtigenTipp()
+                } else {
+                    do { try await Task.sleep(for: .milliseconds(800)) } catch { return }
+                    guard !einfuehrungGesehen, let h = aktuell(Date.now) else { return }
+                    let schritte = Eule.einfuehrung(fuer: h)
+                    sprichEule(schritte[min(einfuehrungSchritt, schritte.count - 1)])
+                }
+            }
             .onChange(of: erinnerung) {
                 Task { await HaustierErinnerung.aktualisieren(fragen: erinnerung) }
             }
@@ -487,6 +508,7 @@ struct HaustierView: View {
                     HaustierSpeicher.entfernen()
                     daten = Data()
                     antippSpruch = nil
+                    euleText = nil
                     WidgetBruecke.aktualisieren()
                     Task { await HaustierErinnerung.aktualisieren() }
                 }
@@ -501,8 +523,11 @@ struct HaustierView: View {
 
     private var auswahl: some View {
         VStack(spacing: 16) {
+            SprechBlase(bild: Eule.bild, wer: Eule.name,
+                        text: "Hallo, ich bin Olli! Such dir ein Haustier aus und gib ihm einen Namen. Ich passe dann auf das Ei auf, bis es schlüpft.",
+                        mitSpitze: false)
             Text("🥚")
-                .font(.system(size: 80))
+                .font(.system(size: 64))
             Text("Such dir ein Haustier aus")
                 .font(.system(.title2, design: .rounded).weight(.heavy))
                 .foregroundStyle(Color.white)
@@ -546,6 +571,14 @@ struct HaustierView: View {
                 HaustierSpeicher.sichern(neu)
                 daten = HaustierSpeicher.kodiere(neu)
                 Haptik.erfolg()
+                // Für jedes neue Ei erklärt Olli alles von vorn
+                einfuehrungGesehen = false
+                einfuehrungSchritt = 0
+                euleText = nil
+                Task {
+                    try? await Task.sleep(for: .milliseconds(900))
+                    sprichEule(Eule.einfuehrung(fuer: neu)[0])
+                }
                 WidgetBruecke.aktualisieren()
                 Task { await HaustierErinnerung.aktualisieren(fragen: true) }
             }
@@ -593,41 +626,132 @@ struct HaustierView: View {
         .glasKarte(radius: 22)
     }
 
-    private func buehne(_ h: Haustier, schlaeft: Bool) -> some View {
-        VStack(spacing: 10) {
+    private func buehne(_ h: Haustier, schlaeft schlafenszeit: Bool) -> some View {
+        let schlaeft = schlafenszeit && h.stufe != .ei
+        return VStack(spacing: 12) {
             Text(h.name)
                 .font(.system(.title, design: .rounded).weight(.black))
                 .foregroundStyle(Theme.gelb)
-            // Das Tier in 3D: antippen lässt es hüpfen, waagrecht ziehen dreht es
+            // Das Tier in 3D: antippen lässt es hüpfen und sprechen, waagrecht ziehen dreht es.
+            // Olli kreist über dem Ei oder schwebt daneben. Wer sie antippt, bekommt einen Tipp.
             Haustier3DView(art: h.art, stufe: h.stufe, stimmung: h.stimmung, hut: h.hut,
-                           stups: stups, tanz: tanz, schlaeft: schlaeft && h.stufe != .ei) { antippen(h) }
+                           stups: stups, tanz: tanz, schlaeft: schlaeft,
+                           eule: h.stufe == .ei ? .kreisen : .schweben,
+                           euleSpricht: euleSpricht,
+                           beiEule: { euleAntippen() },
+                           beiTipp: { antippen(h, schlaeft: schlaeft) })
                 .frame(height: 280)
                 .accessibilityElement()
                 .accessibilityLabel("\(h.name), \(h.stufe.name)")
                 .accessibilityAddTraits(.isButton)
-            Text(schlaeft && h.stufe != .ei && antippSpruch == nil
-                 ? "💤 \(h.name) schläft. Ab 7 Uhr ist es wieder wach."
-                 : "\(h.stimmung.emoji) \(antippSpruch ?? h.spruch)")
-                .font(.system(.subheadline, design: .rounded).weight(.semibold))
-                .foregroundStyle(Color.white)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 10)
-                .background(Color.white.opacity(0.16), in: Capsule())
+            blase(h, schlaeft: schlaeft)
+                .padding(.top, 4)
+            if einfuehrungGesehen && euleText == nil {
+                FragOlliKnopf { euleAntippen() }
+            }
         }
         .padding(20)
         .frame(maxWidth: .infinity)
         .background { HeroFlaeche(radius: 32) }
+        .animation(.spring(response: 0.4, dampingFraction: 0.85), value: euleText)
+        .animation(.spring(response: 0.4, dampingFraction: 0.85), value: einfuehrungGesehen)
     }
 
-    private func antippen(_ h: Haustier) {
-        Haptik.leicht()
-        withAnimation(.spring(duration: 0.25, bounce: 0.6)) { huepf = true }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-            withAnimation(.spring(duration: 0.25)) { huepf = false }
+    /// Die Sprechblase unter der Bühne: erst Ollis Einführung, dann Ollis Tipp oder das Tier.
+    @ViewBuilder
+    private func blase(_ h: Haustier, schlaeft: Bool) -> some View {
+        if !einfuehrungGesehen {
+            let schritte = Eule.einfuehrung(fuer: h)
+            let i = min(einfuehrungSchritt, schritte.count - 1)
+            SprechBlase(bild: Eule.bild, wer: Eule.name, text: schritte[i], spitzeLinks: true,
+                        schritt: i, schritte: schritte.count,
+                        weiter: { einfuehrungWeiter(h) },
+                        ueberspringen: { einfuehrungEnde() })
+        } else if let euleText {
+            SprechBlase(bild: Eule.bild, wer: Eule.name, text: euleText, spitzeLinks: true,
+                        schliessen: { self.euleText = nil })
+        } else {
+            SprechBlase(bild: h.emoji, wer: "\(h.name) \(h.stimmung.emoji)",
+                        text: antippSpruch ?? TierStimme.vonSelbst(h, schlaeft: schlaeft),
+                        tonhoehe: TierStimme.tonhoehe, vorlesen: !schlaeft)
         }
-        let freude = ["Hihi, das kitzelt!", "Schön, dass du da bist.", "Weiter so!", "Ich hab dich lieb."]
-        antippSpruch = h.stufe == .ei ? "Es wackelt im Ei." : freude.randomElement()
+    }
+
+    private func antippen(_ h: Haustier, schlaeft: Bool) {
+        Haptik.leicht()
+        // Während Olli alles erklärt, hüpft das Tier nur und lässt sie ausreden
+        guard einfuehrungGesehen else { return }
+        let satz = TierStimme.antippen(h, schlaeft: schlaeft, nummer: antippNummer)
+        antippNummer += 1
+        euleText = nil
+        antippSpruch = satz
+        // Ein schlafendes Tier murmelt nur, laut wird es nicht
+        if !schlaeft && laut { Sprecher.shared.sprich(Eule.sprechbar(satz), code: "de-DE", tonhoehe: TierStimme.tonhoehe) }
+    }
+
+    /// Das Tier sagt etwas, zum Beispiel nach einem Leckerli.
+    private func tierSagt(_ satz: String) {
+        euleText = nil
+        antippSpruch = satz
+        if laut { Sprecher.shared.sprich(Eule.sprechbar(satz), code: "de-DE", tonhoehe: TierStimme.tonhoehe) }
+    }
+
+    // MARK: Olli
+
+    private func sprichEule(_ text: String) {
+        euleSpricht += 1
+        if laut { Sprecher.shared.sprich(Eule.sprechbar(text), code: "de-DE") }
+    }
+
+    private func euleAntippen() {
+        Haptik.leicht()
+        guard let h = aktuell(Date.now) else { return }
+        if !einfuehrungGesehen {
+            // Während der Einführung liest Olli den aktuellen Schritt noch einmal vor
+            let schritte = Eule.einfuehrung(fuer: h)
+            sprichEule(schritte[min(einfuehrungSchritt, schritte.count - 1)])
+            return
+        }
+        let liste = Eule.tipps(fuer: h, muenzen: muenzen, familie: Familiencode.istGueltig(familienCode))
+        guard !liste.isEmpty else { return }
+        let satz = liste[tippNummer % liste.count]
+        tippNummer += 1
+        antippSpruch = nil
+        euleText = satz
+        sprichEule(satz)
+    }
+
+    private func einfuehrungWeiter(_ h: Haustier) {
+        Haptik.leicht()
+        let schritte = Eule.einfuehrung(fuer: h)
+        if einfuehrungSchritt >= schritte.count - 1 {
+            einfuehrungEnde()
+        } else {
+            einfuehrungSchritt += 1
+            sprichEule(schritte[einfuehrungSchritt])
+        }
+    }
+
+    private func einfuehrungEnde() {
+        Sprecher.shared.still()
+        einfuehrungGesehen = true
+        einfuehrungSchritt = 0
+        tippNummer = 0
+        Haptik.erfolg()
+        stups += 1
+    }
+
+    /// Kurz nach dem Öffnen: Olli meldet sich, wenn gerade etwas wichtig ist (Hunger, Geschenk, ...).
+    private func zeigeWichtigenTipp() async {
+        do { try await Task.sleep(for: .milliseconds(1200)) } catch { return }
+        guard einfuehrungGesehen, euleText == nil,
+              let h = aktuell(Date.now),
+              let satz = Eule.wichtigerTipp(fuer: h, muenzen: muenzen) else { return }
+        antippSpruch = nil
+        euleText = satz
+        // Der erste Tipp in der Liste ist genau dieser, beim Antippen kommt der nächste
+        tippNummer = 1
+        euleSpricht += 1
     }
 
     private func werte(_ h: Haustier) -> some View {
@@ -677,7 +801,7 @@ struct HaustierView: View {
                                moeglich: h.satt < 95 && muenzen >= Haustier.leckerliPreis) {
                     aendere { x in
                         if x.leckerli(bezahlen: { Muenzen.bezahlen($0) }) {
-                            antippSpruch = "Lecker! Danke."
+                            tierSagt("Lecker! Danke.")
                             stups += 1
                         }
                     }
@@ -686,7 +810,7 @@ struct HaustierView: View {
                                moeglich: h.laune < 95 && muenzen >= Haustier.spielzeugPreis) {
                     aendere { x in
                         if x.spielen(bezahlen: { Muenzen.bezahlen($0) }) {
-                            antippSpruch = "Das macht Spaß!"
+                            tierSagt("Das macht Spaß!")
                             stups += 1
                         }
                     }
@@ -725,7 +849,7 @@ struct HaustierView: View {
                 let m = x.holeGeschenk()
                 if m > 0 {
                     Muenzen.gutschreiben(m)
-                    antippSpruch = "Ein Geschenk für dich!"
+                    tierSagt("Ein Geschenk für dich!")
                     Haptik.erfolg()
                 }
             }
@@ -767,7 +891,7 @@ struct HaustierView: View {
                     x.trage(hut: traegt ? "" : hut.id)
                 } else if x.kaufe(hut: hut.id, bezahlen: { Muenzen.bezahlen($0) }) {
                     Haptik.erfolg()
-                    antippSpruch = "Der steht mir!"
+                    tierSagt("Der steht mir!")
                 }
             }
         } label: {
@@ -796,6 +920,10 @@ struct HaustierView: View {
     private var fuss: some View {
         VStack(spacing: 10) {
             Toggle("Erinnere mich, wenn mein Haustier Hunger hat", isOn: $erinnerung)
+                .font(.system(.subheadline, design: .rounded).weight(.semibold))
+                .foregroundStyle(Color.white)
+                .tint(Theme.gelb)
+            Toggle("Olli und mein Haustier sprechen laut", isOn: $laut)
                 .font(.system(.subheadline, design: .rounded).weight(.semibold))
                 .foregroundStyle(Color.white)
                 .tint(Theme.gelb)
