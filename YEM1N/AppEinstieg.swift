@@ -27,6 +27,8 @@ struct MatheApp: App {
             let hatIch = !(vorgaben.string(forKey: "jokerIch") ?? "").isEmpty
             if hatName || hatIch { vorgaben.set(true, forKey: "profilFertig") }
         }
+        // Einmal nach dem großen Haustier-Update: Das alte Tier zieht auf Ollis Eulenhof
+        HaustierNeustart.beimStart()
         let schema = Schema([Klassenarbeit.self, Uebung.self, Aufgabe.self, RundenErgebnis.self])
         // SwiftData bleibt lokal auf dem Gerät. Ohne diese Zeile würde SwiftData
         // nach dem Aktivieren von iCloud die Daten automatisch in die private

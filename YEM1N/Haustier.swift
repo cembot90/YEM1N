@@ -342,6 +342,73 @@ enum HaustierSpeicher {
     }
 }
 
+// ============================================================
+// MARK: - Einmaliger Neustart
+// Mit dem großen Haustier-Update (3D, Olli, Tanzen, Schlafen) fangen alle
+// einmal mit einem neuen Ei an. Das alte Tier zieht auf Ollis Eulenhof, und
+// die Münzen für gekaufte Hüte gibt es doppelt zurück. Steigt `version`,
+// passiert das bei der nächsten App-Version noch einmal.
+// ============================================================
+
+enum HaustierNeustart {
+    static let version = 1
+    static let versionKey = "haustierNeustart"
+    /// Der Brief von Olli, bis das Kind ein neues Ei aussucht.
+    static let abschiedKey = "haustierAbschied"
+
+    struct Abschied: Codable, Equatable {
+        let name: String
+        let art: String
+        let muenzen: Int
+    }
+
+    /// Preis aller gekauften Hüte, einmalig verdoppelt.
+    static func erstattung(fuer h: Haustier) -> Int {
+        2 * h.huete.compactMap { HaustierHut.finde($0)?.preis }.reduce(0, +)
+    }
+
+    /// Läuft beim App-Start. Gibt den Abschied zurück, wenn wirklich ein Tier umgezogen ist.
+    @discardableResult
+    static func durchfuehren(speicher: UserDefaults = .standard,
+                             gutschreiben: (Int) -> Void = { Muenzen.gutschreiben($0) }) -> Abschied? {
+        guard speicher.integer(forKey: versionKey) < version else { return nil }
+        speicher.set(version, forKey: versionKey)
+        guard let h = HaustierSpeicher.laden(speicher: speicher) else { return nil }
+        let a = Abschied(name: h.name, art: h.art, muenzen: erstattung(fuer: h))
+        HaustierSpeicher.entfernen(speicher: speicher)
+        // Für das neue Ei stellt sich Olli von vorn vor, ein alter Freudentanz verfällt
+        speicher.removeObject(forKey: Eule.einfuehrungKey)
+        speicher.removeObject(forKey: HaustierZeit.freudeKey)
+        if let daten = try? JSONEncoder().encode(a) { speicher.set(daten, forKey: abschiedKey) }
+        if a.muenzen > 0 { gutschreiben(a.muenzen) }
+        return a
+    }
+
+    /// Beim App-Start: Neustart, danach Widget, Erinnerung und Cloud nachziehen.
+    /// In der Cloud verschwindet die Kopie des alten Tiers mit dem nächsten Abgleich.
+    static func beimStart() {
+        guard durchfuehren() != nil else { return }
+        WidgetBruecke.aktualisieren()
+        Task { await HaustierErinnerung.aktualisieren() }
+    }
+
+    static func dekodiere(_ daten: Data) -> Abschied? {
+        guard !daten.isEmpty else { return nil }
+        return try? JSONDecoder().decode(Abschied.self, from: daten)
+    }
+
+    /// Ollis Brief an das Kind.
+    static func brief(_ a: Abschied) -> String {
+        var text = "Große Neuigkeit! Das Haustier-Zuhause ist jetzt ganz neu: in 3D, mit Tanzen, Schlafen und mir, Olli, als Aufpasserin. "
+            + "\(a.name) ist dafür auf meinen Eulenhof umgezogen. Dort tobt es mit vielen Freunden über die Wiese, ist immer satt und lässt dich ganz lieb grüßen. 💛"
+        if a.muenzen > 0 {
+            text += " Als Dankeschön bekommst du die Münzen für deine Hüte doppelt zurück: \(a.muenzen) Münzen!"
+        }
+        text += " Jetzt such dir ein neues Ei aus. Ich passe darauf auf!"
+        return text
+    }
+}
+
 enum HaustierDienst {
     /// Wird nach jeder fertigen Runde auf dem Kind-Gerät aufgerufen.
     /// Ohne Haustier passiert nichts. Gibt den Text für die Ergebnisseite zurück.
@@ -456,6 +523,9 @@ struct HaustierView: View {
     /// Zählt hoch, wenn Olli spricht. Sie nickt dann in 3D.
     @State private var euleSpricht = 0
     @AppStorage(Eule.tonKey) private var laut = true
+    /// Ollis Brief nach dem großen Umzug, bis ein neues Ei ausgesucht ist
+    @AppStorage(HaustierNeustart.abschiedKey) private var abschiedDaten = Data()
+    @State private var briefGelesen = false
 
     private var gespeichert: Haustier? { HaustierSpeicher.dekodiere(daten) }
 
@@ -489,8 +559,14 @@ struct HaustierView: View {
                 Haptik.erfolg()
             }
             .task {
-                // Beim ersten Besuch stellt sich Olli vor, sonst gibt sie einen Tipp, wenn einer passt
-                if einfuehrungGesehen {
+                // Nach dem Umzug liest Olli einmal ihren Brief vor. Beim ersten Besuch
+                // stellt sie sich vor, sonst gibt sie einen Tipp, wenn einer passt.
+                if gespeichert == nil {
+                    guard !briefGelesen, let a = HaustierNeustart.dekodiere(abschiedDaten) else { return }
+                    do { try await Task.sleep(for: .milliseconds(800)) } catch { return }
+                    briefGelesen = true
+                    sprichEule(HaustierNeustart.brief(a))
+                } else if einfuehrungGesehen {
                     await zeigeWichtigenTipp()
                 } else {
                     do { try await Task.sleep(for: .milliseconds(800)) } catch { return }
@@ -523,9 +599,28 @@ struct HaustierView: View {
 
     private var auswahl: some View {
         VStack(spacing: 16) {
-            SprechBlase(bild: Eule.bild, wer: Eule.name,
-                        text: "Hallo, ich bin Olli! Such dir ein Haustier aus und gib ihm einen Namen. Ich passe dann auf das Ei auf, bis es schlüpft.",
-                        mitSpitze: false)
+            if let a = HaustierNeustart.dekodiere(abschiedDaten) {
+                SprechBlase(bild: "📬", wer: "Post von Olli", text: HaustierNeustart.brief(a), mitSpitze: false)
+                if a.muenzen > 0 {
+                    HStack(spacing: 10) {
+                        Image("muenze")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 34, height: 34)
+                            .federn(a.muenzen, staerke: 1.2)
+                        ZaehlText(wert: a.muenzen, vorne: "+", hinten: " Münzen", verzoegerung: 0.8)
+                            .font(.system(.title2, design: .rounded).weight(.heavy))
+                            .foregroundStyle(Theme.gelb)
+                    }
+                    .padding(.horizontal, 18)
+                    .padding(.vertical, 10)
+                    .background(Theme.gelb.opacity(0.15), in: Capsule())
+                }
+            } else {
+                SprechBlase(bild: Eule.bild, wer: Eule.name,
+                            text: "Hallo, ich bin Olli! Such dir ein Haustier aus und gib ihm einen Namen. Ich passe dann auf das Ei auf, bis es schlüpft.",
+                            mitSpitze: false)
+            }
             Text("🥚")
                 .font(.system(size: 64))
             Text("Such dir ein Haustier aus")
@@ -571,7 +666,8 @@ struct HaustierView: View {
                 HaustierSpeicher.sichern(neu)
                 daten = HaustierSpeicher.kodiere(neu)
                 Haptik.erfolg()
-                // Für jedes neue Ei erklärt Olli alles von vorn
+                // Für jedes neue Ei erklärt Olli alles von vorn. Der Umzugsbrief ist dann erledigt.
+                abschiedDaten = Data()
                 einfuehrungGesehen = false
                 einfuehrungSchritt = 0
                 euleText = nil
