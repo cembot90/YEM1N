@@ -23,9 +23,17 @@ struct ElternTabs: View {
             ElternDashboardView()
                 .tabItem { Label("Übersicht", systemImage: "chart.bar.fill") }
                 .tag("uebersicht")
+            // Joker steht weit vorne: Ab dem sechsten Reiter landet iOS im Menü "Mehr",
+            // und dort ist die Antwort auf eine Joker-Anfrage abgestürzt.
+            JokerLigaView()
+                .tabItem { Label("Joker", systemImage: "suit.spade.fill") }
+                .tag("joker")
             StartView()
                 .tabItem { Label("Schule", systemImage: "books.vertical.fill") }
                 .tag("schule")
+            ElternHaustierView()
+                .tabItem { Label("Haustier", systemImage: "pawprint.fill") }
+                .tag("haustier")
             SprachStartView()
                 .tabItem { Label("Sprachen", systemImage: "globe") }
                 .tag("sprachen")
@@ -34,12 +42,6 @@ struct ElternTabs: View {
                     .tabItem { Label("Vorschule", systemImage: "sparkles") }
                     .tag("vorschule")
             }
-            ElternHaustierView()
-                .tabItem { Label("Haustier", systemImage: "pawprint.fill") }
-                .tag("haustier")
-            JokerLigaView()
-                .tabItem { Label("Joker", systemImage: "suit.spade.fill") }
-                .tag("joker")
             EinstellungenView(eingebettet: true)
                 .tabItem { Label("Einstellungen", systemImage: "gearshape.fill") }
                 .tag("einstellungen")
@@ -49,6 +51,11 @@ struct ElternTabs: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: .oeffneBericht)) { _ in
             tab = "uebersicht"
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .oeffneBereich)) { n in
+            if let bereich = n.object as? String, ["joker", "haustier", "schule"].contains(bereich) {
+                tab = bereich
+            }
         }
     }
 }

@@ -827,6 +827,11 @@ struct KindTabs: View {
         .onOpenURL { url in
             if url.scheme == "yem1n", url.host == "haustier" { tab = "haustier" }
         }
+        .onReceive(NotificationCenter.default.publisher(for: .oeffneBereich)) { n in
+            if let bereich = n.object as? String, ["joker", "haustier", "schule"].contains(bereich) {
+                tab = bereich
+            }
+        }
         .task {
             WidgetBruecke.aktualisieren()
             await HaustierErinnerung.aktualisieren()

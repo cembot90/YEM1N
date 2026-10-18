@@ -21,6 +21,8 @@ extension Notification.Name {
     nonisolated static let oeffneBericht = Notification.Name("yem1nOeffneBericht")
     /// Die Liste der Vorlese-Stimmen ist neu geladen.
     nonisolated static let stimmenGeladen = Notification.Name("yem1nStimmenGeladen")
+    /// Eine Mitteilung wurde angetippt. Im Objekt steht der Bereich, zum Beispiel "joker".
+    nonisolated static let oeffneBereich = Notification.Name("yem1nOeffneBereich")
 }
 
 // Registriert das Gerät für Mitteilungen und meldet eingehende CloudKit-Pushes an die App.
@@ -51,28 +53,66 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
 
     nonisolated func application(_ application: UIApplication,
                                  didReceiveRemoteNotification userInfo: [AnyHashable: Any]) async -> UIBackgroundFetchResult {
-        NotificationCenter.default.post(name: .cloudPush, object: nil)
+        await MainActor.run {
+            NotificationCenter.default.post(name: .cloudPush, object: nil)
+        }
         return .newData
     }
 
-    // Ohne diese Methode zeigt iOS bei geöffneter App kein Banner
+    // Ohne diese Methode zeigt iOS bei geöffneter App kein Banner.
+    // Wichtig: iOS erwartet die Antwort auf dem Haupt-Thread. Die async-Variante dieser
+    // Methoden antwortet aus einem Hintergrund-Thread, und das brachte die App zum Absturz.
     nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter,
-                                            willPresent notification: UNNotification) async -> UNNotificationPresentationOptions {
-        NotificationCenter.default.post(name: .cloudPush, object: nil)
-        // Ohne .badge: Solange die App offen ist, soll kein roter Punkt entstehen
-        return [.banner, .list, .sound]
+                                            willPresent notification: UNNotification,
+                                            withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(name: .cloudPush, object: nil)
+            // Ohne .badge: Solange die App offen ist, soll kein roter Punkt entstehen
+            completionHandler([.banner, .list, .sound])
+        }
     }
 
-    // Tipp auf eine Mitteilung. Beim Wochenbericht geht es direkt zum Bericht.
+    // Tipp auf eine Mitteilung. Die App springt in den passenden Bereich:
+    // Wochenbericht zur Übersicht, Joker-Mitteilungen zum Joker, Haustier zum Haustier.
     nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter,
-                                            didReceive response: UNNotificationResponse) async {
-        let ziel = response.notification.request.content.userInfo["ziel"] as? String
+                                            didReceive response: UNNotificationResponse,
+                                            withCompletionHandler completionHandler: @escaping () -> Void) {
+        let inhalt = response.notification.request.content.userInfo
+        let ziel = inhalt["ziel"] as? String
         let kennung = response.notification.request.identifier
-        guard ziel == "bericht" || kennung == "wochenbericht" else { return }
-        await MainActor.run {
-            UserDefaults.standard.set(true, forKey: Wochenbericht.oeffnenSchluessel)
-            NotificationCenter.default.post(name: .oeffneBericht, object: nil)
+        let bereich = MitteilungsZiel.bereich(ziel: ziel, kennung: kennung,
+                                              abo: MitteilungsZiel.aboKennung(inhalt))
+        DispatchQueue.main.async {
+            MainActor.assumeIsolated {
+                if bereich == "bericht" {
+                    UserDefaults.standard.set(true, forKey: Wochenbericht.oeffnenSchluessel)
+                    NotificationCenter.default.post(name: .oeffneBericht, object: nil)
+                } else if let bereich {
+                    NotificationCenter.default.post(name: .oeffneBereich, object: bereich)
+                }
+            }
+            completionHandler()
         }
+    }
+}
+
+/// Entscheidet, wohin ein Tipp auf eine Mitteilung führt.
+enum MitteilungsZiel {
+    /// Die Kennung des CloudKit-Abos, zum Beispiel "JokerAnfrage-ABCDE-12345".
+    nonisolated static func aboKennung(_ inhalt: [AnyHashable: Any]) -> String {
+        guard let n = CKNotification(fromRemoteNotificationDictionary: inhalt) else { return "" }
+        return n.subscriptionID ?? ""
+    }
+
+    /// "bericht", "joker", "haustier", "schule" oder nil (dann bleibt die App, wo sie ist).
+    nonisolated static func bereich(ziel: String?, kennung: String, abo: String) -> String? {
+        if ziel == "bericht" || kennung == "wochenbericht" { return "bericht" }
+        if abo.hasPrefix("JokerAnfrage") || abo.hasPrefix("JokerNachschub")
+            || abo.hasPrefix("JokerAntwort") || abo.hasPrefix("JokerFreigabe")
+            || abo.hasPrefix("JokerDaumen") { return "joker" }
+        if abo.hasPrefix("HaustierPflege") { return "haustier" }
+        if abo.hasPrefix("Lernpaket") { return "schule" }
+        return nil
     }
 }
 
