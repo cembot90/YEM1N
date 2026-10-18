@@ -328,8 +328,12 @@ struct LehrplanTests {
     // MARK: Speichern als Übung
 
     @Test func eineFertigeUebungBekommtNeueAufgabenUndBehaeltDieSterne() throws {
-        let container = try ModelContainer(for: Klassenarbeit.self, Uebung.self, Aufgabe.self,
-                                           configurations: ModelConfiguration(isStoredInMemoryOnly: true))
+        // Wie in der App: ohne iCloud und ohne App Group, sonst verlangt SwiftData
+        // ein Modell, das sich mit iCloud spiegeln lässt, und bricht ab
+        let schema = Schema([Klassenarbeit.self, Uebung.self, Aufgabe.self, RundenErgebnis.self])
+        let einstellung = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true,
+                                             groupContainer: .none, cloudKitDatabase: .none)
+        let container = try ModelContainer(for: schema, configurations: einstellung)
         let context = container.mainContext
         let t = try #require(Lernwelt.themen.first { $0.id == "d2-artikel" })
         let u = Lernwelt.uebung(fuer: t, land: .hessen, vorhandene: [], in: context)
