@@ -1,0 +1,36 @@
+name: Logik prüfen
+
+# Übersetzt die Logik ohne Oberfläche unter Linux und lässt ihre Tests laufen.
+# Ersetzt nicht den Build in Xcode Cloud, findet aber Fehler schon auf entwicklung.
+
+on:
+  push:
+    branches: [entwicklung]
+    paths:
+      - "YEM1N/**"
+      - "YEM1NTests/**"
+      - "pruefen/**"
+      - "stimmen/sammeln/**"
+  workflow_dispatch:
+
+jobs:
+  tests:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Swift vorhanden?
+        id: swift
+        run: |
+          if command -v swiftc >/dev/null; then echo "da=ja" >> "$GITHUB_OUTPUT"; else echo "da=nein" >> "$GITHUB_OUTPUT"; fi
+
+      - name: Swift einrichten
+        if: steps.swift.outputs.da == 'nein'
+        uses: swift-actions/setup-swift@v2
+        with:
+          swift-version: "6.1"
+
+      - name: Tests
+        run: |
+          swiftc --version
+          pruefen/linux-tests.sh

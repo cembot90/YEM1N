@@ -39,7 +39,16 @@ open(f"{a}/helfer.swift", "w").write("import Foundation\n" + h[i:j])
 PY
 "$SWIFTC" -parse-as-library -O -o "$arbeit/lern" "$arbeit/lern.swift" $Y/Lehrplan[A-Z]*.swift \
   "$arbeit/LehrplanTests.swift" "$arbeit/helfer.swift" "$arbeit/start.swift"
-"$arbeit/lern" 2>&1 | grep -E "✘|Test run|recorded" || true
+laufen() {
+  if "$1" > "$arbeit/ausgabe.txt" 2>&1; then
+    grep -E "Test run with" "$arbeit/ausgabe.txt" || true
+  else
+    grep -E "✘|recorded an issue|Test run with" "$arbeit/ausgabe.txt" || cat "$arbeit/ausgabe.txt"
+    fehler=1
+  fi
+}
+fehler=0
+laufen "$arbeit/lern"
 
 echo "== Vorschule und Stimmen"
 python3 stimmen/sammeln/auszug.py $Y "$arbeit/vor.swift" \
@@ -49,4 +58,5 @@ ohneApp $T/StimmenTests.swift > "$arbeit/StimmenTests.swift"
 "$SWIFTC" -parse-as-library -O -o "$arbeit/vor" "$arbeit/vor.swift" stimmen/sammeln/platzhalter.swift \
   $Y/VorleseText.swift $Y/GeraeteStimmeDaten.swift \
   "$arbeit/VorschuleTests.swift" "$arbeit/StimmenTests.swift" "$arbeit/start.swift"
-"$arbeit/vor" 2>&1 | grep -E "✘|Test run|recorded" || true
+laufen "$arbeit/vor"
+exit $fehler
