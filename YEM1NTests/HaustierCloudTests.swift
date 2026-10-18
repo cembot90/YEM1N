@@ -105,3 +105,45 @@ struct HaustierCloudTests {
         #expect(HaustierPflege.haustier(aus: "kaputt") == nil)
     }
 }
+
+@MainActor
+struct HaustierZeitTests {
+    private func uhr(_ stunde: Int) -> Date {
+        var k = Calendar(identifier: .gregorian)
+        k.timeZone = TimeZone(identifier: "Europe/Berlin") ?? .current
+        return k.date(from: DateComponents(year: 2026, month: 10, day: 18, hour: stunde, minute: 30)) ?? Date.now
+    }
+
+    private var kalender: Calendar {
+        var k = Calendar(identifier: .gregorian)
+        k.timeZone = TimeZone(identifier: "Europe/Berlin") ?? .current
+        return k
+    }
+
+    @Test func abendsUndNachtsSchlaeftDasTier() {
+        #expect(HaustierZeit.schlaeft(uhr(20), kalender: kalender))
+        #expect(HaustierZeit.schlaeft(uhr(23), kalender: kalender))
+        #expect(HaustierZeit.schlaeft(uhr(3), kalender: kalender))
+        #expect(HaustierZeit.schlaeft(uhr(6), kalender: kalender))
+    }
+
+    @Test func tagsueberIstEsWach() {
+        #expect(!HaustierZeit.schlaeft(uhr(7), kalender: kalender))
+        #expect(!HaustierZeit.schlaeft(uhr(12), kalender: kalender))
+        #expect(!HaustierZeit.schlaeft(uhr(19), kalender: kalender))
+    }
+
+    @Test func eineGeschafftRundeMerktSichDenFreudentanz() {
+        let speicher = UserDefaults(suiteName: "tanz-test-\(UUID().uuidString)") ?? .standard
+        HaustierSpeicher.sichern(Haustier(name: "Pip", art: "katze"), speicher: speicher)
+        HaustierDienst.rundeGeschafft(richtig: 5, gesamt: 10, angesehen: 0, speicher: speicher, erinnern: false)
+        #expect(speicher.bool(forKey: HaustierZeit.freudeKey))
+    }
+
+    @Test func ohneRichtigeAntwortGibtEsKeinenTanz() {
+        let speicher = UserDefaults(suiteName: "tanz-test-\(UUID().uuidString)") ?? .standard
+        HaustierSpeicher.sichern(Haustier(name: "Pip", art: "katze"), speicher: speicher)
+        HaustierDienst.rundeGeschafft(richtig: 0, gesamt: 10, angesehen: 0, speicher: speicher, erinnern: false)
+        #expect(!speicher.bool(forKey: HaustierZeit.freudeKey))
+    }
+}

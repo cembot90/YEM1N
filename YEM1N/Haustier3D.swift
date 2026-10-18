@@ -19,6 +19,10 @@ struct Haustier3DView: UIViewRepresentable {
     var hut: String = ""
     /// Zählt hoch, wenn das Tier hüpfen soll.
     var stups: Int = 0
+    /// Zählt hoch, wenn das Tier einen Freudentanz machen soll.
+    var tanz: Int = 0
+    /// Abends und nachts schläft das Tier mit geschlossenen Augen.
+    var schlaeft: Bool = false
     /// Wird aufgerufen, wenn das Kind auf das Tier tippt.
     var beiTipp: (() -> Void)? = nil
 
@@ -41,7 +45,7 @@ struct Haustier3DView: UIViewRepresentable {
         szene.rootNode.addChildNode(context.coordinator.wurzel)
         ansicht.scene = szene
 
-        let tipp = UITapGestureRecognizer(target: context.coordinator, action: #selector(Koordinator.getippt))
+        let tipp = UITapGestureRecognizer(target: context.coordinator, action: #selector(Koordinator.getippt(_:)))
         let ziehen = UIPanGestureRecognizer(target: context.coordinator, action: #selector(Koordinator.gezogen(_:)))
         // Nur waagrechtes Ziehen dreht das Tier, senkrecht scrollt die Seite weiter
         ziehen.delegate = context.coordinator
@@ -49,18 +53,23 @@ struct Haustier3DView: UIViewRepresentable {
         ansicht.addGestureRecognizer(ziehen)
 
         context.coordinator.stups = stups
+        context.coordinator.tanz = tanz
         context.coordinator.beiTipp = beiTipp
-        context.coordinator.zeige(art: art, stufe: stufe, stimmung: stimmung, hut: hut)
+        context.coordinator.zeige(art: art, stufe: stufe, stimmung: stimmung, hut: hut, schlaeft: schlaeft)
         return ansicht
     }
 
     func updateUIView(_ ansicht: SCNView, context: Context) {
         let k = context.coordinator
         k.beiTipp = beiTipp
-        k.zeige(art: art, stufe: stufe, stimmung: stimmung, hut: hut)
+        k.zeige(art: art, stufe: stufe, stimmung: stimmung, hut: hut, schlaeft: schlaeft)
         if stups != k.stups {
             k.stups = stups
             k.huepfe()
+        }
+        if tanz != k.tanz {
+            k.tanz = tanz
+            k.tanze()
         }
     }
 
@@ -69,15 +78,17 @@ struct Haustier3DView: UIViewRepresentable {
         var tier: SCNNode?
         var schluessel = ""
         var stups = 0
+        var tanz = 0
         var beiTipp: (() -> Void)?
         private var startWinkel: Float = 0
 
-        func zeige(art: String, stufe: HaustierStufe, stimmung: HaustierStimmung, hut: String) {
-            let neu = "\(art)|\(stufe.rawValue)|\(stimmung)|\(hut)"
+        func zeige(art: String, stufe: HaustierStufe, stimmung: HaustierStimmung, hut: String, schlaeft: Bool) {
+            let neu = "\(art)|\(stufe.rawValue)|\(stimmung)|\(hut)|\(schlaeft)"
             guard neu != schluessel else { return }
             schluessel = neu
             tier?.removeFromParentNode()
-            let knoten = Haustier3DBauer.tier(art: art, stufe: stufe, stimmung: stimmung, hut: hut)
+            let knoten = Haustier3DBauer.tier(art: art, stufe: stufe, stimmung: stimmung, hut: hut,
+                                              schlaeft: schlaeft)
             wurzel.addChildNode(knoten)
             tier = knoten
         }
@@ -94,7 +105,33 @@ struct Haustier3DView: UIViewRepresentable {
             return abs(v.x) > abs(v.y)
         }
 
-        @objc func getippt() {
+        func tanze() {
+            guard let tier else { return }
+            tier.removeAction(forKey: "huepfen")
+            // Ein abgebrochener Sprung würde sonst Höhe, Drehung und Größe behalten
+            tier.position = SCNVector3(0, 0, 0)
+            tier.eulerAngles = SCNVector3(0, 0, 0)
+            tier.scale = SCNVector3(1, 1, 1)
+            tier.runAction(Haustier3DBauer.tanz(), forKey: "huepfen")
+        }
+
+        /// Der Kopf dreht sich kurz dorthin, wo der Finger getippt hat.
+        func schaue(nach punkt: CGPoint, in groesse: CGSize) {
+            guard let blick = tier?.childNode(withName: "blick", recursively: true),
+                  groesse.width > 0, groesse.height > 0 else { return }
+            let dx = Float((punkt.x / groesse.width) - 0.5) * 2
+            let dy = Float((punkt.y / groesse.height) - 0.5) * 2
+            blick.removeAction(forKey: "blick")
+            let hin = SCNAction.rotateTo(x: CGFloat(dy * 0.35), y: CGFloat(dx * 0.6), z: 0,
+                                         duration: 0.25, usesShortestUnitArc: true)
+            hin.timingMode = .easeOut
+            let zurueck = SCNAction.rotateTo(x: 0, y: 0, z: 0, duration: 0.6, usesShortestUnitArc: true)
+            zurueck.timingMode = .easeInEaseOut
+            blick.runAction(.sequence([hin, .wait(duration: 1.4), zurueck]), forKey: "blick")
+        }
+
+        @objc func getippt(_ g: UITapGestureRecognizer) {
+            if let v = g.view { schaue(nach: g.location(in: v), in: v.bounds.size) }
             huepfe()
             beiTipp?()
         }
@@ -113,6 +150,21 @@ struct Haustier3DView: UIViewRepresentable {
                 wurzel.runAction(zurueck, forKey: "zurueck")
             }
         }
+    }
+}
+
+// MARK: - Tageszeit
+
+enum HaustierZeit {
+    /// Ab 20 Uhr schläft das Tier, ab 7 Uhr ist es wieder wach.
+    static let schlafenAb = 20
+    static let wachAb = 7
+    /// Wird nach einer geschafften Runde gesetzt. Beim nächsten Besuch tanzt das Tier.
+    static let freudeKey = "haustierFreude"
+
+    static func schlaeft(_ datum: Date, kalender: Calendar = .current) -> Bool {
+        let h = kalender.component(.hour, from: datum)
+        return h >= schlafenAb || h < wachAb
     }
 }
 
@@ -253,7 +305,8 @@ enum Haustier3DBauer {
         }
     }
 
-    static func tier(art: String, stufe: HaustierStufe, stimmung: HaustierStimmung, hut: String) -> SCNNode {
+    static func tier(art: String, stufe: HaustierStufe, stimmung: HaustierStimmung, hut: String,
+                     schlaeft: Bool = false) -> SCNNode {
         let ganz = SCNNode()
         let s = groesse(stufe)
         ganz.addChildNode(schatten(breite: CGFloat(1.9 * s), y: -1.22 * s))
@@ -283,27 +336,38 @@ enum Haustier3DBauer {
         if art == "drache" { fluegel(an: rumpf, f: f) }
         rumpf.addAnimation(atmen(), forKey: "atmen")
 
-        // Kopf: Ohren, Gesicht, Hut
+        // Kopf: Ohren, Gesicht, Hut. Der Blick-Knoten dreht den Kopf zum Finger,
+        // der Kopf selbst neigt sich nebenbei von allein.
+        let blick = SCNNode()
+        blick.name = "blick"
+        blick.position = SCNVector3(0, 0.55, 0)
+        koerper.addChildNode(blick)
         let kopf = SCNNode()
-        kopf.position = SCNVector3(0, 0.55, 0)
-        koerper.addChildNode(kopf)
+        kopf.name = "kopf"
+        blick.addChildNode(kopf)
         kopf.addChildNode(kugel(0.78, f.fell, SCNVector3(0, 0, 0), skala: SCNVector3(1.04, 0.96, 0.96)))
         ohren(an: kopf, art: art, f: f)
-        gesicht(an: kopf, art: art, f: f, stimmung: stimmung)
+        gesicht(an: kopf, art: art, f: f, stimmung: stimmung, schlaeft: schlaeft)
         if let h = HaustierHut.finde(hut) { kopf.addChildNode(hutKnoten(h)) }
 
-        switch stimmung {
-        case .traurig:
-            kopf.eulerAngles = SCNVector3(0.18, 0, 0.08)
-        case .hungrig:
-            kopf.eulerAngles = SCNVector3(0.08, 0, -0.1)
-        default:
-            kopf.runAction(kopfNeigen(), forKey: "neigen")
+        if schlaeft {
+            // Schlafend: Kopf leicht zur Seite, Zzz steigt auf
+            kopf.eulerAngles = SCNVector3(0.12, 0, 0.22)
+            kopf.addChildNode(zzz())
+        } else {
+            switch stimmung {
+            case .traurig:
+                kopf.eulerAngles = SCNVector3(0.18, 0, 0.08)
+            case .hungrig:
+                kopf.eulerAngles = SCNVector3(0.08, 0, -0.1)
+            default:
+                kopf.runAction(kopfNeigen(), forKey: "neigen")
+            }
         }
 
         // Ganz sanftes Schweben, bei guter Laune hüpft es ab und zu von selbst
         koerper.runAction(schweben(), forKey: "schweben")
-        if stimmung == .froh { koerper.runAction(freudenHopser(), forKey: "freude") }
+        if stimmung == .froh && !schlaeft { koerper.runAction(freudenHopser(), forKey: "freude") }
         if stufe == .meister { ganz.addChildNode(funkeln(hoehe: 1.65 * s)) }
         return ganz
     }
@@ -360,7 +424,8 @@ enum Haustier3DBauer {
         }
     }
 
-    static func gesicht(an kopf: SCNNode, art: String, f: Farben, stimmung: HaustierStimmung) {
+    static func gesicht(an kopf: SCNNode, art: String, f: Farben, stimmung: HaustierStimmung,
+                        schlaeft: Bool = false) {
         let dunkel = UIColor(red: 0.12, green: 0.10, blue: 0.16, alpha: 1)
 
         // Helle Schnauze bei Fuchs, Hund und Drache
@@ -374,12 +439,14 @@ enum Haustier3DBauer {
         kopf.addChildNode(augen)
         let lacht = stimmung == .froh
         for x: Float in [-1, 1] {
+            // Schlafende Augen sind nur ein schmaler Strich
+            let hoehe: Float = schlaeft ? 0.14 : (lacht ? 0.55 : 1.15)
             let auge = kugel(0.12, dunkel, SCNVector3(0.28 * x, 0, 0.66),
-                             skala: SCNVector3(1, lacht ? 0.55 : 1.15, 0.7), glanz: 0.9)
-            auge.addChildNode(kugel(0.04, .white, SCNVector3(0.035, 0.05, 0.1), glanz: 0))
+                             skala: SCNVector3(1, hoehe, 0.7), glanz: 0.9)
+            if !schlaeft { auge.addChildNode(kugel(0.04, .white, SCNVector3(0.035, 0.05, 0.1), glanz: 0)) }
             augen.addChildNode(auge)
         }
-        augen.addAnimation(blinzeln(), forKey: "blinzeln")
+        if !schlaeft { augen.addAnimation(blinzeln(), forKey: "blinzeln") }
 
         // Wangen
         for x: Float in [-1, 1] {
@@ -412,6 +479,24 @@ enum Haustier3DBauer {
                                          winkel: SCNVector3(0, 0, Float.pi / 2 + 0.55 * x)))
             }
         }
+    }
+
+    /// "💤" steigt langsam über dem Kopf auf und verblasst, immer wieder.
+    static func zzz() -> SCNNode {
+        let flaeche = SCNPlane(width: 0.5, height: 0.5)
+        let m = SCNMaterial()
+        m.lightingModel = .constant
+        m.diffuse.contents = emojiBild("💤")
+        m.isDoubleSided = true
+        m.writesToDepthBuffer = false
+        flaeche.firstMaterial = m
+        let n = SCNNode(geometry: flaeche)
+        n.position = SCNVector3(0.55, 0.75, 0.2)
+        n.renderingOrder = 11
+        let steigen = SCNAction.group([.moveBy(x: 0.15, y: 0.45, z: 0, duration: 2.2), .fadeOut(duration: 2.2)])
+        let zurueck = SCNAction.group([.move(to: SCNVector3(0.55, 0.75, 0.2), duration: 0), .fadeIn(duration: 0.3)])
+        n.runAction(.repeatForever(.sequence([steigen, zurueck])))
+        return n
     }
 
     static func schwanz(art: String, f: Farben) -> SCNNode {
@@ -662,6 +747,18 @@ enum Haustier3DBauer {
         drehen.timingMode = .easeInEaseOut
         let quetschen = SCNAction.sequence([.scale(to: 1.08, duration: 0.08), .scale(to: 1.0, duration: 0.12)])
         return .sequence([.group([.sequence([hoch, runter]), drehen]), quetschen])
+    }
+
+    /// Freudentanz nach einer geschafften Runde: drehen, hüpfen, wackeln.
+    static func tanz() -> SCNAction {
+        let drehen = SCNAction.rotateBy(x: 0, y: CGFloat.pi * 2, z: 0, duration: 0.9)
+        drehen.timingMode = .easeInEaseOut
+        let links = SCNAction.rotateBy(x: 0, y: 0, z: 0.25, duration: 0.15)
+        let rechts = SCNAction.rotateBy(x: 0, y: 0, z: -0.5, duration: 0.3)
+        let mitte = SCNAction.rotateBy(x: 0, y: 0, z: 0.25, duration: 0.15)
+        let schunkeln = SCNAction.sequence([links, rechts, mitte])
+        return .sequence([.group([drehen, .sequence([kleinerSprung(), kleinerSprung(), kleinerSprung()])]),
+                          schunkeln, schunkeln])
     }
 
     static func wackeln() -> SCNAction {

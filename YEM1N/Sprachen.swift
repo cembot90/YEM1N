@@ -859,6 +859,7 @@ struct SprachStartView: View {
     private let stand = SprachStand.shared
     @AppStorage("sprachTon") private var ton = true
     @AppStorage(SprachAuswahl.schluessel) private var sprachWahl = ""
+    @Namespace private var zoomRaum
 
     private var aktive: [String] {
         SprachAuswahl.aktiv(roh: sprachWahl, alle: store.katalog.lernsprachen)
@@ -881,8 +882,9 @@ struct SprachStartView: View {
                         Text("Was möchtest du lernen?")
                             .font(.system(.subheadline, design: .rounded).weight(.semibold))
                             .foregroundStyle(Theme.textSanft)
-                        ForEach(aktive, id: \.self) { c in
+                        ForEach(Array(aktive.enumerated()), id: \.element) { i, c in
                             sprachKarte(c)
+                                .einblenden(i)
                         }
                         if aktive.isEmpty {
                             Text("Du hast keine Sprache gewählt. Wähle in den Einstellungen unter „Sprachen“, was du lernen möchtest.")
@@ -939,6 +941,7 @@ struct SprachStartView: View {
         let anteil = woerter.isEmpty ? 0 : Double(g) / Double(woerter.count)
         return NavigationLink {
             SprachThemenView(sprache: c)
+                .zoomZiel(c, in: zoomRaum)
         } label: {
             HStack(spacing: 16) {
                 Text(info.flagge).font(.system(size: 44))
@@ -963,6 +966,7 @@ struct SprachStartView: View {
             }
             .padding(18)
             .glasKarte(radius: 28)
+            .zoomQuelle(c, in: zoomRaum)
         }
         .buttonStyle(TastenStil())
     }
@@ -1372,6 +1376,7 @@ struct SprachKartenView: View {
     private var ende: some View {
         VStack(spacing: 16) {
             Text("🎉").font(.system(size: 70))
+                .jubeln()
             Text("Alle Karten durch")
                 .font(.system(.title, design: .rounded).weight(.black))
                 .foregroundStyle(Color.white)
@@ -1384,6 +1389,12 @@ struct SprachKartenView: View {
                 .foregroundStyle(Theme.gelb)
         }
         .padding(.top, 40)
+        .frame(maxWidth: .infinity)
+        .overlay(alignment: .top) {
+            KonfettiRegen(anzahl: 70)
+                .frame(height: 600)
+                .allowsHitTesting(false)
+        }
     }
 }
 

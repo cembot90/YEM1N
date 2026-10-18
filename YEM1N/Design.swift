@@ -118,11 +118,14 @@ struct Fortschrittsring: View {
     }
 }
 
+/// Knöpfe drücken sich federnd ein. Vibrieren tun nur die Aktionen selbst,
+/// sonst gäbe es doppelte Stöße und ein Zucken beim Scrollen.
 struct TastenStil: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .scaleEffect(configuration.isPressed ? 0.94 : 1)
-            .animation(.snappy(duration: 0.15), value: configuration.isPressed)
+            .brightness(configuration.isPressed ? -0.04 : 0)
+            .animation(.spring(response: 0.28, dampingFraction: 0.55), value: configuration.isPressed)
     }
 }
 

@@ -405,6 +405,7 @@ struct VorschuleView: View {
     @AppStorage("vorschulStufe") private var stufe = 2
     @AppStorage("vorschulSprache") private var sprache = "de"
     @AppStorage("kindName") private var kindName = ""
+    @Namespace private var zoomRaum
 
     var body: some View {
         NavigationStack {
@@ -431,11 +432,14 @@ struct VorschuleView: View {
             }
             .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(for: VorschulArt.self) { art in
-                if art == .memory {
-                    VorschulMemory()
-                } else {
-                    VorschulRunde(art: art)
+                Group {
+                    if art == .memory {
+                        VorschulMemory()
+                    } else {
+                        VorschulRunde(art: art)
+                    }
                 }
+                .zoomZiel(art, in: zoomRaum)
             }
             .navigationDestination(for: Klassenarbeit.self) { VorschulPaketListe(arbeit: $0) }
             .navigationDestination(for: Uebung.self) { VorschulRunde(art: .mix, quelle: $0) }
@@ -517,9 +521,13 @@ struct VorschuleView: View {
 
     private func raster(_ arten: [VorschulArt]) -> some View {
         LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 14)], spacing: 14) {
-            ForEach(arten) { art in
-                NavigationLink(value: art) { karte(art) }
-                    .buttonStyle(TastenStil())
+            ForEach(Array(arten.enumerated()), id: \.element.id) { i, art in
+                NavigationLink(value: art) {
+                    karte(art)
+                        .zoomQuelle(art, in: zoomRaum)
+                }
+                .buttonStyle(TastenStil())
+                .einblenden(i)
             }
         }
     }
@@ -663,6 +671,7 @@ struct VorschulRunde: View {
         return VStack(spacing: 18) {
             Text(sterne == 3 ? "🎉" : (sterne >= 1 ? "👏" : "💪"))
                 .font(.system(size: 90))
+                .jubeln()
             Text("\(perfekt) von \(fragen.count) gleich richtig!")
                 .font(.system(size: 28, weight: .black, design: .rounded))
                 .foregroundStyle(Color.white)
@@ -672,6 +681,8 @@ struct VorschulRunde: View {
                     Image(systemName: i < sterne ? "star.fill" : "star")
                         .font(.system(size: 48))
                         .foregroundStyle(Theme.gelb)
+                        .shadow(color: Theme.gelb.opacity(i < sterne ? 0.6 : 0), radius: 12)
+                        .einblenden(i * 3)
                 }
             }
             Button { neu() } label: {
@@ -687,6 +698,13 @@ struct VorschulRunde: View {
                 .foregroundStyle(Theme.textSanft)
         }
         .padding(24)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .overlay {
+            if sterne >= 1 {
+                KonfettiRegen(anzahl: sterne == 3 ? 110 : 60)
+                    .ignoresSafeArea()
+            }
+        }
     }
 
     private func neu() {

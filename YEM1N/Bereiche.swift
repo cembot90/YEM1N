@@ -48,12 +48,14 @@ struct KindIchView: View {
                                   text: "Abzeichen, Serie und Wochenziel")
                 }
                 .buttonStyle(TastenStil())
+                .einblenden(1)
                 if spieleErlaubt {
                     Button { zeigeSpiele = true } label: {
                         BereichsKarte(bild: "🎮", titel: "Spiele",
                                       text: "Mit deinen Münzen spielen")
                     }
                     .buttonStyle(TastenStil())
+                    .einblenden(2)
                 }
 
                 AbschnittsTitel("Einstellungen und Hilfe")
@@ -116,16 +118,19 @@ struct ElternLernenView: View {
                                   text: "Klassenarbeiten, Fehlerheft und Training", betont: true)
                 }
                 .buttonStyle(TastenStil())
+                .einblenden(3)
                 Button { offen = .sprachen } label: {
                     BereichsKarte(bild: "🌍", titel: "Sprachen",
                                   text: "Wörter lernen mit Bildern und Vorlesen")
                 }
                 .buttonStyle(TastenStil())
+                .einblenden(4)
                 Button { offen = .vorschule } label: {
                     BereichsKarte(bild: "🧸", titel: "Vorschule",
                                   text: "Zählen, Formen, Buchstaben und mehr")
                 }
                 .buttonStyle(TastenStil())
+                .einblenden(5)
 
                 AbschnittsTitel("Aufgaben verwalten")
                 ZeilenGruppe {

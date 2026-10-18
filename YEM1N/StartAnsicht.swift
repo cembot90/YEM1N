@@ -33,6 +33,8 @@ struct StartView: View {
     @State private var zeigeErfolge = false
     @State private var zeigeSpiele = false
     @State private var pfad = NavigationPath()
+    /// Für den Zoom-Übergang: Die Klassenarbeit wächst aus ihrer Karte heraus.
+    @Namespace private var zoomRaum
     @State private var zwischenPaket: ArbeitPaket?
     @State private var zwischenText = ""
     @State private var zeigeZwischen = false
@@ -202,7 +204,9 @@ struct StartView: View {
                     Text("\(p.klasse), \(p.fach): \(PaketAktion.anzahl(p)) Aufgaben. Die Kind-Geräte laden das Paket automatisch.")
                 }
             }
-            .navigationDestination(for: Klassenarbeit.self) { ArbeitView(arbeit: $0) }
+            .navigationDestination(for: Klassenarbeit.self) {
+                ArbeitView(arbeit: $0).zoomZiel($0.persistentModelID, in: zoomRaum)
+            }
             .navigationDestination(for: Uebung.self) { UebungView(uebung: $0) }
             .fileImporter(isPresented: $zeigeDatei,
                           allowedContentTypes: [.json, .plainText]) { ergebnis in
@@ -250,11 +254,11 @@ struct StartView: View {
         HeroKopf(kicker: "YEM1N", titel: "Schule", untertitel: untertitel,
                  bild: "✏️", chips: kopfChips) {
             if (modus == "kind" && spieleErlaubt) || modus == "eltern" {
-                Button { zeigeSpiele = true } label: { RundSymbol(symbol: "gamecontroller.fill") }
+                Button { zeigeSpiele = true } label: { RundSymbol(symbol: "gamecontroller.fill", huepfen: zeigeSpiele) }
                     .accessibilityLabel("Spiele")
             }
             if modus != "eltern" {
-                Button { zeigeErfolge = true } label: { RundSymbol(symbol: "trophy.fill") }
+                Button { zeigeErfolge = true } label: { RundSymbol(symbol: "trophy.fill", huepfen: zeigeErfolge) }
                     .accessibilityLabel("Erfolge")
             }
             Menu {
@@ -355,6 +359,7 @@ struct StartView: View {
                     ForEach(treffer) { a in
                         ZStack {
                             ArbeitKarte(arbeit: a)
+                                .zoomQuelle(a.persistentModelID, in: zoomRaum)
                             NavigationLink(value: a) { EmptyView() }.opacity(0)
                         }
                         .listRowBackground(Color.clear)

@@ -291,6 +291,16 @@ struct UebungInhalt: View {
     @State private var mauerSchritt = 0
     @State private var kurzerHinweis: String?
     @State private var wackeln = 0
+    /// Zählt richtige Antworten: Lichtring, Funken und Federn.
+    @State private var erfolg = 0
+    /// Auf der Ergebnisseite erscheinen die Sterne nacheinander.
+    @State private var sichtbareSterne = 0
+    @State private var verdient = 0
+    @State private var neuerRekord = false
+    @State private var welle = false
+    /// true nur direkt nach dem Abschluss, nicht beim späteren Wiederöffnen
+    @State private var frischGeschafft = false
+    @Environment(\.accessibilityReduceMotion) private var ruhig
     @State private var probeStart = Date.now
     @State private var zeigeNotiz = false
     @State private var notiz = PKDrawing()
@@ -396,6 +406,7 @@ struct UebungInhalt: View {
                 Label("\(uebung.richtigAnzahl)", systemImage: "checkmark.circle.fill")
                     .foregroundStyle(Theme.gelb)
                     .contentTransition(.numericText())
+                    .symbolEffect(.bounce, value: uebung.richtigAnzahl)
             }
             .font(.system(.subheadline, design: .rounded).weight(.bold))
             .foregroundStyle(Theme.textSanft)
@@ -447,6 +458,18 @@ struct UebungInhalt: View {
         .padding(24)
         .frame(maxWidth: .infinity)
         .glasKarte(radius: 34)
+        // Richtig: Lichtring, kleine Funken und ein kurzes Federn. Falsch: koralle Ring und Kopfschütteln.
+        .overlay { LichtRing(trigger: erfolg, farbe: Theme.gelb) }
+        .overlay { LichtRing(trigger: wackeln, farbe: Theme.koralle) }
+        .overlay {
+            // Nur direkt nach einer richtigen Antwort, nicht auf jeder neuen Karte
+            if bewertet != nil && bewertung == .richtig {
+                KonfettiRegen(anzahl: 24, dauer: 1.1, ausDerMitte: true)
+                    .id(erfolg)
+            }
+        }
+        .federn(erfolg)
+        .kopfschuetteln(wackeln)
         .overlay(alignment: .topTrailing) { vorlesenKnopf(a) }
         .padding(.horizontal, 20)
     }
@@ -882,6 +905,7 @@ struct UebungInhalt: View {
         lobWort = ["Richtig.", "Stimmt.", "Genau so.", "Sehr gut."].randomElement() ?? "Richtig."
         if ok {
             Haptik.erfolg()
+            erfolg += 1
         } else {
             Haptik.fehler()
             withAnimation(.default) { wackeln += 1 }
@@ -937,13 +961,17 @@ struct UebungInhalt: View {
 
     private func abschliessen() {
         let gut = uebung.richtigAnzahl
+        // Ein Rekord zählt nur, wenn es schon einmal einen Bestwert gab
+        neuerRekord = Belohnung.istNeuerRekord(gut: gut, beste: uebung.beste)
+        frischGeschafft = true
         if gut > uebung.beste { uebung.beste = gut }
         uebung.sterne = max(uebung.sterne, uebung.sternAnzahl(fuer: gut))
         // Auf dem Kind-Gerät landet jede fertige Runde in der Warteschlange
         if modus == "kind" {
-            Muenzen.gutschreiben(Muenzen.verdient(richtig: gut,
-                                                  gesamt: uebung.aufgaben.count,
-                                                  angesehen: uebung.angesehenAnzahl))
+            verdient = Muenzen.verdient(richtig: gut,
+                                        gesamt: uebung.aufgaben.count,
+                                        angesehen: uebung.angesehenAnzahl)
+            Muenzen.gutschreiben(verdient)
             Muenzen.rundeGeschafft()
             haustierText = HaustierDienst.rundeGeschafft(richtig: gut,
                                                          gesamt: uebung.aufgaben.count,
@@ -974,6 +1002,11 @@ struct UebungInhalt: View {
         probeStart = Date.now
         bewertet = nil
         haustierText = nil
+        sichtbareSterne = 0
+        verdient = 0
+        neuerRekord = false
+        welle = false
+        frischGeschafft = false
     }
 
     // MARK: Ergebnis
@@ -986,11 +1019,28 @@ struct UebungInhalt: View {
             VStack(spacing: 20) {
                 HStack(spacing: 10) {
                     ForEach(0..<3, id: \.self) { i in
-                        Image(systemName: i < n ? "star.fill" : "star")
+                        // Die Sterne fallen nacheinander ein, die verdienten leuchten gelb
+                        let da = ruhig || i < sichtbareSterne
+                        let an = da && i < n
+                        Image(systemName: an ? "star.fill" : "star")
                             .font(.system(size: 58))
-                            .foregroundStyle(i < n ? Theme.gelb : Color.white.opacity(0.25))
-                            .symbolEffect(.bounce, value: n)
+                            .foregroundStyle(an ? Theme.gelb : Color.white.opacity(0.25))
+                            .shadow(color: Theme.gelb.opacity(an ? 0.6 : 0), radius: 14)
+                            .scaleEffect(da ? 1 : 0.4)
+                            .opacity(da ? 1 : 0)
+                            .rotationEffect(.degrees(da ? 0 : -25))
+                            .offset(y: i == 1 ? -14 : 0)
+                            .symbolEffect(.bounce, value: an)
                     }
+                }
+                if neuerRekord {
+                    Label("Neuer Rekord!", systemImage: "crown.fill")
+                        .font(.system(.headline, design: .rounded).weight(.heavy))
+                        .foregroundStyle(Theme.navy)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .background(Theme.gelb, in: Capsule())
+                        .federn(sichtbareSterne)
                 }
                 Text("\(gut) von \(uebung.aufgaben.count)")
                     .font(.system(size: 48, weight: .black, design: .rounded))
@@ -1002,6 +1052,18 @@ struct UebungInhalt: View {
                     Text("Das ist eine Schätzung wie in der Schule.")
                         .font(.footnote)
                         .foregroundStyle(Theme.textSanft)
+                }
+                if verdient > 0 {
+                    HStack(spacing: 8) {
+                        Image("muenze")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 30, height: 30)
+                            .federn(sichtbareSterne, staerke: 1.25)
+                        ZaehlText(wert: verdient, vorne: "+", hinten: " Münzen", verzoegerung: 1.3)
+                            .font(.system(.title2, design: .rounded).weight(.heavy))
+                            .foregroundStyle(Theme.gelb)
+                    }
                 }
                 if uebung.angesehenAnzahl > 0 {
                     Label("\(uebung.angesehenAnzahl) Lösung\(uebung.angesehenAnzahl == 1 ? "" : "en") angeschaut",
@@ -1092,6 +1154,28 @@ struct UebungInhalt: View {
             .animation(.smooth, value: neuePokale.count)
         }
         .scrollIndicators(.hidden)
+        .overlay {
+            // Konfetti ab zwei Sternen, bei drei Sternen mehr. Nur direkt nach dem Abschluss.
+            if frischGeschafft && Belohnung.konfetti(sterne: n) > 0 {
+                KonfettiRegen(anzahl: Belohnung.konfetti(sterne: n))
+                    .ignoresSafeArea()
+            }
+        }
+        .overlay {
+            // Bei einem neuen Rekord läuft eine goldene Welle über den Bildschirm
+            if neuerRekord && !ruhig {
+                GeometryReader { g in
+                    LinearGradient(colors: [.clear, Theme.gelb.opacity(0.4), .clear],
+                                   startPoint: .leading, endPoint: .trailing)
+                        .frame(width: g.size.width * 0.6)
+                        .rotationEffect(.degrees(18))
+                        .offset(x: welle ? g.size.width * 1.3 : -g.size.width * 0.9)
+                }
+                .ignoresSafeArea()
+                .allowsHitTesting(false)
+            }
+        }
+        .task { await sterneZeigen(n) }
         .onAppear { pruefePokale() }
         .onChange(of: lokaleRunden.count) { pruefePokale() }
     }
@@ -1122,6 +1206,20 @@ struct UebungInhalt: View {
             zeilen.append("Noch nicht sicher: " + fehler.joined(separator: "; "))
         }
         return zeilen.joined(separator: "\n")
+    }
+
+    private func sterneZeigen(_ n: Int) async {
+        sichtbareSterne = 0
+        welle = false
+        for i in 1...3 {
+            do { try await Task.sleep(for: .milliseconds(380)) } catch { return }
+            withAnimation(.spring(response: 0.45, dampingFraction: 0.5)) { sichtbareSterne = i }
+            if i <= n { Haptik.leicht() }
+        }
+        if neuerRekord {
+            Haptik.erfolg()
+            withAnimation(.easeInOut(duration: 1.3)) { welle = true }
+        }
     }
 
     private func lob(_ sterne: Int) -> String {

@@ -270,7 +270,8 @@ struct ElternHaustierView: View {
     private func karte(_ h: Haustier) -> some View {
         VStack(spacing: 10) {
             Haustier3DView(art: h.art, stufe: h.stufe, stimmung: h.stimmung,
-                           hut: h.stufe == .ei ? "" : h.hut, stups: stups)
+                           hut: h.stufe == .ei ? "" : h.hut, stups: stups,
+                           schlaeft: h.stufe != .ei && HaustierZeit.schlaeft(Date.now))
                 .frame(height: 250)
                 .accessibilityLabel("\(h.name), \(h.stufe.name)")
             Text(h.name)

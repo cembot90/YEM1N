@@ -74,6 +74,7 @@ struct EinstellungenInhalt: View {
                       text: eltern ? "Unter welchem Namen du Joker-Tipps schickst"
                                    : "Name, Klasse und Tagesziel") { ProfilEinstellungen() }
             }
+            .einblenden(1)
 
             AbschnittsTitel("Familie und Klasse")
             ZeilenGruppe {
@@ -85,6 +86,7 @@ struct EinstellungenInhalt: View {
                       text: klassenCode.isEmpty ? "Aufgaben von der Klasse bekommen" : klassenCode,
                       farbe: Theme.mint) { KlassenEinstellungen() }
             }
+            .einblenden(2)
 
             AbschnittsTitel("Lernen und Spielen")
             ZeilenGruppe {
@@ -97,6 +99,7 @@ struct EinstellungenInhalt: View {
                 zeile(symbol: "speaker.wave.2.fill", titel: "Vorlese-Stimmen",
                       text: "Stimme wählen und bessere Stimmen laden", farbe: Theme.himmel) { StimmenView() }
             }
+            .einblenden(3)
 
             if eltern {
                 AbschnittsTitel("Aufgaben")
@@ -111,6 +114,7 @@ struct EinstellungenInhalt: View {
                 zeile(symbol: "paintpalette.fill", titel: "Farben und Darstellung",
                       text: farbwelt == "rosa" ? "Rosa" : "Blau und Gelb") { AussehenEinstellungen() }
             }
+            .einblenden(4)
 
             AbschnittsTitel("Hilfe und Rechtliches")
             ZeilenGruppe {
@@ -120,6 +124,7 @@ struct EinstellungenInhalt: View {
                 zeile(symbol: "hand.raised.fill", titel: "Datenschutz",
                       text: "Hinweise, Impressum, Daten löschen", farbe: Theme.koralle) { RechtlichesEinstellungen() }
             }
+            .einblenden(5)
 
             AbschnittsTitel("Für Fortgeschrittene", text: "Technik und Fehlersuche. Im Alltag brauchst du das nicht.")
             ZeilenGruppe {
@@ -127,6 +132,7 @@ struct EinstellungenInhalt: View {
                       text: "Cloud prüfen, Einrichtung, Gerätemodus",
                       farbe: Color.white.opacity(0.75)) { FortgeschrittenEinstellungen() }
             }
+            .einblenden(6)
 
             Text("Version \(AppInfo.version) (\(AppInfo.build))")
                 .font(Schrift.zeilenText)

@@ -65,24 +65,13 @@ struct HeroKopf<Aktionen: View>: View {
                 }
                 Spacer(minLength: 0)
                 if !bild.isEmpty {
-                    Text(bild)
-                        .font(.system(size: 64))
-                        .shadow(color: Theme.gelb.opacity(0.45), radius: 18)
-                        .accessibilityHidden(true)
+                    HeroBild(bild: bild)
                 }
             }
             if !chips.isEmpty {
                 HStack(spacing: 8) {
                     ForEach(chips) { c in
-                        Text(c.text)
-                            .font(.system(.subheadline, design: .rounded).weight(.heavy))
-                            .foregroundStyle(c.hervorgehoben ? Theme.navy : Color.white)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.8)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 7)
-                            .background(c.hervorgehoben ? Theme.gelb : Color.white.opacity(0.16),
-                                        in: Capsule())
+                        HeroChipAnsicht(chip: c)
                     }
                 }
             }
@@ -90,6 +79,66 @@ struct HeroKopf<Aktionen: View>: View {
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background { HeroFlaeche(radius: 30) }
+        .wegscrollenSchrumpfen()
+    }
+}
+
+/// Das große Bild der Kopfkarte: schwebt sanft und folgt leicht dem Neigen des iPhones.
+struct HeroBild: View {
+    let bild: String
+    private let neigung = Neigung.shared
+    @Environment(\.accessibilityReduceMotion) private var ruhig
+
+    var body: some View {
+        let bildText = Text(bild)
+            .font(.system(size: 64))
+            .shadow(color: Theme.gelb.opacity(0.45), radius: 18)
+            .offset(x: ruhig ? 0 : neigung.x * 7, y: ruhig ? 0 : neigung.y * 5)
+            .rotation3DEffect(.degrees(ruhig ? 0 : neigung.x * 14), axis: (x: 0, y: 1, z: 0))
+        Group {
+            if ruhig {
+                bildText
+            } else {
+                bildText.phaseAnimator([false, true]) { inhalt, oben in
+                    inhalt
+                        .offset(y: oben ? -5 : 4)
+                        .rotationEffect(.degrees(oben ? -3 : 2))
+                } animation: { _ in
+                    .easeInOut(duration: 2.2)
+                }
+            }
+        }
+        .accessibilityHidden(true)
+        .onAppear { neigung.anmelden() }
+        .onDisappear { neigung.abmelden() }
+    }
+}
+
+/// Ein Etikett der Kopfkarte. Hervorgehobene Etiketten (zum Beispiel die Serie) pulsieren sanft.
+struct HeroChipAnsicht: View {
+    let chip: HeroChip
+    @Environment(\.accessibilityReduceMotion) private var ruhig
+
+    var body: some View {
+        let etikett = Text(chip.text)
+            .font(.system(.subheadline, design: .rounded).weight(.heavy))
+            .foregroundStyle(chip.hervorgehoben ? Theme.navy : Color.white)
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 7)
+            .background(chip.hervorgehoben ? Theme.gelb : Color.white.opacity(0.16), in: Capsule())
+        if chip.hervorgehoben && !ruhig {
+            etikett.phaseAnimator([false, true]) { inhalt, an in
+                inhalt
+                    .scaleEffect(an ? 1.05 : 1)
+                    .shadow(color: Theme.gelb.opacity(an ? 0.55 : 0), radius: an ? 10 : 0)
+            } animation: { _ in
+                .easeInOut(duration: 0.9)
+            }
+        } else {
+            etikett
+        }
     }
 }
 
@@ -109,21 +158,62 @@ extension HeroKopf where Aktionen == EmptyView {
 /// Bewusst ohne Weichzeichner, damit es auch auf älteren iPhones flüssig bleibt.
 struct HeroFlaeche: View {
     var radius: CGFloat = 30
+    @Environment(\.accessibilityReduceMotion) private var ruhig
 
     var body: some View {
         let form = RoundedRectangle(cornerRadius: radius, style: .continuous)
-        ZStack {
-            LinearGradient(colors: [Theme.glanz, Theme.navy],
-                           startPoint: .topLeading, endPoint: .bottomTrailing)
-            RadialGradient(colors: [Theme.gelb.opacity(0.38), .clear],
-                           center: UnitPoint(x: 0.95, y: 0.05), startRadius: 0, endRadius: 190)
-            RadialGradient(colors: [Theme.himmel.opacity(0.22), .clear],
-                           center: UnitPoint(x: 0.0, y: 1.0), startRadius: 0, endRadius: 220)
+        Group {
+            if ruhig {
+                verlauf(zeit: 0)
+            } else {
+                // Die Lichter wandern langsam, 30 Bilder pro Sekunde reichen dafür
+                TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { z in
+                    verlauf(zeit: z.date.timeIntervalSinceReferenceDate)
+                }
+            }
         }
         .clipShape(form)
         .overlay(form.stroke(LinearGradient(colors: [Color.white.opacity(0.35), Color.white.opacity(0.05)],
                                             startPoint: .top, endPoint: .bottom), lineWidth: 1))
-        .shadow(color: Color.black.opacity(0.25), radius: 16, y: 8)
+        // Der Schatten hängt an einer festen Form, damit er nicht in jedem Bild neu entsteht
+        .background(form.fill(Theme.navy).shadow(color: Color.black.opacity(0.25), radius: 16, y: 8))
+    }
+
+    @ViewBuilder
+    private func verlauf(zeit t: Double) -> some View {
+        if #available(iOS 18.0, *) {
+            ZStack {
+                Theme.navy
+                MeshGradient(width: 3, height: 3, points: punkte(t), colors: [
+                    Theme.glanz, Theme.glanz, Theme.gelb.opacity(0.55),
+                    Theme.glanz.opacity(0.9), Theme.navy, Theme.glanz.opacity(0.7),
+                    Theme.himmel.opacity(0.45), Theme.navy, Theme.navy
+                ])
+            }
+        } else {
+            ZStack {
+                LinearGradient(colors: [Theme.glanz, Theme.navy],
+                               startPoint: .topLeading, endPoint: .bottomTrailing)
+                RadialGradient(colors: [Theme.gelb.opacity(0.38), .clear],
+                               center: UnitPoint(x: 0.9 + 0.06 * sin(t * 0.5), y: 0.08 + 0.06 * cos(t * 0.4)),
+                               startRadius: 0, endRadius: 190)
+                RadialGradient(colors: [Theme.himmel.opacity(0.22), .clear],
+                               center: UnitPoint(x: 0.05 + 0.06 * cos(t * 0.3), y: 0.95),
+                               startRadius: 0, endRadius: 220)
+            }
+        }
+    }
+
+    /// Die inneren Punkte des Verlaufs kreisen langsam, die Ecken bleiben fest.
+    private func punkte(_ t: Double) -> [SIMD2<Float>] {
+        let a = Float(sin(t * 0.45)) * 0.12
+        let b = Float(cos(t * 0.35)) * 0.12
+        let c = Float(sin(t * 0.3 + 1)) * 0.1
+        return [
+            SIMD2(0, 0), SIMD2(0.5 + a, 0), SIMD2(1, 0),
+            SIMD2(0, 0.5 + c), SIMD2(0.5 + b, 0.5 + a), SIMD2(1, 0.5 - c),
+            SIMD2(0, 1), SIMD2(0.5 - b, 1), SIMD2(1, 1)
+        ]
     }
 }
 
@@ -227,6 +317,8 @@ struct AbschnittsTitel: View {
 struct RundSymbol: View {
     let symbol: String
     var betont = false
+    /// Ändert sich dieser Wert, hüpft das Symbol kurz.
+    var huepfen: Bool = false
 
     var body: some View {
         Image(systemName: symbol)
@@ -234,6 +326,7 @@ struct RundSymbol: View {
             .foregroundStyle(betont ? Theme.navy : Color.white)
             .frame(width: 46, height: 46)
             .background(betont ? Theme.gelb : Color.white.opacity(0.16), in: Circle())
+            .symbolEffect(.bounce, value: huepfen)
             .contentShape(Circle())
     }
 }

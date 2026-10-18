@@ -353,6 +353,8 @@ enum HaustierDienst {
         guard var h = HaustierSpeicher.laden(speicher: speicher) else { return nil }
         let ereignis = h.lernrunde(richtig: richtig, gesamt: gesamt, angesehen: angesehen, jetzt: jetzt)
         HaustierSpeicher.sichern(h, speicher: speicher)
+        // Beim nächsten Besuch im Reiter Haustier macht das Tier einen Freudentanz
+        if richtig > 0 { speicher.set(true, forKey: HaustierZeit.freudeKey) }
         if erinnern {
             Task { await HaustierErinnerung.aktualisieren() }
             WidgetBruecke.aktualisieren()
@@ -440,6 +442,9 @@ struct HaustierView: View {
     @State private var huepf = false
     /// Zählt hoch, wenn das 3D-Tier vor Freude hüpfen soll, zum Beispiel nach einem Leckerli.
     @State private var stups = 0
+    /// Zählt hoch für den Freudentanz nach einer geschafften Runde.
+    @State private var tanz = 0
+    @AppStorage(HaustierZeit.freudeKey) private var freude = false
     @State private var zeigeWechsel = false
 
     private var gespeichert: Haustier? { HaustierSpeicher.dekodiere(daten) }
@@ -464,6 +469,15 @@ struct HaustierView: View {
             }
             .navigationTitle("Haustier")
             .navigationBarTitleDisplayMode(.inline)
+            .task {
+                // Nach einer geschafften Runde: kurz warten, dann tanzt das Tier.
+                // Ein schlafendes Tier tanzt erst am Morgen.
+                guard freude, !HaustierZeit.schlaeft(Date.now) else { return }
+                do { try await Task.sleep(for: .milliseconds(700)) } catch { return }
+                freude = false
+                tanz += 1
+                Haptik.erfolg()
+            }
             .onChange(of: erinnerung) {
                 Task { await HaustierErinnerung.aktualisieren(fragen: erinnerung) }
             }
@@ -554,7 +568,7 @@ struct HaustierView: View {
     private func inhalt(jetzt: Date) -> some View {
         if let h = aktuell(jetzt) {
             muenzenKarte
-            buehne(h)
+            buehne(h, schlaeft: HaustierZeit.schlaeft(jetzt))
             werte(h)
             if h.stufe != .ei { versorgen(h) }
             if h.geschenkOffen(jetzt: jetzt) { geschenk }
@@ -579,19 +593,21 @@ struct HaustierView: View {
         .glasKarte(radius: 22)
     }
 
-    private func buehne(_ h: Haustier) -> some View {
+    private func buehne(_ h: Haustier, schlaeft: Bool) -> some View {
         VStack(spacing: 10) {
             Text(h.name)
                 .font(.system(.title, design: .rounded).weight(.black))
                 .foregroundStyle(Theme.gelb)
             // Das Tier in 3D: antippen lässt es hüpfen, waagrecht ziehen dreht es
             Haustier3DView(art: h.art, stufe: h.stufe, stimmung: h.stimmung, hut: h.hut,
-                           stups: stups) { antippen(h) }
+                           stups: stups, tanz: tanz, schlaeft: schlaeft && h.stufe != .ei) { antippen(h) }
                 .frame(height: 280)
                 .accessibilityElement()
                 .accessibilityLabel("\(h.name), \(h.stufe.name)")
                 .accessibilityAddTraits(.isButton)
-            Text("\(h.stimmung.emoji) \(antippSpruch ?? h.spruch)")
+            Text(schlaeft && h.stufe != .ei && antippSpruch == nil
+                 ? "💤 \(h.name) schläft. Ab 7 Uhr ist es wieder wach."
+                 : "\(h.stimmung.emoji) \(antippSpruch ?? h.spruch)")
                 .font(.system(.subheadline, design: .rounded).weight(.semibold))
                 .foregroundStyle(Color.white)
                 .multilineTextAlignment(.center)
