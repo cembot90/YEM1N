@@ -826,14 +826,10 @@ struct KindTabs: View {
         .onOpenURL { url in
             if url.scheme == "yem1n", url.host == "haustier" { tab = "haustier" }
         }
-        .onReceive(NotificationCenter.default.publisher(for: .oeffneBereich)) { n in
-            switch n.object as? String {
-            case "joker": tab = "ich"
-            case "haustier": tab = "haustier"
-            case "schule": tab = "schule"
-            default: break
-            }
+        .onReceive(NotificationCenter.default.publisher(for: .oeffneBereich)) { _ in
+            springe(MitteilungsZiel.abholen())
         }
+        .onAppear { springe(MitteilungsZiel.abholen()) }
         .task {
             WidgetBruecke.aktualisieren()
             await HaustierErinnerung.aktualisieren()
@@ -843,6 +839,15 @@ struct KindTabs: View {
                 WidgetBruecke.aktualisieren()
                 Task { await HaustierErinnerung.aktualisieren() }
             }
+        }
+    }
+
+    private func springe(_ bereich: String?) {
+        switch bereich {
+        case "joker": tab = "ich"
+        case "haustier": tab = "haustier"
+        case "schule": tab = "schule"
+        default: break
         }
     }
 }

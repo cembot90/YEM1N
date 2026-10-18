@@ -88,6 +88,8 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
                     UserDefaults.standard.set(true, forKey: Wochenbericht.oeffnenSchluessel)
                     NotificationCenter.default.post(name: .oeffneBericht, object: nil)
                 } else if let bereich {
+                    // Gemerkt für den Fall, dass die App gerade erst startet und noch niemand zuhört
+                    UserDefaults.standard.set(bereich, forKey: MitteilungsZiel.merkSchluessel)
                     NotificationCenter.default.post(name: .oeffneBereich, object: bereich)
                 }
             }
@@ -98,6 +100,16 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
 
 /// Entscheidet, wohin ein Tipp auf eine Mitteilung führt.
 enum MitteilungsZiel {
+    /// Hier merkt sich die App den Bereich, bis die Reiter ihn übernommen haben.
+    nonisolated static let merkSchluessel = "oeffneBereichGemerkt"
+
+    /// Liest den gemerkten Bereich einmal und löscht ihn dann.
+    static func abholen() -> String? {
+        let b = UserDefaults.standard.string(forKey: merkSchluessel)
+        UserDefaults.standard.removeObject(forKey: merkSchluessel)
+        return b
+    }
+
     /// Die Kennung des CloudKit-Abos, zum Beispiel "JokerAnfrage-ABCDE-12345".
     nonisolated static func aboKennung(_ inhalt: [AnyHashable: Any]) -> String {
         guard let n = CKNotification(fromRemoteNotificationDictionary: inhalt) else { return "" }

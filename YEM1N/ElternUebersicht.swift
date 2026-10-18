@@ -43,13 +43,18 @@ struct ElternTabs: View {
         .onReceive(NotificationCenter.default.publisher(for: .oeffneBericht)) { _ in
             tab = "uebersicht"
         }
-        .onReceive(NotificationCenter.default.publisher(for: .oeffneBereich)) { n in
-            switch n.object as? String {
-            case "joker": tab = "joker"
-            case "haustier": tab = "haustier"
-            case "schule": tab = "lernen"
-            default: break
-            }
+        .onReceive(NotificationCenter.default.publisher(for: .oeffneBereich)) { _ in
+            springe(MitteilungsZiel.abholen())
+        }
+        .onAppear { springe(MitteilungsZiel.abholen()) }
+    }
+
+    private func springe(_ bereich: String?) {
+        switch bereich {
+        case "joker": tab = "joker"
+        case "haustier": tab = "haustier"
+        case "schule": tab = "lernen"
+        default: break
         }
     }
 }

@@ -28,3 +28,12 @@ struct MitteilungsZielTests {
         #expect(MitteilungsZiel.bereich(ziel: nil, kennung: "x", abo: "RundenErgebnis-ABCDE-12345") == nil)
     }
 }
+
+@MainActor
+struct MitteilungsZielMerkerTests {
+    @Test func gemerkterBereichWirdNurEinmalAbgeholt() {
+        UserDefaults.standard.set("joker", forKey: MitteilungsZiel.merkSchluessel)
+        #expect(MitteilungsZiel.abholen() == "joker")
+        #expect(MitteilungsZiel.abholen() == nil)
+    }
+}
