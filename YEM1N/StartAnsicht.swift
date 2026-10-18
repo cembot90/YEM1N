@@ -146,6 +146,8 @@ struct StartView: View {
                 if normale.isEmpty {
                     VStack(spacing: 0) {
                         kopf
+                        lernweltKnopf
+                            .padding(.horizontal, 20)
                         leer
                     }
                 } else {
@@ -208,6 +210,7 @@ struct StartView: View {
                 ArbeitView(arbeit: $0).zoomZiel($0.persistentModelID, in: zoomRaum)
             }
             .navigationDestination(for: Uebung.self) { UebungView(uebung: $0) }
+            .navigationDestination(for: LernweltZiel.self) { _ in LernweltView() }
             .fileImporter(isPresented: $zeigeDatei,
                           allowedContentTypes: [.json, .plainText]) { ergebnis in
                 switch ergebnis {
@@ -302,8 +305,8 @@ struct StartView: View {
                 .font(.system(.title2, design: .rounded).weight(.bold))
                 .foregroundStyle(Color.white)
             Text(modus == "kind"
-                 ? "Neue Aufgaben kommen automatisch von deinen Eltern."
-                 : "Tippe auf das Plus und füge das JSON von Claude ein.")
+                 ? "Eigene Klassenarbeiten kommen automatisch von deinen Eltern. Bis dahin wartet die Lernwelt auf dich."
+                 : "Tippe auf das Plus und füge das JSON von Claude ein. Fertige Aufgaben gibt es oben in der Lernwelt.")
                 .font(.subheadline)
                 .foregroundStyle(Theme.textSanft)
                 .multilineTextAlignment(.center)
@@ -327,6 +330,11 @@ struct StartView: View {
                 .listRowBackground(Color.clear)
                 .listRowSeparator(.hidden)
                 .listRowInsets(EdgeInsets())
+            lernweltKnopf
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+                .listRowInsets(EdgeInsets(top: 4, leading: 20, bottom: 4, trailing: 20))
+
             extraZeile
                 .listRowBackground(Color.clear)
                 .listRowSeparator(.hidden)
@@ -408,6 +416,12 @@ struct StartView: View {
                 }
             }
         }
+    }
+
+    /// Fertige Aufgaben nach dem Lehrplan, auch ohne Klassenarbeiten von den Eltern
+    private var lernweltKnopf: some View {
+        Button { pfad.append(LernweltZiel()) } label: { LernweltKarte() }
+            .buttonStyle(TastenStil())
     }
 
     private var extraZeile: some View {

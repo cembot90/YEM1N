@@ -437,19 +437,25 @@ struct UebungInhalt: View {
                 .foregroundStyle(Theme.textSanft)
                 .multilineTextAlignment(.center)
 
+            if !a.bild.isEmpty {
+                AufgabenBild(code: a.bild)
+            }
+
             if a.art == "mauer" {
                 mauer(a)
             } else {
                 if let (x, y) = a.faktoren, a.hinweis.isEmpty, !istProbe {
                     PunkteFeld(reihen: x, spalten: y)
                 }
-                Text(angezeigteRechnung(a))
-                    .font(grosseSchrift(a)
-                          ? Font.system(size: 42, weight: .heavy, design: .rounded)
-                          : Font.system(.title3, design: .rounded).weight(.semibold))
-                    .foregroundStyle(Color.white)
-                    .multilineTextAlignment(.center)
-                    .minimumScaleFactor(0.6)
+                if !a.rechnung.isEmpty {
+                    Text(angezeigteRechnung(a))
+                        .font(grosseSchrift(a)
+                              ? Font.system(size: 42, weight: .heavy, design: .rounded)
+                              : Font.system(.title3, design: .rounded).weight(.semibold))
+                        .foregroundStyle(Color.white)
+                        .multilineTextAlignment(.center)
+                        .minimumScaleFactor(0.6)
+                }
 
                 if !a.hinweis.isEmpty && !istProbe {
                     Text(a.hinweis)
@@ -543,7 +549,7 @@ struct UebungInhalt: View {
                 feldPaar(titel: "", wert: eingabe, aktiv: false, nummer: 1)
                     .modifier(Wackeln(animatableData: CGFloat(wackeln)))
             }
-        } else if a.art != "vergleich" {
+        } else if a.art != "vergleich" && a.art != "wahl" {
             feldPaar(titel: "", wert: eingabe, aktiv: true, nummer: 1)
                 .modifier(Wackeln(animatableData: CGFloat(wackeln)))
         }
@@ -691,17 +697,28 @@ struct UebungInhalt: View {
             .padding(.horizontal, 24)
         } else if a.art == "text" {
             TextAntwortFeld(text: $eingabe) { pruefen(a) }
+        } else if a.art == "wahl" {
+            WahlKnoepfe(optionen: a.optionenListe) { z in
+                melde(a, ok: z == a.antwort, erklaerung: a.erklaerung, gegeben: z)
+            }
         } else {
             VStack(spacing: 12) {
                 EingabeUmschalter(stift: $stift)
                 if stift {
-                    SchreibFeld(text: aktuellerText, maxLaenge: 3) { pruefen(a) }
+                    SchreibFeld(text: aktuellerText, maxLaenge: laenge(a)) { pruefen(a) }
                         .id(schreibRunde)
                 } else {
-                    ZahlenTastatur(text: aktuellerText, maxLaenge: 3) { pruefen(a) }
+                    ZahlenTastatur(text: aktuellerText, maxLaenge: laenge(a)) { pruefen(a) }
                 }
             }
         }
+    }
+
+    /// Drei Ziffern reichen fast immer. Große Zahlen ab Klasse 4 bekommen sieben,
+    /// damit die Länge des Feldes nicht verrät, wie lang die Lösung ist.
+    private func laenge(_ a: Aufgabe) -> Int {
+        let loesung = aktivesFeld == 2 ? a.antwort2 : a.antwort
+        return loesung.count > 3 ? 7 : 3
     }
 
     private var aktuellerText: Binding<String> {

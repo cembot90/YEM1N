@@ -147,6 +147,7 @@ struct AnleitungView: View {
         ("Einrichten", "Beim ersten Start Kind oder Eltern wählen. Die Eltern erzeugen den Familiencode und tragen ihn auf dem Kind-Gerät ein. Ein Klassencode ist zusätzlich möglich."),
         ("QR-Code", "Statt abzutippen: Das Eltern-Gerät zeigt den Code unter Einstellungen > Familiencode als QR-Code, das Kind-Gerät scannt ihn. Den Familiencode nur dem Kind oder dem anderen Elternteil zeigen."),
         ("Üben", "Im Tab Schule eine Arbeit wählen, dann eine Übung. Antwort eintippen und bestätigen. Nach jeder Übung gibt es bis zu drei Sterne."),
+        ("Lernwelt", "Ganz oben im Tab Schule: fertige Aufgaben für Klasse 1 bis 4 in Mathe, Deutsch, Englisch, Musik und Kunst, nach dem Lehrplan von Hessen, Bayern oder NRW. Jedes Mal neue Aufgaben. Die eigene Klasse steht oben, andere Klassen lassen sich aufklappen. Bundesland und Klasse stehen unter Einstellungen, Profil."),
         ("Weiter", "Am Ende einer Übung führt der Knopf Nächste Übung direkt zur nächsten."),
         ("Hilfen", "Der Lautsprecher liest die Aufgabe vor. Eine natürlichere Stimme gibt es unter Einstellungen, Vorlese-Stimmen. Hinweis, Lösung zeigen, Notizblock und Joker helfen bei schweren Aufgaben."),
         ("Mit dem Stift", "Über der Eingabe auf Mit dem Stift schreiben tippen. Dann die Zahl mit dem Apple Pencil oder dem Finger aufs Karoblatt schreiben. Das Gerät liest sie, die Zahl steht im Antwortfeld, dann auf den Haken tippen. Lieber Tasten schaltet zurück. Auf dem iPad ist der Stift von Anfang an an."),

@@ -30,6 +30,8 @@ enum Spezial {
                           erklaerung: a.erklaerung, antwort: a.antwort, antwort2: a.antwort2,
                           reihenJSON: a.reihenJSON, reihenfolge: reihenfolge)
         neu.quellKey = schluessel(a)
+        neu.optionen = a.optionen
+        neu.bild = a.bild
         return neu
     }
 

@@ -71,7 +71,7 @@ final class Uebung {
 
 @Model
 final class Aufgabe {
-    var art: String = "zahl"          // zahl, rest, vergleich, mauer, text
+    var art: String = "zahl"          // zahl, rest, vergleich, mauer, text, wahl
     var frage: String = ""
     var rechnung: String = ""
     var hinweis: String = ""
@@ -86,9 +86,15 @@ final class Aufgabe {
     var gemeistert: Bool = false      // Fehler wurde im Fehlerheft richtig wiederholt
     var gegeben: String = ""          // was das Kind zuletzt eingegeben hat (für die Eltern-Übersicht)
     var gegebenSoll: String = ""      // nur Zahlenmauer: was an der falschen Stelle richtig gewesen wäre
+    var optionen: String = ""         // nur art "wahl": die Antworten zum Antippen, eine pro Zeile
+    var bild: String = ""             // kleines Bild über der Aufgabe, siehe AufgabenBild
     var uebung: Uebung?
 
     var erledigt: Bool { richtig != nil || angesehen }
+
+    var optionenListe: [String] {
+        optionen.isEmpty ? [] : optionen.components(separatedBy: "\n")
+    }
 
     init(art: String, frage: String, rechnung: String, hinweis: String,
          erklaerung: String, antwort: String, antwort2: String,

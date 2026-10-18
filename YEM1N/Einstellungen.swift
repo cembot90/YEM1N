@@ -193,6 +193,7 @@ struct ProfilEinstellungen: View {
     @AppStorage("kindKlasse") private var kindKlasse = ""
     @AppStorage("tagesziel") private var tagesziel = 2
     @AppStorage("jokerIch") private var jokerIch = ""
+    @AppStorage(Bundesland.key) private var bundesland = ""
     @State private var nameEntwurf = ""
     @FocusState private var fokus: Bool
 
@@ -223,10 +224,14 @@ struct ProfilEinstellungen: View {
                         Text("Alle").tag("")
                         ForEach(ProfilDaten.klassen, id: \.self) { k in Text(k).tag(k) }
                     }
+                    Picker("Bundesland", selection: Binding(get: { Bundesland.aus(bundesland).rawValue },
+                                                            set: { bundesland = $0 })) {
+                        ForEach(Bundesland.allCases) { b in Text(b.name).tag(b.rawValue) }
+                    }
                     Stepper("Tagesziel: \(tagesziel) \(tagesziel == 1 ? "Runde" : "Runden")",
                             value: $tagesziel, in: 1...10)
                 } footer: {
-                    Text("Der Name erscheint bei den Eltern und in der App. Ein Vorname oder Spitzname reicht, bitte keinen Nachnamen. Mit einer Klasse lädt das Gerät nur passende Aufgabenpakete, bei Alle bekommt es alle.")
+                    Text("Der Name erscheint bei den Eltern und in der App. Ein Vorname oder Spitzname reicht, bitte keinen Nachnamen. Mit einer Klasse lädt das Gerät nur passende Aufgabenpakete, bei Alle bekommt es alle. Klasse und Bundesland bestimmen auch, welche Themen die Lernwelt zuerst zeigt.")
                 }
                 .listRowBackground(zeilenGrund)
             }
