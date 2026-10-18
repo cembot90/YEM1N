@@ -330,28 +330,31 @@ struct VollbildRahmen<Inhalt: View>: View {
     @ViewBuilder var inhalt: () -> Inhalt
 
     var body: some View {
-        inhalt()
-            .safeAreaInset(edge: .top, spacing: 0) {
-                HStack {
-                    Text(titel)
-                        .font(.system(.headline, design: .rounded).weight(.heavy))
-                        .foregroundStyle(Color.white)
-                    Spacer()
-                    Button { dismiss() } label: {
-                        Text("Fertig")
-                            .font(.system(.subheadline, design: .rounded).weight(.heavy))
-                            .foregroundStyle(Theme.navy)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 8)
-                            .background(Theme.gelb, in: Capsule())
-                    }
-                    .buttonStyle(TastenStil())
+        // Leiste und Inhalt untereinander, nicht übereinander. So schiebt sich der
+        // Inhalt nicht unter die Leiste, auch wenn er einen eigenen Navigationsrahmen hat.
+        VStack(spacing: 0) {
+            HStack {
+                Text(titel)
+                    .font(.system(.headline, design: .rounded).weight(.heavy))
+                    .foregroundStyle(Color.white)
+                Spacer()
+                Button { dismiss() } label: {
+                    Text("Fertig")
+                        .font(.system(.subheadline, design: .rounded).weight(.heavy))
+                        .foregroundStyle(Theme.navy)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .background(Theme.gelb, in: Capsule())
                 }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 10)
-                .background(Theme.tiefNavy)
+                .buttonStyle(TastenStil())
             }
-            .preferredColorScheme(.dark)
-            .tint(Theme.gelb)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 10)
+            .background(Theme.tiefNavy.ignoresSafeArea(edges: .top))
+            inhalt()
+                .clipped()
+        }
+        .preferredColorScheme(.dark)
+        .tint(Theme.gelb)
     }
 }
