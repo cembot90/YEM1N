@@ -249,14 +249,13 @@ struct JokerLigaView: View {
     }
 
     private var kopf: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("Eltern-Joker")
-                .font(.system(size: 34, weight: .black, design: .rounded))
-                .foregroundStyle(Theme.gelb)
-            Text("Wer dem Kind zuerst hilft, bekommt Punkte.")
-                .font(.system(.subheadline, design: .rounded).weight(.medium))
-                .foregroundStyle(Theme.textSanft)
-        }
+        let offen = JokerCloud.shared.sichtbar.count
+        return HeroKopf(kicker: "Eltern-Joker", titel: "Hilf deinem Kind",
+                        untertitel: "Wer zuerst einen guten Tipp schickt, bekommt Punkte.",
+                        bild: "🃏",
+                        chips: [HeroChip(text: offen == 0 ? "Keine offene Anfrage"
+                                                          : "\(offen) offene \(offen == 1 ? "Anfrage" : "Anfragen")",
+                                         hervorgehoben: offen > 0)])
     }
 
     private var liga: some View {

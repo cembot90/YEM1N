@@ -601,11 +601,11 @@ struct HaustierView: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 10)
-                .background(Color.white.opacity(0.12), in: Capsule())
+                .background(Color.white.opacity(0.16), in: Capsule())
         }
-        .padding(18)
+        .padding(20)
         .frame(maxWidth: .infinity)
-        .glasKarte(radius: 30)
+        .background { HeroFlaeche(radius: 32) }
     }
 
     private func antippen(_ h: Haustier) {

@@ -140,9 +140,14 @@ struct StartView: View {
         NavigationStack(path: $pfad) {
             ZStack {
                 HintergrundView()
-                VStack(spacing: 0) {
-                    kopf
-                    if normale.isEmpty { leer } else { liste }
+                // Die Kopfkarte scrollt mit, damit auf kleinen iPhones mehr Platz für die Übungen bleibt.
+                if normale.isEmpty {
+                    VStack(spacing: 0) {
+                        kopf
+                        leer
+                    }
+                } else {
+                    liste
                 }
             }
             .toolbar(.hidden, for: .navigationBar)
@@ -224,40 +229,33 @@ struct StartView: View {
     // MARK: Kopf
 
     private var untertitel: String {
-        var text = kindName.isEmpty ? "Schule üben" : "Hallo \(kindName)! Schule üben"
+        if modus == "eltern" { return "So sieht dein Kind die Klassenarbeiten" }
+        return kindName.isEmpty ? "Such dir eine Übung aus" : "Hallo \(kindName)! Such dir eine Übung aus"
+    }
+
+    private var kopfChips: [HeroChip] {
+        var c: [HeroChip] = []
         let serie = serieAnzeige
-        if modus != "eltern" && serie > 0 { text += " · 🔥 \(serie)" }
-        return text
+        if modus != "eltern" && serie > 0 {
+            c.append(HeroChip(text: "🔥 \(serie) \(serie == 1 ? "Tag" : "Tage")", hervorgehoben: true))
+        }
+        let faellig = fehlerStand.faellig
+        if faellig > 0 {
+            c.append(HeroChip(text: "📕 \(faellig) Fehler üben"))
+        }
+        return c
     }
 
     private var kopf: some View {
-        HStack(alignment: .center) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text("YEM1N")
-                    .font(.system(size: 44, weight: .black, design: .rounded))
-                    .foregroundStyle(Theme.gelb)
-                Text(untertitel)
-                    .font(.system(.subheadline, design: .rounded).weight(.medium))
-                    .foregroundStyle(Theme.textSanft)
-            }
-            Spacer()
+        HeroKopf(kicker: "YEM1N", titel: "Schule", untertitel: untertitel,
+                 bild: "✏️", chips: kopfChips) {
             if (modus == "kind" && spieleErlaubt) || modus == "eltern" {
-                Button { zeigeSpiele = true } label: {
-                    Image(systemName: "gamecontroller.fill")
-                        .font(.system(size: 18, weight: .bold))
-                        .foregroundStyle(Theme.gelb)
-                        .frame(width: 48, height: 48)
-                        .background(Color.white.opacity(0.12), in: Circle())
-                }
+                Button { zeigeSpiele = true } label: { RundSymbol(symbol: "gamecontroller.fill") }
+                    .accessibilityLabel("Spiele")
             }
             if modus != "eltern" {
-                Button { zeigeErfolge = true } label: {
-                    Image(systemName: "trophy.fill")
-                        .font(.system(size: 18, weight: .bold))
-                        .foregroundStyle(Theme.gelb)
-                        .frame(width: 48, height: 48)
-                        .background(Color.white.opacity(0.12), in: Circle())
-                }
+                Button { zeigeErfolge = true } label: { RundSymbol(symbol: "trophy.fill") }
+                    .accessibilityLabel("Erfolge")
             }
             Menu {
                 Button("Text einfügen", systemImage: "text.cursor") {
@@ -280,14 +278,11 @@ struct StartView: View {
                 Divider()
                 Button("Einstellungen", systemImage: "gearshape") { zeigeEinstellungen = true }
             } label: {
-                Image(systemName: "plus")
-                    .font(.system(size: 20, weight: .black))
-                    .foregroundStyle(Theme.navy)
-                    .frame(width: 48, height: 48)
-                    .background(Theme.gelb, in: Circle())
+                RundSymbol(symbol: "plus", betont: true)
             }
+            .accessibilityLabel("Aufgaben hinzufügen")
         }
-        .padding(.horizontal, 24)
+        .padding(.horizontal, 20)
         .padding(.top, 8)
         .padding(.bottom, 12)
     }
@@ -324,6 +319,10 @@ struct StartView: View {
 
     private var liste: some View {
         List {
+            kopf
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+                .listRowInsets(EdgeInsets())
             extraZeile
                 .listRowBackground(Color.clear)
                 .listRowSeparator(.hidden)
@@ -409,7 +408,7 @@ struct StartView: View {
     private var extraZeile: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Extra")
-                .font(.system(.headline, design: .rounded).weight(.heavy))
+                .font(Schrift.abschnitt)
                 .foregroundStyle(Theme.gelb)
             HStack(spacing: 10) {
                 extraKnopf("📓", "Fehlerheft", fehlerUntertitel) {
@@ -439,18 +438,20 @@ struct StartView: View {
                             aktion: @escaping () -> Void) -> some View {
         Button(action: aktion) {
             VStack(spacing: 4) {
-                Text(emoji).font(.system(size: 28))
+                Text(emoji).font(.system(size: 32))
                 Text(titel)
-                    .font(.system(.footnote, design: .rounded).weight(.heavy))
+                    .font(.system(.subheadline, design: .rounded).weight(.heavy))
                     .foregroundStyle(Color.white)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
                 Text(untertitel)
-                    .font(.caption2)
+                    .font(.system(.caption, design: .rounded).weight(.semibold))
                     .foregroundStyle(Theme.textSanft)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
             }
-            .frame(maxWidth: .infinity, minHeight: 84)
-            .glasKarte(radius: 20)
+            .frame(maxWidth: .infinity, minHeight: 96)
+            .glasKarte(radius: 22)
         }
         .buttonStyle(TastenStil())
     }

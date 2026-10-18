@@ -489,14 +489,9 @@ struct VorschuleView: View {
     }
 
     private var kopf: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text("Vorschule")
-                .font(.system(size: 40, weight: .black, design: .rounded))
-                .foregroundStyle(Theme.gelb)
-            Text(kindName.isEmpty ? "Spielen und lernen" : "Hallo \(kindName)! Spielen und lernen")
-                .font(.system(.subheadline, design: .rounded).weight(.medium))
-                .foregroundStyle(Theme.textSanft)
-        }
+        HeroKopf(kicker: "YEM1N", titel: "Vorschule",
+                 untertitel: kindName.isEmpty ? "Spielen und lernen" : "Hallo \(kindName)! Spielen und lernen",
+                 bild: "🧸")
     }
 
     private func abschnitt(_ titel: String) -> some View {

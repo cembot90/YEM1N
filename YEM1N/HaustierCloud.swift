@@ -287,9 +287,9 @@ struct ElternHaustierView: View {
             balken("Satt", wert: h.satt / 100, farbe: Theme.mint)
             balken("Laune", wert: h.laune / 100, farbe: Theme.gelb)
         }
-        .padding(18)
+        .padding(20)
         .frame(maxWidth: .infinity)
-        .glasKarte(radius: 26)
+        .background { HeroFlaeche(radius: 30) }
     }
 
     private func balken(_ titel: String, wert: Double, farbe: Color) -> some View {

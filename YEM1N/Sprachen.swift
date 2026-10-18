@@ -817,19 +817,21 @@ struct KindTabs: View {
                 .tabItem { Label("Haustier", systemImage: "pawprint.fill") }
                 .badge(HaustierDienst.braucheAufmerksamkeit(haustierDaten) ? 1 : 0)
                 .tag("haustier")
-            KindJokerView()
-                .tabItem { Label("Joker", systemImage: "suit.spade.fill") }
-                .tag("joker")
-            EinstellungenView(eingebettet: true)
-                .tabItem { Label("Einstellungen", systemImage: "gearshape.fill") }
-                .tag("einstellungen")
+            // Joker-Tipps, Erfolge, Spiele und Einstellungen liegen zusammen unter "Ich".
+            // So bleiben es höchstens fünf Reiter und nichts rutscht ins Menü "Mehr".
+            KindIchView()
+                .tabItem { Label("Ich", systemImage: "person.crop.circle.fill") }
+                .tag("ich")
         }
         .onOpenURL { url in
             if url.scheme == "yem1n", url.host == "haustier" { tab = "haustier" }
         }
         .onReceive(NotificationCenter.default.publisher(for: .oeffneBereich)) { n in
-            if let bereich = n.object as? String, ["joker", "haustier", "schule"].contains(bereich) {
-                tab = bereich
+            switch n.object as? String {
+            case "joker": tab = "ich"
+            case "haustier": tab = "haustier"
+            case "schule": tab = "schule"
+            default: break
             }
         }
         .task {
@@ -894,21 +896,18 @@ struct SprachStartView: View {
     }
 
     private var kopf: some View {
-        HStack(spacing: 10) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text("YEM1N")
-                    .font(.system(size: 42, weight: .black, design: .rounded))
-                    .foregroundStyle(Theme.gelb)
-                Text("Sprachen lernen")
-                    .font(.system(.subheadline, design: .rounded).weight(.medium))
-                    .foregroundStyle(Theme.textSanft)
-            }
-            Spacer()
+        HeroKopf(kicker: "YEM1N", titel: "Sprachen",
+                 untertitel: "Wörter lernen mit Bildern, Hören und Sprechen",
+                 bild: aktive.first.map { store.sprache($0).flagge } ?? "🌍",
+                 chips: aktive.prefix(3).map { HeroChip(text: store.sprache($0).flagge + " " + store.sprache($0).name) }) {
             Button { ton.toggle() } label: {
-                rundSymbol(ton ? "speaker.wave.2.fill" : "speaker.slash.fill")
+                RundSymbol(symbol: ton ? "speaker.wave.2.fill" : "speaker.slash.fill")
             }
-            NavigationLink { SprachBerichtView() } label: { rundSymbol("chart.bar.fill") }
-            NavigationLink { SprachEinstellungenView() } label: { rundSymbol("gearshape.fill") }
+            .accessibilityLabel(ton ? "Ton aus" : "Ton an")
+            NavigationLink { SprachBerichtView() } label: { RundSymbol(symbol: "chart.bar.fill") }
+                .accessibilityLabel("Bericht")
+            NavigationLink { SprachEinstellungenView() } label: { RundSymbol(symbol: "gearshape.fill") }
+                .accessibilityLabel("Einstellungen Sprachen")
         }
     }
 

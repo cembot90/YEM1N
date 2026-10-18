@@ -933,62 +933,60 @@ struct KindJokerView: View {
     }
     private var meine: [CloudAnfrage] { cloud.anfragen.filter { $0.kind == meinName } }
 
+    /// true: ohne eigenen Rahmen und ohne Kopf, zum Einbauen in den Reiter "Ich".
+    var eingebettet = false
+
     var body: some View {
-        NavigationStack {
-            ZStack {
-                HintergrundView()
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 16) {
-                        kopf
-                        if Familiencode.istGueltig(familienCode) {
-                            nachschubBereich
-                        } else {
-                            Text("Dieses Gerät gehört zu keiner Familie, nur zu einer Klasse. Darum gibt es hier keine Joker-Antworten von Eltern. Wenn du bei einer Aufgabe auf 🃏 Joker tippst, kannst du die Frage stattdessen per Nachricht an jemanden schicken. Einen Familiencode trägst du in den Einstellungen ein.")
-                                .font(.subheadline)
-                                .foregroundStyle(Theme.textSanft)
-                                .padding(16)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .glasKarte(radius: 22)
-                        }
-                        namenFeld
-                        if !cloud.fehler.isEmpty {
-                            Text(cloud.fehler).font(.footnote).foregroundStyle(Theme.koralle)
-                        }
-                        if meine.isEmpty {
-                            Text("Noch kein Joker benutzt. Wenn du bei einer Aufgabe nicht weiter kannst, tippe auf 🃏 Joker. Deine Familie bekommt sofort eine Mitteilung und schickt dir Tipps.")
-                                .font(.subheadline)
-                                .foregroundStyle(Theme.textSanft)
-                        }
-                        ForEach(Array(meine.prefix(10))) { a in
-                            karte(a)
-                        }
-                    }
-                    .padding(20)
+        if eingebettet {
+            inhalt
+        } else {
+            NavigationStack {
+                HeroSeite {
+                    HeroKopf(kicker: "Joker", titel: "Hilfe von deiner Familie",
+                             untertitel: "Tippe bei einer Aufgabe auf 🃏, dann schickt dir deine Familie Tipps.",
+                             bild: "🃏",
+                             chips: [HeroChip(text: "Heute übrig: \(joker.uebrigHeute) von \(joker.limitProTag)",
+                                              hervorgehoben: joker.uebrigHeute > 0)])
+                    inhalt
                 }
-                .scrollIndicators(.hidden)
                 .refreshable { await cloud.aktualisieren() }
-            }
-            .toolbar(.hidden, for: .navigationBar)
-            .task {
-                while !Task.isCancelled {
-                    await cloud.aktualisieren()
-                    try? await Task.sleep(for: .seconds(8))
-                }
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .cloudPush)) { _ in
-                Task { await cloud.aktualisieren() }
+                .toolbar(.hidden, for: .navigationBar)
             }
         }
     }
 
-    private var kopf: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("Joker")
-                .font(.system(size: 34, weight: .black, design: .rounded))
-                .foregroundStyle(Theme.gelb)
-            Text("Heute übrig: \(joker.uebrigHeute) von \(joker.limitProTag)")
-                .font(.system(.subheadline, design: .rounded).weight(.medium))
-                .foregroundStyle(Theme.textSanft)
+    private var inhalt: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            if Familiencode.istGueltig(familienCode) {
+                nachschubBereich
+            } else {
+                Text("Dieses Gerät gehört zu keiner Familie, nur zu einer Klasse. Darum gibt es hier keine Joker-Antworten von Eltern. Wenn du bei einer Aufgabe auf 🃏 Joker tippst, kannst du die Frage stattdessen per Nachricht an jemanden schicken. Einen Familiencode trägst du in den Einstellungen ein.")
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.textSanft)
+                    .padding(16)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .glasKarte(radius: 22)
+            }
+            if !cloud.fehler.isEmpty {
+                Text(cloud.fehler).font(.footnote).foregroundStyle(Theme.koralle)
+            }
+            if meine.isEmpty {
+                Text("Noch kein Joker benutzt. Wenn du bei einer Aufgabe nicht weiter kannst, tippe auf 🃏 Joker. Deine Familie bekommt sofort eine Mitteilung und schickt dir Tipps.")
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.textSanft)
+            }
+            ForEach(Array(meine.prefix(10))) { a in
+                karte(a)
+            }
+        }
+        .task {
+            while !Task.isCancelled {
+                await cloud.aktualisieren()
+                try? await Task.sleep(for: .seconds(8))
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .cloudPush)) { _ in
+            Task { await cloud.aktualisieren() }
         }
     }
 
@@ -1012,18 +1010,6 @@ struct KindJokerView: View {
                     .font(.footnote)
                     .foregroundStyle(Theme.himmel)
             }
-        }
-    }
-
-    private var namenFeld: some View {
-        HStack(spacing: 10) {
-            Text("Ich bin")
-                .font(.system(.subheadline, design: .rounded).weight(.bold))
-                .foregroundStyle(Theme.textSanft)
-            Text(kindName.isEmpty ? "Noch kein Name (Einstellungen > Profil)" : kindName)
-                .font(.system(.subheadline, design: .rounded).weight(.heavy))
-                .foregroundStyle(kindName.isEmpty ? Theme.textSanft : Color.white)
-            Spacer()
         }
     }
 

@@ -14,34 +14,25 @@ import CoreImage.CIFilterBuiltins
 // MARK: - Eltern: Übersicht und Üben
 
 struct ElternTabs: View {
-    @AppStorage("vorschulTabEltern") private var vorschul = false
     /// Das Widget springt mit "yem1n://haustier" zum Haustier.
     @State private var tab = "uebersicht"
 
     var body: some View {
+        // Höchstens fünf Reiter, damit nichts im iOS-Menü "Mehr" verschwindet.
+        // Schule, Sprachen und Vorschule liegen zusammen unter "Lernen".
         TabView(selection: $tab) {
             ElternDashboardView()
                 .tabItem { Label("Übersicht", systemImage: "chart.bar.fill") }
                 .tag("uebersicht")
-            // Joker steht weit vorne: Ab dem sechsten Reiter landet iOS im Menü "Mehr",
-            // und dort ist die Antwort auf eine Joker-Anfrage abgestürzt.
             JokerLigaView()
                 .tabItem { Label("Joker", systemImage: "suit.spade.fill") }
                 .tag("joker")
-            StartView()
-                .tabItem { Label("Schule", systemImage: "books.vertical.fill") }
-                .tag("schule")
+            ElternLernenView()
+                .tabItem { Label("Lernen", systemImage: "books.vertical.fill") }
+                .tag("lernen")
             ElternHaustierView()
                 .tabItem { Label("Haustier", systemImage: "pawprint.fill") }
                 .tag("haustier")
-            SprachStartView()
-                .tabItem { Label("Sprachen", systemImage: "globe") }
-                .tag("sprachen")
-            if vorschul {
-                VorschuleView()
-                    .tabItem { Label("Vorschule", systemImage: "sparkles") }
-                    .tag("vorschule")
-            }
             EinstellungenView(eingebettet: true)
                 .tabItem { Label("Einstellungen", systemImage: "gearshape.fill") }
                 .tag("einstellungen")
@@ -53,8 +44,11 @@ struct ElternTabs: View {
             tab = "uebersicht"
         }
         .onReceive(NotificationCenter.default.publisher(for: .oeffneBereich)) { n in
-            if let bereich = n.object as? String, ["joker", "haustier", "schule"].contains(bereich) {
-                tab = bereich
+            switch n.object as? String {
+            case "joker": tab = "joker"
+            case "haustier": tab = "haustier"
+            case "schule": tab = "lernen"
+            default: break
             }
         }
     }
@@ -101,7 +95,6 @@ struct ElternDashboardView: View {
            sort: \RundenErgebnis.zeitpunkt, order: .reverse)
     private var alleErgebnisse: [RundenErgebnis]
     @State private var kindFilter = ""
-    @State private var zeigeEinstellungen = false
     @State private var radarTage = 7
     @State private var zeigeBericht = false
     @AppStorage("berichtGelesen") private var berichtGelesen: Double = 0
@@ -323,7 +316,6 @@ struct ElternDashboardView: View {
         .onReceive(NotificationCenter.default.publisher(for: .oeffneBericht)) { _ in
             oeffneBerichtWennGewuenscht()
         }
-        .sheet(isPresented: $zeigeEinstellungen) { EinstellungenView() }
         .sheet(item: $gewaehlteRunde) { runde in RundeDetailView(runde: runde) }
         .sheet(item: $gewaehlteUebung) { auswahl in
             UebungDetailView(titel: auswahl.titel,
@@ -347,24 +339,11 @@ struct ElternDashboardView: View {
     // MARK: Teile
 
     private var kopf: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 2) {
-                Text("YEM1N Eltern")
-                    .font(.system(size: 34, weight: .black, design: .rounded))
-                    .foregroundStyle(Theme.gelb)
-                Text(familienCode.isEmpty ? "Noch kein Familiencode" : "Familiencode: \(familienCode)")
-                    .font(.system(.footnote, design: .monospaced))
-                    .foregroundStyle(Theme.textSanft)
-            }
-            Spacer()
-            Button { zeigeEinstellungen = true } label: {
-                Image(systemName: "gearshape.fill")
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundStyle(Theme.navy)
-                    .frame(width: 44, height: 44)
-                    .background(Theme.gelb, in: Circle())
-            }
-        }
+        HeroKopf(kicker: "YEM1N Eltern", titel: "Übersicht",
+                 untertitel: "So lernt dein Kind diese Woche",
+                 bild: "📊",
+                 chips: [HeroChip(text: familienCode.isEmpty ? "Noch kein Familiencode" : "👨‍👩‍👧 \(familienCode)",
+                                  hervorgehoben: !familienCode.isEmpty)])
     }
 
     private var leer: some View {

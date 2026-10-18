@@ -34,7 +34,8 @@ enum Theme {
     }
     static let koralle = Color(red: 1.0, green: 0.42, blue: 0.42)
     static let mint = Color(red: 0.45, green: 0.95, blue: 0.62)
-    static let textSanft = Color.white.opacity(0.7)
+    /// Zweitrangiger Text. Etwas heller als früher, damit Kinder ihn gut lesen können.
+    static let textSanft = Color.white.opacity(0.78)
 }
 
 struct HintergrundView: View {
@@ -42,8 +43,10 @@ struct HintergrundView: View {
         ZStack {
             LinearGradient(colors: [Theme.navy, Theme.tiefNavy],
                            startPoint: .top, endPoint: .bottom)
-            RadialGradient(colors: [Theme.glanz.opacity(0.35), .clear],
-                           center: .top, startRadius: 0, endRadius: 420)
+            RadialGradient(colors: [Theme.glanz.opacity(0.40), .clear],
+                           center: UnitPoint(x: 0.15, y: 0.0), startRadius: 0, endRadius: 460)
+            RadialGradient(colors: [Theme.gelb.opacity(0.07), .clear],
+                           center: UnitPoint(x: 1.0, y: 0.55), startRadius: 0, endRadius: 320)
         }
         .ignoresSafeArea()
     }
@@ -83,7 +86,8 @@ extension View {
                         in: RoundedRectangle(cornerRadius: radius, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: radius, style: .continuous)
-                    .stroke(Color.white.opacity(0.14), lineWidth: 1)
+                    .stroke(LinearGradient(colors: [Color.white.opacity(0.22), Color.white.opacity(0.06)],
+                                           startPoint: .top, endPoint: .bottom), lineWidth: 1)
             )
     }
 
@@ -131,8 +135,9 @@ struct GelberKnopf: View {
             Text(titel)
                 .font(.system(.title3, design: .rounded).weight(.heavy))
                 .foregroundStyle(Theme.navy)
-                .frame(maxWidth: .infinity, minHeight: 56)
+                .frame(maxWidth: .infinity, minHeight: 58)
                 .background(Theme.gelb, in: Capsule())
+                .shadow(color: Theme.gelb.opacity(0.35), radius: 12, y: 5)
         }
         .buttonStyle(TastenStil())
         .padding(.horizontal, 24)
