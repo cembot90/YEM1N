@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
-   LastUpgradeVersion = "2700"
+   LastUpgradeVersion = "2710"
    wasCreatedForAppExtension = "YES"
    version = "2.0">
    <BuildAction
@@ -31,6 +31,7 @@
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "000000000000000100000000"
                BuildableName = "YEM1N.app"
+               BlueprintName = "YEM1N"
                ReferencedContainer = "container:YEM1N.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -71,6 +72,7 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "000000000000000100000000"
             BuildableName = "YEM1N.app"
+            BlueprintName = "YEM1N"
             ReferencedContainer = "container:YEM1N.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
@@ -106,6 +108,7 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "000000000000000100000000"
             BuildableName = "YEM1N.app"
+            BlueprintName = "YEM1N"
             ReferencedContainer = "container:YEM1N.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
