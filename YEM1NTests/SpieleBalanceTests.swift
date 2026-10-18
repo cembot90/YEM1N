@@ -163,7 +163,10 @@ struct SpielArtTests {
     @Test func jedesSpielHatEinenEigenenBestwert() {
         let schluessel = SpielArt.allCases.map { $0.schluessel }
         #expect(Set(schluessel).count == schluessel.count)
-        #expect(SpielArt.allCases.count == 3)
+        #expect(SpielArt.allCases.count == 5)
+        // Die Hüllen der neuen Spiele speichern unter genau diesen Namen
+        #expect(SpielArt.elfmeter.schluessel == "elfmeter")
+        #expect(SpielArt.einhorn.schluessel == "einhorn")
     }
 
     @Test func derAlteBestwertBleibtErhalten() {

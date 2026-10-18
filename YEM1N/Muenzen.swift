@@ -102,7 +102,7 @@ enum Muenzen {
 // ============================================================
 
 enum SpielArt: String, CaseIterable, Identifiable {
-    case lauf, jagd, hockey
+    case elfmeter, einhorn, lauf, jagd, hockey
 
     var id: String { rawValue }
 
@@ -111,6 +111,8 @@ enum SpielArt: String, CaseIterable, Identifiable {
 
     var titel: String {
         switch self {
+        case .elfmeter: return "Elfmeterschießen"
+        case .einhorn: return "Einhorn-Flug"
         case .lauf: return "Zahlenlauf"
         case .jagd: return "Münzjagd"
         case .hockey: return "Münz-Hockey"
@@ -119,14 +121,26 @@ enum SpielArt: String, CaseIterable, Identifiable {
 
     var beschreibung: String {
         switch self {
+        case .elfmeter: return "Wische vom Ball zum Tor. Der Torwart wird immer schneller. Der Winkel bringt 3 Punkte."
+        case .einhorn: return "Tippe, dann fliegt das Einhorn hoch. Fang Sterne und Regenbögen, weich den Gewitterwolken aus."
         case .lauf: return "Spring über die Kakteen und sammle Münzen. Es wird immer schneller."
         case .jagd: return "Sammle auf den Plattformen alle Münzen ein. Weich den Fliegern aus."
         case .hockey: return "Tischhockey gegen den Computer. Wer zuerst fünf Tore hat, gewinnt."
         }
     }
 
+    /// Großes Bild auf der Karte, wenn es kein gezeichnetes Bild gibt.
+    var emoji: String? {
+        switch self {
+        case .elfmeter: return "⚽"
+        case .einhorn: return "🦄"
+        default: return nil
+        }
+    }
+
     var bild: String {
         switch self {
+        case .elfmeter, .einhorn: return "muenze"
         case .lauf: return "held_lauf1"
         case .jagd: return "held_sprung"
         case .hockey: return "muenze"
@@ -136,6 +150,8 @@ enum SpielArt: String, CaseIterable, Identifiable {
     @ViewBuilder
     var ansicht: some View {
         switch self {
+        case .elfmeter: SpielElfmeterView()
+        case .einhorn: SpielEinhornView()
         case .lauf: SpielLaufView()
         case .jagd: SpielJagdView()
         case .hockey: SpielHockeyView()
@@ -295,10 +311,17 @@ struct SpieleView: View {
     private func spielKarte(_ art: SpielArt) -> some View {
         let bestwert = bestwerte[art.schluessel] ?? 0
         return VStack(spacing: 12) {
-            Image(art.bild)
-                .resizable()
-                .scaledToFit()
-                .frame(height: 76)
+            if let e = art.emoji {
+                Text(e)
+                    .font(.system(size: 64))
+                    .frame(height: 76)
+                    .shadow(color: Theme.gelb.opacity(0.4), radius: 14)
+            } else {
+                Image(art.bild)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: 76)
+            }
             Text(art.titel)
                 .font(.system(.title2, design: .rounded).weight(.heavy))
                 .foregroundStyle(Color.white)

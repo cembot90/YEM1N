@@ -167,6 +167,9 @@ final class LaufSzene: SKScene {
 
     private func ordneNeu() {
         guard size.width > 0, size.height > 0 else { return }
+        // Sternenhimmel passend zur neuen Größe
+        children.filter { $0.name == "himmel" }.forEach { $0.removeFromParent() }
+        SpielEffekte.sternenHimmel(in: self, groesse: size)
 
         for (i, berg) in huegel.enumerated() {
             let breite = max(size.width * 1.2, 600)
@@ -480,6 +483,8 @@ final class LaufSzene: SKScene {
                 if trifft(o.knoten, breite: 36, hoehe: 40) {
                     punkte += 10
                     funkel(o.knoten.position)
+                    SpielEffekte.funken(in: self, ort: o.knoten.position)
+                    Haptik.leicht()
                     o.knoten.removeFromParent()
                     continue
                 }
@@ -520,6 +525,8 @@ final class LaufSzene: SKScene {
         knoten.removeFromParent()
         leben -= 1
         zeichneLeben()
+        SpielEffekte.blitz(in: self)
+        Haptik.fehler()
         unverwundbarRest = 1.6
         spieler.texture = auaBild
         spieler.run(SKAction.sequence([
@@ -560,6 +567,7 @@ final class LaufSzene: SKScene {
         spieler.texture = auaBild
         infoLabel.text = "\(punkte) Punkte"
         untertitelLabel.text = "Tippen für noch einen Versuch"
+        SpielEffekte.konfetti(in: self, ort: CGPoint(x: size.width / 2, y: size.height * 0.35))
         beiEnde?(punkte)
     }
 }

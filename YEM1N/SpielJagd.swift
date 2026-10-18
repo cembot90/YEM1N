@@ -68,6 +68,8 @@ final class JagdSzene: SKScene, SpielSzene {
     override func didMove(to view: SKView) {
         view.isMultipleTouchEnabled = true
         backgroundColor = UIColor(Theme.tiefNavy)
+        SpielEffekte.sternenHimmel(in: self, groesse: size)
+        SpielEffekte.kamera(in: self)
         laufBilder = ["held_lauf1", "held_lauf2"].map { SKTexture(imageNamed: $0) }
 
         let berg = SKSpriteNode(imageNamed: "huegel")
@@ -426,6 +428,8 @@ final class JagdSzene: SKScene, SpielSzene {
         let leuchtend = m === markiert
         punkte += leuchtend ? B.punkteLeuchtend : B.punkteMuenze
         SpielHilfe.funkel(in: self, ort: m.position, text: leuchtend ? "+\(B.punkteLeuchtend)" : "✦")
+        SpielEffekte.funken(in: self, ort: m.position, anzahl: leuchtend ? 36 : 16)
+        Haptik.leicht()
         muenzen.removeAll { $0 === m }
         m.removeFromParent()
         if leuchtend {
@@ -442,6 +446,9 @@ final class JagdSzene: SKScene, SpielSzene {
     private func treffer() {
         leben -= 1
         zeichneLeben()
+        SpielEffekte.blitz(in: self)
+        SpielEffekte.wackeln(in: self)
+        Haptik.fehler()
         unverwundbar = 1.6
         vy = 380
         amBoden = false
@@ -453,6 +460,8 @@ final class JagdSzene: SKScene, SpielSzene {
         punkteLabel.text = "\(punkte)"
         wartet = true
         infoLabel.text = "Ebene \(ebene) geschafft!"
+        SpielEffekte.konfetti(in: self, ort: CGPoint(x: B.breite / 2, y: B.hoehe * 0.45))
+        Haptik.erfolg()
         untertitelLabel.text = "+\(B.punkteEbene) Punkte"
         run(SKAction.sequence([
             SKAction.wait(forDuration: 1.8),
@@ -477,6 +486,7 @@ final class JagdSzene: SKScene, SpielSzene {
         spieler.texture = SKTexture(imageNamed: "held_aua")
         infoLabel.text = "\(punkte) Punkte"
         untertitelLabel.text = "Ebene \(ebene). Tippen für noch einen Versuch"
+        SpielEffekte.konfetti(in: self, ort: CGPoint(x: B.breite / 2, y: B.hoehe * 0.4), anzahl: 60)
         beiEnde?(punkte)
     }
 

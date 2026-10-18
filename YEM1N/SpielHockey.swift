@@ -65,6 +65,8 @@ final class HockeySzene: SKScene, SpielSzene {
 
     override func didMove(to view: SKView) {
         backgroundColor = UIColor(Theme.tiefNavy)
+        SpielEffekte.sternenHimmel(in: self, groesse: size)
+        SpielEffekte.kamera(in: self)
         zeichneFeld()
 
         puck.size = CGSize(width: H.puckRadius * 2, height: H.puckRadius * 2)
@@ -333,6 +335,11 @@ final class HockeySzene: SKScene, SpielSzene {
         puck.position = CGPoint(x: schlaeger.position.x + nx * (pr + sr),
                                 y: schlaeger.position.y + ny * (pr + sr))
         let rel = (puckV.dx - v.dx) * nx + (puckV.dy - v.dy) * ny
+        if rel < -200 && schlaeger === meinSchlaeger {
+            // Kräftiger Schlag: kleine Funken und ein spürbarer Stoß
+            SpielEffekte.funken(in: self, ort: puck.position, farbe: UIColor(Theme.himmel), anzahl: 10)
+            Haptik.leicht()
+        }
         if rel < 0 {
             puckV.dx -= 1.9 * rel * nx
             puckV.dy -= 1.9 * rel * ny
@@ -364,6 +371,15 @@ final class HockeySzene: SKScene, SpielSzene {
         zeichneStand()
         SpielHilfe.funkel(in: self, ort: CGPoint(x: ich ? rechts - 60 : links + 60, y: H.hoehe / 2),
                           text: ich ? "Tor!" : "Aua")
+        if ich {
+            SpielEffekte.konfetti(in: self, ort: CGPoint(x: rechts - 40, y: H.hoehe / 2), anzahl: 70)
+            SpielEffekte.aufspringen(in: self, ort: CGPoint(x: mitte, y: H.hoehe / 2), text: "TOR!")
+            SpielEffekte.wackeln(in: self, staerke: 8)
+            Haptik.erfolg()
+        } else {
+            SpielEffekte.blitz(in: self)
+            Haptik.fehler()
+        }
         puckV = .zero
 
         if toreIch >= H.toreZumSieg {
@@ -391,6 +407,7 @@ final class HockeySzene: SKScene, SpielSzene {
         punkte += H.punkteFuerSieg(level: level, vorsprung: toreIch - toreKi)
         zeichneStand()
         infoLabel.text = "Level \(level) geschafft!"
+        SpielEffekte.konfetti(in: self, ort: CGPoint(x: mitte, y: H.hoehe * 0.4))
         untertitelLabel.text = "Der Computer wird jetzt besser"
         run(SKAction.sequence([
             SKAction.wait(forDuration: 2.0),
