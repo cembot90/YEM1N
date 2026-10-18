@@ -78,7 +78,7 @@ struct VorschuleTests {
             #expect(a.1.suffix(2).lowercased() == b.1.suffix(2).lowercased(), "\(a.1) und \(b.1)")
         }
         for (_, wort, n) in VorschulMehr.silbenBilder {
-            #expect((1...4).contains(n), wort)
+            #expect((1...4).contains(n), "\(wort)")
         }
     }
 
@@ -87,7 +87,7 @@ struct VorschuleTests {
             for _ in 0..<15 {
                 let f = VorschulGenerator.eine(art, stufe: 2)
                 for t in [f.text.de, f.text.tr ?? ""] + f.optionen {
-                    #expect(!t.contains("\u{2013}") && !t.contains("\u{2014}"), t)
+                    #expect(!t.contains("\u{2013}") && !t.contains("\u{2014}"), "\(t)")
                 }
             }
         }

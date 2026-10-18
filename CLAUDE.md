@@ -53,6 +53,22 @@ Vorlage:
 4. **CloudKit.** Neue Felder oder Record-Typen müssen in `cloudkit/schema.ckdb`
    stehen, und Cem muss sie in die Produktionsumgebung ausrollen.
 
+## Stimmen
+
+Vorlesen geht immer über `Sprecher.sprich`: erst Studio-Aufnahme, dann Gerätestimme, dann iOS-Stimme.
+Studio-Aufnahmen liegen als `YEM1N/Studio/studio_<sprache>_<name>.mp3` in der App. Der Name kommt aus
+`VorleseText.aufnahme`. Der Sammler `stimmen/sammeln/sammeln.sh` schreibt alle festen Sätze nach
+`stimmen/saetze/`, die Action "Studio-Stimmen" vertont fehlende auf `entwicklung` mit Azure Speech und
+committet selbst. Deshalb vor eigenen Commits auf `entwicklung` immer erst `git pull --ff-only`.
+Olli bekommt bewusst keine Studio-Aufnahmen, damit er nicht zwischen zwei Stimmen wechselt.
+Die Gerätestimmen (Piper über sherpa-onnx) liegen im Release `stimmen-1`, gebaut von
+`stimmen/modelle/packen.py`. Größe und SHA-256 stehen fest in `GeraeteStimmeDaten.swift`.
+
+## Prüfen ohne Mac
+
+`pruefen/linux-tests.sh` übersetzt die Logik ohne Oberfläche unter Linux und lässt die Tests von
+Lernwelt, Vorschule und Stimmen laufen (Swift 6.1 oder neuer, Pfad über `SWIFTC`). Vor jedem Push laufen lassen.
+
 ## Schreibweise
 
 Keine Gedankenstriche, weder im Code noch in Texten noch in Commit-Nachrichten.

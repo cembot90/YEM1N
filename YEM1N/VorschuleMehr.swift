@@ -62,7 +62,8 @@ enum VorschulMehr {
         let weg = Int.random(in: 1...(n - 1))
         let e = ["🎈", "🐦", "🦋", "🐝"].randomElement() ?? "🎈"
         let o = VorschulGenerator.zahlenOptionen(richtig: n - weg, von: 0, bis: m)
-        return F(text: VorschulText(de: "Es waren \(n). \(weg) sind weggeflogen. Wie viele sind noch da?",
+        let wegDe = weg == 1 ? "Einer ist" : "\(weg) sind"
+        return F(text: VorschulText(de: "Es waren \(n). \(wegDe) weggeflogen. Wie viele sind noch da?",
                                     tr: "\(n) tane vardı. \(weg) tanesi uçtu. Kaç tane kaldı?"),
                  zeige: Array(repeating: e, count: n - weg) + Array(repeating: "💨", count: weg),
                  optionen: o.optionen, richtig: o.index)

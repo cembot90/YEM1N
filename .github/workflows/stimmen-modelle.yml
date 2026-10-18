@@ -1,0 +1,35 @@
+name: Gerätestimmen packen
+
+# Baut die Pakete der Gerätestimmen und legt sie als Release "stimmen-1" ab.
+# Die App lädt sie von dort, wenn man in den Einstellungen auf "Laden" tippt.
+
+on:
+  push:
+    branches: [entwicklung]
+    paths:
+      - "stimmen/modelle/**"
+      - ".github/workflows/stimmen-modelle.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  packen:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Pakete bauen und prüfen
+        run: python3 stimmen/modelle/packen.py bau
+
+      - name: Als Release ablegen
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view stimmen-1 --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload stimmen-1 bau/*.tar --clobber --repo "$GITHUB_REPOSITORY"
+          else
+            gh release create stimmen-1 bau/*.tar --repo "$GITHUB_REPOSITORY" \
+              --target main --title "Gerätestimmen 1" --notes-file stimmen/modelle/HINWEIS.md
+          fi

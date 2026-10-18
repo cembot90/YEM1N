@@ -271,6 +271,7 @@ enum RechtTexte {
         ("Aufgaben und Lösungen", "Aufgaben und Lösungen werden sorgfältig erstellt und geprüft, können aber Fehler enthalten. Die App ersetzt keinen Unterricht und kein Lehrwerk. Aufgabenpakete der Eltern oder einer Klasse stammen von den Personen, die sie veröffentlicht haben."),
         ("Haftung", "Für Schäden haftet der Anbieter nur bei Vorsatz und grober Fahrlässigkeit. Bei der Verletzung von Leben, Körper oder Gesundheit und nach zwingenden gesetzlichen Vorschriften haftet er nach dem Gesetz."),
         ("Grafiken", "Die Spielgrafiken stammen von Kenney (kenney.nl) und stehen unter der Lizenz CC0."),
+        ("Stimmen", "Die Studio-Stimme ist mit Azure Speech von Microsoft vertont. Die Gerätestimmen sind Piper-Stimmen: Thorsten (Thorsten-Voice) und Fahrettin (NabuCasa voice-datasets), beide unter der Lizenz CC0. Sie laufen mit sherpa-onnx (Apache-2.0) und ONNX Runtime (MIT), die Aussprache kommt von espeak-ng (GPL-3.0)."),
         ("Datenschutz", "Wie die App mit Daten umgeht, steht unter Info > Datenschutzhinweise.")
     ]
 }

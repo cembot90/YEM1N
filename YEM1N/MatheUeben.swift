@@ -505,14 +505,7 @@ struct UebungInhalt: View {
 
     // Rechenzeichen werden für die Sprachausgabe in Wörter übersetzt
     private func sprechText(_ a: Aufgabe) -> String {
-        var t = a.frage + ". " + a.rechnung
-        let tausch: [(String, String)] = [
-            ("\n", ". "), (" · ", " mal "), (" : ", " geteilt durch "),
-            (" - ", " minus "), (" + ", " plus "), ("=", " gleich "),
-            (" ? ", " und "), ("<", " kleiner "), (">", " größer ")
-        ]
-        for (alt, neu) in tausch { t = t.replacingOccurrences(of: alt, with: neu) }
-        return t
+        VorleseText.aufgabe(frage: a.frage, rechnung: a.rechnung)
     }
 
     private func grosseSchrift(_ a: Aufgabe) -> Bool {

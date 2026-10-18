@@ -429,6 +429,9 @@ final class Sprecher {
     private let synth = AVSpeechSynthesizer()
     private var stimmen: [String: AVSpeechSynthesisVoice] = [:]
     private var sitzungBereit = false
+    /// Zählt jeden neuen Satz mit. Kommt die Gerätestimme erst nach einem neueren
+    /// Satz oder nach "still" mit ihrer Tonspur, wird sie nicht mehr abgespielt.
+    private var satzNummer = 0
 
     /// Alle Stimmen des Geräts, einmal geladen und dann gemerkt.
     /// Die Abfrage bei iOS kann lange dauern, besonders während gerade eine Stimme
@@ -536,7 +539,7 @@ final class Sprecher {
     /// Spricht einen Satz mit genau dieser Stimme, zum Probehören.
     func probe(_ text: String, stimme: AVSpeechSynthesisVoice) {
         sitzungEinrichten()
-        if synth.isSpeaking { synth.stopSpeaking(at: .immediate) }
+        still()
         let u = AVSpeechUtterance(string: text)
         u.voice = stimme
         u.rate = AVSpeechUtteranceDefaultSpeechRate * 0.95
@@ -556,6 +559,10 @@ final class Sprecher {
             // Stimmen schon beim Start im Hintergrund laden. Kein stilles Probe-Sprechen,
             // das würde beim Kind laufende Musik unterbrechen.
             self.neuLaden()
+            // Die deutsche Gerätestimme schon bereitlegen, dann kommt der erste Satz sofort
+            if NatuerlicheStimme.an, let p = GeraeteStimmen.shared.bereit("de") {
+                GeraeteStimmeMotor.shared.vorbereiten(p)
+            }
         }
     }
 
@@ -571,15 +578,55 @@ final class Sprecher {
 
     /// Hört sofort auf zu sprechen, zum Beispiel wenn die Einführung übersprungen wird.
     func still() {
+        satzNummer += 1
         if synth.isSpeaking { synth.stopSpeaking(at: .immediate) }
+        StimmAbspieler.shared.still()
     }
 
     /// `tonhoehe` bleibt normalerweise bei 1. Nur das Haustier spricht etwas höher.
-    func sprich(_ text: String, code: String, tonhoehe: Float = 1.0) {
+    /// `stimmung` hört man nur bei der Gerätestimme Thorsten (fröhlich oder leise).
+    func sprich(_ text: String, code: String, tonhoehe: Float = 1.0, stimmung: SprechStimmung = .normal) {
         let an = UserDefaults.standard.object(forKey: "sprachTon") as? Bool ?? true
         guard an, !text.isEmpty else { return }
         sitzungEinrichten()
-        if synth.isSpeaking { synth.stopSpeaking(at: .immediate) }
+        still()
+        if NatuerlicheStimme.an {
+            // 1. Studio-Aufnahme
+            if let datei = NatuerlicheStimme.studio(text, code: code),
+               StimmAbspieler.shared.spiele(datei: datei, tonhoehe: tonhoehe) {
+                return
+            }
+            // 2. Gerätestimme, sie rechnet einen Moment im Hintergrund
+            if let paket = GeraeteStimmen.shared.bereit(VorleseText.sprache(code)) {
+                let meine = satzNummer
+                Task {
+                    let geklappt = await GeraeteVorleser.shared.sprich(
+                        text, paket: paket, stimmung: stimmung, tonhoehe: tonhoehe,
+                        nochGueltig: { [weak self] in self?.satzNummer == meine })
+                    if !geklappt, self.satzNummer == meine {
+                        self.sprichMitIOS(text, code: code, tonhoehe: tonhoehe)
+                    }
+                }
+                return
+            }
+        }
+        // 3. iOS-Stimme
+        sprichMitIOS(text, code: code, tonhoehe: tonhoehe)
+    }
+
+    /// Spielt den Probesatz mit der Gerätestimme, auch wenn natürliche Stimmen aus sind.
+    func probeGeraet(_ paket: GeraetePaket) {
+        sitzungEinrichten()
+        still()
+        let satz = paket.sprache == "tr" ? "Merhaba! Sana böyle kitap okurum." : "Hallo! So klinge ich, wenn ich dir vorlese."
+        let meine = satzNummer
+        Task {
+            _ = await GeraeteVorleser.shared.sprich(satz, paket: paket, stimmung: .normal, tonhoehe: 1,
+                                                    nochGueltig: { [weak self] in self?.satzNummer == meine })
+        }
+    }
+
+    private func sprichMitIOS(_ text: String, code: String, tonhoehe: Float) {
         let u = AVSpeechUtterance(string: text)
         u.voice = stimme(code)
         // Normales Sprechtempo, nur einen Hauch langsamer für Kinder.

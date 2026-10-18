@@ -155,8 +155,8 @@ struct LehrplanTests {
 
     @Test func jedesNomenHatEinenArtikel() {
         for n in LehrplanDeutsch.nomen {
-            #expect(["der", "die", "das"].contains(n.artikel), n.wort)
-            #expect(n.wort.first?.isUppercase == true, n.wort)
+            #expect(["der", "die", "das"].contains(n.artikel), "\(n.wort)")
+            #expect(n.wort.first?.isUppercase == true, "\(n.wort)")
             #expect(!LehrplanDeutsch.falscheMehrzahl(n).contains(n.mehrzahl), "\(n.wort): richtige Mehrzahl unter den falschen")
             #expect(LehrplanDeutsch.falscheMehrzahl(n).count >= 2, "\(n.wort): zu wenig falsche Formen")
         }
@@ -177,7 +177,7 @@ struct LehrplanTests {
 
     @Test func lueckenwoerterHabenGenauEineLuecke() {
         for (luecke, richtig, falsch, lang) in LehrplanDeutsch.verlaengerWoerter {
-            #expect(luecke.filter { $0 == "?" }.count == 1, luecke)
+            #expect(luecke.filter { $0 == "?" }.count == 1, "\(luecke)")
             #expect(richtig != falsch)
             let ganz = luecke.replacingOccurrences(of: "?", with: richtig)
             // In der verlängerten Form hört man den Buchstaben
@@ -192,10 +192,10 @@ struct LehrplanTests {
             #expect(luecke.replacingOccurrences(of: "?", with: richtig) == ganz)
         }
         for (satz, _) in LehrplanDeutsch.dassSaetze {
-            #expect(satz.components(separatedBy: "___").count == 2, satz)
+            #expect(satz.components(separatedBy: "___").count == 2, "\(satz)")
         }
         for (satz, teil, fall) in LehrplanDeutsch.fallSaetze {
-            #expect(satz.contains(teil), satz)
+            #expect(satz.contains(teil), "\(satz)")
             #expect((1...4).contains(fall))
         }
     }
@@ -215,7 +215,7 @@ struct LehrplanTests {
 
     @Test func jedeNoteHatNamenUndTon() {
         for n in Noten.alle {
-            #expect(Noten.name[n] != nil && Noten.frequenz[n] != nil && Noten.stufe[n] != nil, n)
+            #expect(Noten.name[n] != nil && Noten.frequenz[n] != nil && Noten.stufe[n] != nil, "\(n)")
         }
         #expect(Noten.name["h1"] == "h", "Im Deutschen heißt die Note h, nicht b")
     }
@@ -258,7 +258,7 @@ struct LehrplanTests {
                 let a = t.erzeuge()
                 guard a.art == "vergleich" else { continue }
                 #expect(["<", ">", "="].contains(a.antwort))
-                #expect(a.rechnung.components(separatedBy: "  ?  ").count == 2, a.rechnung)
+                #expect(a.rechnung.components(separatedBy: "  ?  ").count == 2, "\(a.rechnung)")
             }
         }
     }
@@ -266,8 +266,8 @@ struct LehrplanTests {
     @Test func falscheTrennungenSindNieDieRichtige() {
         for w in LehrplanDeutschMehr.trennWoerter {
             let falsch = LehrplanDeutschMehr.falscheTrennungen(w)
-            #expect(!falsch.isEmpty, w)
-            #expect(!falsch.contains(w), w)
+            #expect(!falsch.isEmpty, "\(w)")
+            #expect(!falsch.contains(w), "\(w)")
             for f in falsch {
                 #expect(f.replacingOccurrences(of: "-", with: "") == w.replacingOccurrences(of: "-", with: ""))
             }
@@ -277,7 +277,7 @@ struct LehrplanTests {
 
     @Test func lueckenErgebenDasGanzeWort() {
         for (luecke, _, _, richtig, ganz) in LehrplanDeutschMehr.doppeltWoerter {
-            #expect(luecke.replacingOccurrences(of: "?", with: richtig) == ganz, ganz)
+            #expect(luecke.replacingOccurrences(of: "?", with: richtig) == ganz, "\(ganz)")
         }
         for (luecke, richtig, _) in LehrplanDeutschMehr.sssWoerter {
             #expect(luecke.filter { $0 == "?" }.count == 1)
@@ -288,7 +288,7 @@ struct LehrplanTests {
             #expect(richtig != falsch)
         }
         for (_, b, ganz, artikel) in LehrplanDeutschMehr.komposita {
-            #expect(ganz.lowercased().hasSuffix(b.lowercased()), ganz)
+            #expect(ganz.lowercased().hasSuffix(b.lowercased()), "\(ganz)")
             #expect(["der", "die", "das"].contains(artikel))
         }
     }
@@ -302,17 +302,17 @@ struct LehrplanTests {
     @Test func satzgliederStehenImSatz() {
         for (satz, subjekt, praedikat) in LehrplanDeutschMehr.gliederSaetze {
             let w = LehrplanDeutschMehr.woerter(satz)
-            #expect(w.contains(subjekt) && w.contains(praedikat), satz)
+            #expect(w.contains(subjekt) && w.contains(praedikat), "\(satz)")
         }
     }
 
     @Test func leseFragenHabenEineEindeutigeAntwort() {
         for texte in [LehrplanLesen.klasse1, LehrplanLesen.klasse2, LehrplanLesen.klasse3, LehrplanLesen.klasse4] {
             for t in texte {
-                #expect(!t.fragen.isEmpty, t.titel)
+                #expect(!t.fragen.isEmpty, "\(t.titel)")
                 for (frage, richtig, falsch) in t.fragen {
-                    #expect(!falsch.contains(richtig), frage)
-                    #expect(falsch.count >= 2, frage)
+                    #expect(!falsch.contains(richtig), "\(frage)")
+                    #expect(falsch.count >= 2, "\(frage)")
                 }
             }
         }

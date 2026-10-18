@@ -85,18 +85,26 @@ struct StimmenKarte: View {
                     HStack {
                         Text("\(s.flagge) \(s.name)").foregroundStyle(Color.white)
                         Spacer()
-                        if let v {
-                            Text(v.name)
+                        if NatuerlicheStimme.an, let p = GeraeteStimmen.shared.bereit(s.kurz) {
+                            Text(p.name)
                                 .foregroundStyle(Theme.textSanft)
+                            Text("Natürlich")
+                                .font(.footnote.weight(.bold))
+                                .foregroundStyle(Color.green)
+                        } else {
+                            if let v {
+                                Text(v.name)
+                                    .foregroundStyle(Theme.textSanft)
+                            }
+                            Text(StimmText.qualitaet(v?.quality))
+                                .font(.footnote.weight(.bold))
+                                .foregroundStyle(StimmText.farbe(v?.quality))
                         }
-                        Text(StimmText.qualitaet(v?.quality))
-                            .font(.footnote.weight(.bold))
-                            .foregroundStyle(StimmText.farbe(v?.quality))
                     }
                     .font(.subheadline)
                 }
                 .id(stand)
-                Text("Stimme wählen, Mann oder Frau, und bessere Stimmen laden")
+                Text("Natürliche Stimmen laden, Stimme wählen, Mann oder Frau")
                     .font(.footnote)
                     .foregroundStyle(Theme.textSanft)
             }
@@ -122,6 +130,8 @@ struct StimmenView: View {
         ZStack {
             HintergrundView()
             Form {
+                NatuerlicheStimmenAbschnitt(hintergrund: zeile)
+
                 Section {
                     Button {
                         zeigeAnleitung = true
@@ -130,8 +140,10 @@ struct StimmenView: View {
                             .font(.headline)
                             .foregroundStyle(Theme.gelb)
                     }
+                } header: {
+                    Text("iOS-Stimmen")
                 } footer: {
-                    Text("Premium- und erweiterte Stimmen klingen viel natürlicher. Sie werden einmal auf dieses Gerät geladen und gehen dann auch ohne Internet.")
+                    Text("Die iOS-Stimmen lesen alles vor, wofür es keine natürliche Stimme gibt, zum Beispiel Englisch. Premium- und erweiterte Stimmen klingen viel natürlicher. Sie werden einmal auf dieses Gerät geladen und gehen dann auch ohne Internet.")
                 }
                 .listRowBackground(zeile)
 

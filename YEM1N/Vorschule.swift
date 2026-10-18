@@ -324,12 +324,12 @@ enum VorschulGenerator {
 }
 
 enum VorschulTon {
-    static func sag(_ t: VorschulText) {
+    static func sag(_ t: VorschulText, stimmung: SprechStimmung = .normal) {
         let sprache = UserDefaults.standard.string(forKey: "vorschulSprache") ?? "de"
         if sprache == "tr", let tr = t.tr {
-            Sprecher.shared.sprich(tr, code: "tr-TR")
+            Sprecher.shared.sprich(tr, code: "tr-TR", stimmung: stimmung)
         } else {
-            Sprecher.shared.sprich(t.de, code: "de-DE")
+            Sprecher.shared.sprich(t.de, code: "de-DE", stimmung: stimmung)
         }
     }
 
@@ -340,7 +340,7 @@ enum VorschulTon {
             VorschulText(de: "Richtig!", tr: "Doğru!"),
             VorschulText(de: "Prima!", tr: "Bravo!")
         ]
-        sag(lob.randomElement() ?? lob[0])
+        sag(lob.randomElement() ?? lob[0], stimmung: .froh)
     }
 
     static func nochmal() {
