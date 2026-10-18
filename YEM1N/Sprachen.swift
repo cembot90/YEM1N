@@ -591,12 +591,7 @@ final class Sprecher {
         sitzungEinrichten()
         still()
         if NatuerlicheStimme.an {
-            // 1. Studio-Aufnahme
-            if let datei = NatuerlicheStimme.studio(text, code: code),
-               StimmAbspieler.shared.spiele(datei: datei, tonhoehe: tonhoehe) {
-                return
-            }
-            // 2. Gerätestimme, sie rechnet einen Moment im Hintergrund
+            // 1. Gerätestimme, sie rechnet einen Moment im Hintergrund
             if let paket = GeraeteStimmen.shared.bereit(VorleseText.sprache(code)) {
                 let meine = satzNummer
                 Task {
@@ -610,7 +605,7 @@ final class Sprecher {
                 return
             }
         }
-        // 3. iOS-Stimme
+        // 2. iOS-Stimme
         sprichMitIOS(text, code: code, tonhoehe: tonhoehe)
     }
 

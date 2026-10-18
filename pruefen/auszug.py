@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Schneidet einzelne Typen ohne Oberfläche aus den App-Dateien aus,
-damit der Sammler sie unter Linux übersetzen kann.
+damit pruefen/linux-tests.sh sie unter Linux übersetzen kann.
 Aufruf: auszug.py <App-Ordner> <Ziel-Datei> Datei:Name1,Name2 ..."""
 import re, sys
 

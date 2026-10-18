@@ -2,26 +2,17 @@ import Foundation
 import Testing
 @testable import YEM1N
 
-// Natürliche Stimmen: Namen der Studio-Aufnahmen, Pakete der Gerätestimmen und das Auspacken.
+// Natürliche Stimmen: Vorlesetexte, Pakete der Gerätestimmen und das Auspacken.
 
 @MainActor
 struct StimmenTests {
 
-    // MARK: Namen der Aufnahmen
-
-    @Test func aufnahmeNameBleibtGleich() {
-        // Derselbe Name entsteht beim Sammeln unter Linux. Ändert sich das hier,
-        // findet die App keine einzige Studio-Aufnahme mehr.
-        #expect(VorleseText.aufnahme("Wie viele siehst du?", sprache: "de-DE") == "studio_de_2a2252ee4d41a4d8")
-        #expect(VorleseText.aufnahme("Wie viele siehst du?", sprache: "de")
-                == VorleseText.aufnahme("Wie viele siehst du?", sprache: "de-DE"))
-        #expect(VorleseText.aufnahme("Wie viele siehst du?", sprache: "tr")
-                != VorleseText.aufnahme("Wie viele siehst du?", sprache: "de"))
-    }
+    // MARK: Vorlesetexte
 
     @Test func bilderUndLeerzeichenZaehlenNicht() {
         #expect(VorleseText.gesprochen("🍎 Hallo  Welt! ❤️\n") == "Hallo Welt!")
-        #expect(VorleseText.aufnahme("🦉 Super!", sprache: "de") == VorleseText.aufnahme("Super!", sprache: "de"))
+        #expect(VorleseText.gesprochen("🦉 Super!") == "Super!")
+        #expect(VorleseText.sprache("de-DE") == "de")
         #expect(VorleseText.gesprochen("Es sind 7.") == "Es sind 7.")
     }
 
@@ -157,16 +148,5 @@ struct StimmenTests {
             try StimmOrt.einrichten(p, aus: datei, in: wurzel)
         }
         #expect(!StimmOrt.installiert(p, in: wurzel))
-    }
-
-    // MARK: Gesammelte Sätze
-
-    @Test func vorschulSaetzeHabenEineAufnahmeName() {
-        // Was die Vorschule sagt, muss denselben Namen ergeben wie beim Sammeln
-        for _ in 0..<50 {
-            let f = VorschulGenerator.eine(.zaehlen, stufe: 1)
-            let name = VorleseText.aufnahme(f.text.de, sprache: "de-DE")
-            #expect(name.hasPrefix("studio_de_") && name.count == "studio_de_".count + 16)
-        }
     }
 }

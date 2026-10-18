@@ -10,7 +10,6 @@ on:
       - "YEM1N/**"
       - "YEM1NTests/**"
       - "pruefen/**"
-      - "stimmen/sammeln/**"
   workflow_dispatch:
 
 jobs:

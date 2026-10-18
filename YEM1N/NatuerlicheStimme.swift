@@ -4,13 +4,12 @@ import AVFoundation
 import CryptoKit
 
 // ============================================================
-// MARK: - Natürliche Stimmen: Studio-Aufnahmen und Gerätestimme
+// MARK: - Natürliche Stimmen: die Gerätestimme
 // ============================================================
 //
 // Reihenfolge beim Vorlesen:
-// 1. Gibt es den Satz als Studio-Aufnahme in der App, kommt die Aufnahme.
-// 2. Sonst liest die Gerätestimme (Thorsten oder Fahrettin), wenn sie geladen ist.
-// 3. Sonst wie bisher die iOS-Stimme.
+// 1. Die Gerätestimme (Thorsten oder Fahrettin), wenn sie geladen ist.
+// 2. Sonst wie bisher die iOS-Stimme.
 // Alles läuft auf dem Gerät. Nur das einmalige Laden einer Gerätestimme braucht Internet.
 
 enum NatuerlicheStimme {
@@ -20,32 +19,13 @@ enum NatuerlicheStimme {
         UserDefaults.standard.object(forKey: key) as? Bool ?? true
     }
 
-    /// Die Studio-Aufnahme zu diesem Satz, wenn es eine gibt.
-    static func studio(_ text: String, code: String) -> URL? {
-        let sp = VorleseText.sprache(code)
-        guard sp == "de" || sp == "tr" else { return nil }
-        return Bundle.main.url(forResource: VorleseText.aufnahme(text, sprache: code), withExtension: "mp3")
-    }
-
-    /// Wie viele Studio-Aufnahmen die App für eine Sprache mitbringt.
-    static func studioAnzahl(_ sprache: String) -> Int {
-        if let n = gezaehlt[sprache] { return n }
-        let n = Bundle.main.paths(forResourcesOfType: "mp3", inDirectory: nil)
-            .filter { ($0 as NSString).lastPathComponent.hasPrefix("studio_" + sprache + "_") }
-            .count
-        gezaehlt[sprache] = n
-        return n
-    }
-
-    private static var gezaehlt: [String: Int] = [:]
-
     /// Etwas langsamer als normal, damit Kinder gut mitkommen
     static let tempo: Float = 0.92
 }
 
 // MARK: - Abspielen
 
-/// Spielt Aufnahmen und Tonspuren der Gerätestimme ab. Für das Haustier läuft
+/// Spielt die Tonspuren der Gerätestimme ab. Für das Haustier läuft
 /// der Ton etwas schneller, dann klingt es hell und klein. Normal geht der Ton
 /// unverändert durch, ohne Effekt, damit nichts hallt oder blechern klingt.
 final class StimmAbspieler {
@@ -91,16 +71,6 @@ final class StimmAbspieler {
         // Höher und schneller zugleich, wie ein schneller abgespieltes Band
         hoehe.rate = t
         hoehe.bypass = abs(t - 1) < 0.01
-    }
-
-    @discardableResult
-    func spiele(datei: URL, tonhoehe: Float) -> Bool {
-        guard let f = try? AVAudioFile(forReading: datei), bereit(fuer: f.processingFormat) else { return false }
-        stelle(tonhoehe)
-        spieler.stop()
-        spieler.scheduleFile(f, at: nil, completionHandler: nil)
-        spieler.play()
-        return true
     }
 
     @discardableResult
@@ -351,7 +321,7 @@ struct NatuerlicheStimmenAbschnitt: View {
             Toggle(isOn: $an) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Natürliche Stimmen").foregroundStyle(Color.white)
-                    Text("Studio-Stimme und Gerätestimme statt der iOS-Stimme")
+                    Text("Gerätestimme statt der iOS-Stimme, wenn sie geladen ist")
                         .font(.footnote)
                         .foregroundStyle(Theme.textSanft)
                 }
@@ -359,19 +329,6 @@ struct NatuerlicheStimmenAbschnitt: View {
             .tint(Theme.gelb)
 
             if an {
-                HStack {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("🎙️ Studio-Stimme").foregroundStyle(Color.white)
-                        Text("Vorschule und Haustier, schon in der App")
-                            .font(.footnote)
-                            .foregroundStyle(Theme.textSanft)
-                    }
-                    Spacer()
-                    let n = NatuerlicheStimme.studioAnzahl("de") + NatuerlicheStimme.studioAnzahl("tr")
-                    Text(n > 0 ? "\(n) Sätze" : "Kommt bald")
-                        .font(.footnote.weight(.bold))
-                        .foregroundStyle(n > 0 ? Color.green : Theme.textSanft)
-                }
                 if GeraeteStimmeMotor.eingebaut {
                     ForEach(GeraetePaket.stimmen) { p in
                         zeile(p)
@@ -385,7 +342,7 @@ struct NatuerlicheStimmenAbschnitt: View {
         } header: {
             Text("Natürliche Stimmen")
         } footer: {
-            Text("Eine Gerätestimme liest alles andere vor, auch ohne Internet. Sie wird einmal von GitHub geladen, am besten im WLAN. Dabei werden keine Daten aus der App gesendet.")
+            Text("Die Gerätestimme liest Vorschule, Mathe, Lernwelt, Olli und das Haustier vor, auch ohne Internet. Sie wird einmal von GitHub geladen, am besten im WLAN. Dabei werden keine Daten aus der App gesendet.")
         }
         .listRowBackground(hintergrund)
     }

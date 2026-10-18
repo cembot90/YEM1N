@@ -55,14 +55,10 @@ Vorlage:
 
 ## Stimmen
 
-Vorlesen geht immer über `Sprecher.sprich`: erst Studio-Aufnahme, dann Gerätestimme, dann iOS-Stimme.
-Studio-Aufnahmen liegen als `YEM1N/Studio/studio_<sprache>_<name>.mp3` in der App. Der Name kommt aus
-`VorleseText.aufnahme`. Der Sammler `stimmen/sammeln/sammeln.sh` schreibt alle festen Sätze nach
-`stimmen/saetze/`, die Action "Studio-Stimmen" vertont fehlende auf `entwicklung` mit Azure Speech und
-committet selbst. Deshalb vor eigenen Commits auf `entwicklung` immer erst `git pull --ff-only`.
-Olli bekommt bewusst keine Studio-Aufnahmen, damit er nicht zwischen zwei Stimmen wechselt.
-Die Gerätestimmen (Piper über sherpa-onnx) liegen im Release `stimmen-1`, gebaut von
-`stimmen/modelle/packen.py`. Größe und SHA-256 stehen fest in `GeraeteStimmeDaten.swift`.
+Vorlesen geht immer über `Sprecher.sprich`: erst die Gerätestimme, wenn sie geladen ist, sonst die iOS-Stimme.
+Die Gerätestimmen (Piper über sherpa-onnx, Paket in Xcode) liegen im Release `stimmen-1`, gebaut von
+`stimmen/modelle/packen.py` über die Action "Gerätestimmen packen". Größe und SHA-256 stehen fest in
+`GeraeteStimmeDaten.swift`. Studio-Aufnahmen mit Azure hat Cem abgelehnt, nicht wieder vorschlagen.
 
 ## Prüfen ohne Mac
 

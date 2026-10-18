@@ -2,7 +2,7 @@
 # Prüft die Logik ohne Oberfläche unter Linux: Lernwelt, Vorschule, Stimmen,
 # Erklärbilder, Duell und Handschrift.
 # SwiftUI, SwiftData und AVFoundation gibt es dort nicht. Deshalb schneidet
-# stimmen/sammeln/auszug.py nur die reinen Typen aus den App-Dateien aus.
+# pruefen/auszug.py nur die reinen Typen aus den App-Dateien aus.
 # Braucht Swift 6.1 oder neuer (SWIFTC=/pfad/zu/swiftc) und Python 3.
 # Aufruf aus dem Repo-Ordner: pruefen/linux-tests.sh
 set -euo pipefail
@@ -20,7 +20,7 @@ SWIFT
 ohneApp() { sed -e 's/@testable import YEM1N//' -e 's/^import SwiftData//' "$1"; }
 
 echo "== Lernwelt"
-python3 stimmen/sammeln/auszug.py $Y "$arbeit/lern.swift" \
+python3 pruefen/auszug.py $Y "$arbeit/lern.swift" \
   Lehrplan.swift:Bundesland,LehrFach,LernAufgabe,LernThema,Lern,Lernwelt AufgabenBild.swift:Noten \
   Sprachen.swift:SprachInfo,Wort,Thema,SprachKatalog,SprachHelfer SprachKatalog.swift:SprachKatalogDaten \
   MatheEditor.swift:MatheRechner
@@ -56,17 +56,17 @@ fehler=0
 laufen "$arbeit/lern"
 
 echo "== Vorschule und Stimmen"
-python3 stimmen/sammeln/auszug.py $Y "$arbeit/vor.swift" \
+python3 pruefen/auszug.py $Y "$arbeit/vor.swift" \
   Vorschule.swift:VorschulArt,VorschulText,VorschulFrage,VorschulGenerator,VorschulTon VorschuleMehr.swift:VorschulMehr
 ohneApp $T/VorschuleTests.swift > "$arbeit/VorschuleTests.swift"
 ohneApp $T/StimmenTests.swift > "$arbeit/StimmenTests.swift"
-"$SWIFTC" -parse-as-library -O -o "$arbeit/vor" "$arbeit/vor.swift" stimmen/sammeln/platzhalter.swift \
+"$SWIFTC" -parse-as-library -O -o "$arbeit/vor" "$arbeit/vor.swift" pruefen/platzhalter.swift \
   $Y/VorleseText.swift $Y/GeraeteStimmeDaten.swift \
   "$arbeit/VorschuleTests.swift" "$arbeit/StimmenTests.swift" "$arbeit/start.swift"
 laufen "$arbeit/vor"
 
 echo "== Erklärbilder, Duell, Handschrift"
-python3 stimmen/sammeln/auszug.py $Y "$arbeit/rest.swift" \
+python3 pruefen/auszug.py $Y "$arbeit/rest.swift" \
   ErklaerBild.swift:ErklaerBild,ErklaerBildPlan MatheEditor.swift:MatheRechner \
   Duell.swift:DuellStufe,DuellAufgabe,DuellStand,DuellRegeln,DuellLauf \
   DuellCloud.swift:DuellHerausforderung,DuellAntwort,DuellPost \

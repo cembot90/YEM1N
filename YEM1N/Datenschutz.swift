@@ -28,7 +28,7 @@ struct DatenschutzView: View {
         ("KI auf dem Gerät",
          "Der Erklär-Freund und der Wochenbericht in Worten werden auf iPhones mit Apple Intelligence von Apples Sprachmodell formuliert. Das läuft vollständig auf diesem Gerät. Aufgaben, Antworten und Ergebnisse werden dafür nicht ins Internet geschickt, weder an Apple noch an mich oder andere Anbieter. Was das Kind mit dem Stift oder dem Finger aufs Karoblatt schreibt, liest die Texterkennung von Apple ebenfalls nur auf dem Gerät. Die Schrift wird weder gespeichert noch verschickt, nur die gelesene Zahl wird wie eine getippte Antwort behandelt."),
         ("Kein Tracking",
-         "Die App enthält keine Werbung und keine Analysedienste. Es gibt kein Benutzerkonto bei mir. Die Sprachausgabe läuft auf dem Gerät: Studio-Aufnahmen sind in der App enthalten, die Gerätestimmen rechnet die freie Software sherpa-onnx auf dem Gerät. Es werden keine Fotos, Kontakte, Standortdaten oder Mikrofonaufnahmen erhoben."),
+         "Die App enthält keine Werbung und keine Analysedienste. Es gibt kein Benutzerkonto bei mir. Die Sprachausgabe läuft auf dem Gerät, die Gerätestimmen rechnet die freie Software sherpa-onnx auf dem Gerät. Es werden keine Fotos, Kontakte, Standortdaten oder Mikrofonaufnahmen erhoben."),
         ("Mitteilungen",
          "Die App sendet Mitteilungen zwischen Eltern- und Kindgeräten über Apple. Dafür gibt Apple ein technisches Gerätekennzeichen aus. Die Erlaubnis kannst du jederzeit in den iOS-Einstellungen widerrufen."),
         ("Zwecke und Rechtsgrundlagen",
