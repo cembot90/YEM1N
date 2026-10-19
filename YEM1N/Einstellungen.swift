@@ -93,8 +93,9 @@ struct EinstellungenInhalt: View {
                 zeile(symbol: "gamecontroller.fill", titel: "Spiele und Lernzeit",
                       text: spieleText, farbe: Theme.himmel) { LernzeitEinstellungen() }
                 ZeilenTrenner()
-                zeile(symbol: "globe", titel: "Sprachen", text: "Welche Sprachen erscheinen",
-                      farbe: Theme.himmel) { SprachenEinstellungen() }
+                zeile(symbol: "square.grid.2x2.fill", titel: "Bereiche",
+                      text: "Vorschule und Sprachen ein- und ausschalten",
+                      farbe: Theme.himmel) { BereicheEinstellungen() }
                 ZeilenTrenner()
                 zeile(symbol: "speaker.wave.2.fill", titel: "Vorlese-Stimmen",
                       text: "Stimme wählen und bessere Stimmen laden", farbe: Theme.himmel) { StimmenView() }
@@ -487,13 +488,37 @@ struct LernzeitEinstellungen: View {
 
 // MARK: Sprachen
 
-struct SprachenEinstellungen: View {
+struct BereicheEinstellungen: View {
+    @AppStorage("modus") private var modus = ""
+    @AppStorage("vorschulTab") private var vorschulAn = true
+    @AppStorage(SprachAuswahl.anSchluessel) private var sprachenAn = false
+
+    private var eltern: Bool { modus == "eltern" }
+
     var body: some View {
-        EinstellungsSeite(titel: "Sprachen") {
+        EinstellungsSeite(titel: "Bereiche") {
             Section {
-                SprachWahlSchalter()
+                Toggle("🧸 Vorschule anzeigen", isOn: $vorschulAn)
+                    .tint(Theme.gelb)
+            } header: {
+                Text("Vorschule")
             } footer: {
-                Text("Nur die angehakten Sprachen erscheinen im Bereich Sprachen. Sind alle aus, verschwindet der Bereich auf dem Kind-Gerät.")
+                Text(eltern
+                     ? "Zeigt die Vorschule im Reiter Lernen. Auf dem Kind-Gerät stellst du den Reiter dort selbst ein."
+                     : "Zählen, Formen, Buchstaben und Spiele für Kinder, die noch nicht in die Schule gehen. Aus heißt: Der Reiter Vorschule verschwindet.")
+            }
+            .listRowBackground(zeilenGrund)
+
+            Section {
+                Toggle("🌍 Sprachen anzeigen", isOn: $sprachenAn)
+                    .tint(Theme.gelb)
+                if sprachenAn {
+                    SprachWahlSchalter()
+                }
+            } header: {
+                Text("Sprachen (Versuch)")
+            } footer: {
+                Text("Wörter lernen mit Bildern und Vorlesen. Der Bereich ist noch ein Versuch: Es gibt erst wenige Themen und Wörter, und er kann sich noch ändern. Nur die angehakten Sprachen erscheinen.")
             }
             .listRowBackground(zeilenGrund)
         }
@@ -506,7 +531,6 @@ struct AussehenEinstellungen: View {
     @AppStorage("modus") private var modus = ""
     @AppStorage("farbwelt") private var farbwelt = "blau"
     @AppStorage("glasEffekt") private var glas = false
-    @AppStorage("vorschulTab") private var vorschulKind = true
     @AppStorage(Handschrift.key) private var stift = Handschrift.standard
 
     var body: some View {
@@ -529,16 +553,10 @@ struct AussehenEinstellungen: View {
             Section {
                 Toggle("Glas-Effekte", isOn: $glas)
                     .tint(Theme.gelb)
-                if modus != "eltern" {
-                    Toggle("Reiter Vorschule anzeigen", isOn: $vorschulKind)
-                        .tint(Theme.gelb)
-                }
             } header: {
                 Text("Darstellung")
             } footer: {
-                Text(modus == "eltern"
-                     ? "Glas-Effekte aus macht die App auf älteren iPhones flüssiger. Die Vorschule findest du im Reiter Lernen."
-                     : "Glas-Effekte aus macht die App auf älteren iPhones flüssiger. Das Aussehen wird dann etwas flacher.")
+                Text("Glas-Effekte aus macht die App auf älteren iPhones flüssiger. Das Aussehen wird dann etwas flacher. Vorschule und Sprachen schaltest du unter Einstellungen > Bereiche ein und aus.")
             }
             .listRowBackground(zeilenGrund)
 

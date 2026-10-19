@@ -45,6 +45,29 @@ struct SprachAuswahlTests {
         roh = SprachAuswahl.umgeschaltet("tr", roh: roh, alle: alle)
         #expect(SprachAuswahl.aktiv(roh: roh, alle: alle) == ["tr"])
     }
+
+    // MARK: Sprachen als Versuch zum Einschalten
+
+    @Test func neueGeraeteHabenSprachenAus() throws {
+        let vorgaben = try #require(UserDefaults(suiteName: "test-sprachen-neu-" + UUID().uuidString))
+        SprachAuswahl.voreinstellen(vorgaben)
+        #expect(vorgaben.bool(forKey: SprachAuswahl.anSchluessel) == false)
+    }
+
+    @Test func werSchonSprachenGeuebtHatBehaeltSie() throws {
+        let vorgaben = try #require(UserDefaults(suiteName: "test-sprachen-alt-" + UUID().uuidString))
+        vorgaben.set(Data([1, 2, 3]), forKey: SprachAuswahl.standSchluessel)
+        SprachAuswahl.voreinstellen(vorgaben)
+        #expect(vorgaben.bool(forKey: SprachAuswahl.anSchluessel) == true)
+    }
+
+    @Test func eineEigeneWahlBleibtBestehen() throws {
+        let vorgaben = try #require(UserDefaults(suiteName: "test-sprachen-wahl-" + UUID().uuidString))
+        vorgaben.set(Data([1]), forKey: SprachAuswahl.standSchluessel)
+        vorgaben.set(false, forKey: SprachAuswahl.anSchluessel)
+        SprachAuswahl.voreinstellen(vorgaben)
+        #expect(vorgaben.bool(forKey: SprachAuswahl.anSchluessel) == false)
+    }
 }
 
 @MainActor

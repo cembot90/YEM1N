@@ -105,6 +105,8 @@ struct KindIchView: View {
 /// Eltern-Gerät: Schule, Sprachen und Vorschule ausprobieren und Aufgaben verwalten.
 struct ElternLernenView: View {
     @Query private var alleArbeiten: [Klassenarbeit]
+    @AppStorage("vorschulTab") private var vorschulAn = true
+    @AppStorage(SprachAuswahl.anSchluessel) private var sprachenAn = false
     @State private var offen: LernBereich?
 
     enum LernBereich: String, Identifiable {
@@ -132,18 +134,22 @@ struct ElternLernenView: View {
                 }
                 .buttonStyle(TastenStil())
                 .einblenden(3)
-                Button { offen = .sprachen } label: {
-                    BereichsKarte(bild: "🌍", titel: "Sprachen",
-                                  text: "Wörter lernen mit Bildern und Vorlesen")
+                if sprachenAn {
+                    Button { offen = .sprachen } label: {
+                        BereichsKarte(bild: "🌍", titel: "Sprachen",
+                                      text: "Wörter lernen mit Bildern und Vorlesen")
+                    }
+                    .buttonStyle(TastenStil())
+                    .einblenden(4)
                 }
-                .buttonStyle(TastenStil())
-                .einblenden(4)
-                Button { offen = .vorschule } label: {
-                    BereichsKarte(bild: "🧸", titel: "Vorschule",
-                                  text: "Zählen, Formen, Buchstaben und mehr")
+                if vorschulAn {
+                    Button { offen = .vorschule } label: {
+                        BereichsKarte(bild: "🧸", titel: "Vorschule",
+                                      text: "Zählen, Formen, Buchstaben und mehr")
+                    }
+                    .buttonStyle(TastenStil())
+                    .einblenden(5)
                 }
-                .buttonStyle(TastenStil())
-                .einblenden(5)
                 Button { offen = .duell } label: {
                     BereichsKarte(bild: "⚔️", titel: "Duell",
                                   text: "Kopfrechnen gegen dein Kind, jeder auf seiner Stufe")

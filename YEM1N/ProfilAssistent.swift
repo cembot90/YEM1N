@@ -26,6 +26,7 @@ struct ProfilAssistent: View {
     @AppStorage("farbwelt") private var farbwelt = "blau"
     @AppStorage("tagesziel") private var tagesziel = 2
     @AppStorage("vorschulTab") private var vorschulTab = true
+    @AppStorage(SprachAuswahl.anSchluessel) private var sprachenAn = false
     @AppStorage("jokerIch") private var jokerIch = ""
     @AppStorage("profilFertig") private var profilFertig = false
     @State private var schritt = 0
@@ -100,8 +101,14 @@ struct ProfilAssistent: View {
                 }
             }
         } else if schritt == 2 {
-            frageKarte("Welche Sprachen möchtest du lernen?", "Tippe an, was du lernen willst. Du kannst es später in den Einstellungen ändern. Wenn du nichts wählst, gibt es keinen Sprachen-Bereich.") {
-                SprachWahlChips()
+            frageKarte("Auch Sprachen üben?", "Wörter in anderen Sprachen mit Bildern und Vorlesen. Der Bereich ist noch ein Versuch mit wenigen Wörtern. Du kannst es später unter Einstellungen > Bereiche ändern.") {
+                VStack(spacing: 10) {
+                    chip("Ja, Sprachen anzeigen", aktiv: sprachenAn) { sprachenAn = true }
+                    chip("Nein, erstmal nicht", aktiv: !sprachenAn) { sprachenAn = false }
+                    if sprachenAn {
+                        SprachWahlChips()
+                    }
+                }
             }
         } else {
             frageKarte("Farben und Ziel", "Wähle die Farbwelt und wie viele Runden pro Tag das Ziel sind.") {

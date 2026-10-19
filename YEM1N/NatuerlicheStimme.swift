@@ -19,8 +19,10 @@ enum NatuerlicheStimme {
         UserDefaults.standard.object(forKey: key) as? Bool ?? true
     }
 
-    /// Etwas langsamer als normal, damit Kinder gut mitkommen
-    static let tempo: Float = 0.92
+    /// Normales Tempo. Langsamer klang lustlos.
+    static let tempo: Float = 1.0
+    /// Für Lob: etwas heller und schneller abgespielt
+    static let froh: Float = 1.07
 }
 
 // MARK: - Abspielen

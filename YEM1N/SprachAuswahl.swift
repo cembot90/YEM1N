@@ -10,6 +10,17 @@ import SwiftUI
 enum SprachAuswahl {
     static let schluessel = "sprachWahl"
     static let keine = "-"
+    /// Der Bereich Sprachen ist ein Versuch und muss erst eingeschaltet werden
+    static let anSchluessel = "sprachenAn"
+    /// Wird so lange gespeichert, wie es Fortschritt beim Sprachenlernen gibt
+    static let standSchluessel = "sprachStandV1"
+
+    /// Einmal beim Start: Wer schon Sprachen geübt hat, behält den Bereich.
+    /// Alle anderen schalten ihn bei Bedarf unter Einstellungen > Bereiche ein.
+    static func voreinstellen(_ vorgaben: UserDefaults = .standard) {
+        guard vorgaben.object(forKey: anSchluessel) == nil else { return }
+        vorgaben.set(vorgaben.data(forKey: standSchluessel) != nil, forKey: anSchluessel)
+    }
 
     /// Die Sprachen, die gerade gelernt werden, in der Reihenfolge des Katalogs.
     static func aktiv(roh: String, alle: [String]) -> [String] {

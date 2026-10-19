@@ -594,9 +594,11 @@ final class Sprecher {
             // 1. Gerätestimme, sie rechnet einen Moment im Hintergrund
             if let paket = GeraeteStimmen.shared.bereit(VorleseText.sprache(code)) {
                 let meine = satzNummer
+                // Lob klingt etwas heller und schneller, das wirkt fröhlicher
+                let hoehe = (stimmung == .froh && tonhoehe == 1) ? NatuerlicheStimme.froh : tonhoehe
                 Task {
                     let geklappt = await GeraeteVorleser.shared.sprich(
-                        text, paket: paket, stimmung: stimmung, tonhoehe: tonhoehe,
+                        text, paket: paket, stimmung: stimmung, tonhoehe: hoehe,
                         nochGueltig: { self.satzNummer == meine })
                     if !geklappt, self.satzNummer == meine {
                         self.sprichMitIOS(text, code: code, tonhoehe: tonhoehe)
@@ -837,6 +839,7 @@ enum SprachErgebnis {
 
 struct KindTabs: View {
     @AppStorage("vorschulTab") private var vorschul = true
+    @AppStorage(SprachAuswahl.anSchluessel) private var sprachenAn = false
     @AppStorage(SprachAuswahl.schluessel) private var sprachWahl = ""
     @AppStorage(HaustierSpeicher.key) private var haustierDaten = Data()
     @Environment(\.scenePhase) private var phase
@@ -844,7 +847,8 @@ struct KindTabs: View {
     @State private var tab = "schule"
 
     private var hatSprachen: Bool {
-        !SprachAuswahl.aktiv(roh: sprachWahl, alle: SprachKatalogStore.shared.katalog.lernsprachen).isEmpty
+        sprachenAn
+            && !SprachAuswahl.aktiv(roh: sprachWahl, alle: SprachKatalogStore.shared.katalog.lernsprachen).isEmpty
     }
 
     var body: some View {

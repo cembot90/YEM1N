@@ -333,18 +333,23 @@ enum VorschulTon {
         }
     }
 
-    static func lob() {
-        let lob: [VorschulText] = [
-            VorschulText(de: "Super!", tr: "Harika!"),
-            VorschulText(de: "Toll gemacht!", tr: "Aferin!"),
-            VorschulText(de: "Richtig!", tr: "Doğru!"),
-            VorschulText(de: "Prima!", tr: "Bravo!")
-        ]
-        sag(lob.randomElement() ?? lob[0], stimmung: .froh)
+    static var name: String { UserDefaults.standard.string(forKey: "kindName") ?? "" }
+
+    static func sag(_ t: LobText, stimmung: SprechStimmung = .normal) {
+        sag(VorschulText(de: t.de, tr: t.tr), stimmung: stimmung)
+    }
+
+    /// Lob mit viel Abwechslung, siehe Lob.swift
+    static func lob(serie: Int = 0, nachFehler: Bool = false) {
+        sag(Lob.fuerRichtig(serie: serie, nachFehler: nachFehler, name: name), stimmung: .froh)
     }
 
     static func nochmal() {
-        sag(VorschulText(de: "Probier es noch einmal.", tr: "Bir daha dene."))
+        sag(Lob.fuerNochmal())
+    }
+
+    static func ende(richtig: Int, gesamt: Int) {
+        sag(Lob.fuerEnde(richtig: richtig, gesamt: gesamt, name: name), stimmung: .froh)
     }
 }
 
@@ -600,6 +605,8 @@ struct VorschulRunde: View {
     @State private var fragen: [VorschulFrage] = []
     @State private var nr = 0
     @State private var perfekt = 0
+    /// Richtig beim ersten Versuch, so oft hintereinander
+    @State private var serie = 0
     @State private var falsch: Set<Int> = []
     @State private var richtigGewaehlt: Int?
     @State private var schuettel: Int?
@@ -757,6 +764,7 @@ struct VorschulRunde: View {
         }
         nr = 0
         perfekt = 0
+        serie = 0
         zuruecksetzen()
         gespeichert = false
         if let f = fragen.first { VorschulTon.sag(f.text) }
@@ -773,10 +781,12 @@ struct VorschulRunde: View {
         guard !sperre, richtigGewaehlt == nil, !falsch.contains(i) else { return }
         if i == f.richtig {
             richtigGewaehlt = i
-            if falsch.isEmpty { perfekt += 1 }
+            let ersterVersuch = falsch.isEmpty
+            if ersterVersuch { perfekt += 1 }
+            serie = ersterVersuch ? serie + 1 : 0
             sperre = true
             Haptik.erfolg()
-            VorschulTon.lob()
+            VorschulTon.lob(serie: serie, nachFehler: !ersterVersuch)
             Task {
                 try? await Task.sleep(for: .seconds(1.2))
                 weiter()
@@ -784,6 +794,7 @@ struct VorschulRunde: View {
         } else {
             falsch.insert(i)
             schuettel = i
+            serie = 0
             Haptik.fehler()
             VorschulTon.nochmal()
             Task {
@@ -806,7 +817,7 @@ struct VorschulRunde: View {
     private func abschliessen() {
         guard !gespeichert else { return }
         gespeichert = true
-        VorschulTon.sag(VorschulText(de: "Das hast du toll gemacht!", tr: "Çok güzel yaptın!"))
+        VorschulTon.ende(richtig: perfekt, gesamt: fragen.count)
         guard modus == "kind" else { return }
         Muenzen.gutschreiben(Muenzen.verdient(richtig: perfekt, gesamt: fragen.count, angesehen: 0))
         Muenzen.rundeGeschafft()
@@ -952,7 +963,7 @@ struct VorschulMemory: View {
     }
 
     private func abschliessen() {
-        VorschulTon.lob()
+        VorschulTon.ende(richtig: paare, gesamt: max(paare, zuege))
         fertig = true
         guard modus == "kind" else { return }
         HaustierDienst.rundeGeschafft(richtig: paare, gesamt: max(paare, zuege), angesehen: 0)

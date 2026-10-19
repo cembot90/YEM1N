@@ -29,6 +29,8 @@ struct MatheApp: App {
         }
         // Einmal nach dem großen Haustier-Update: Das alte Tier zieht auf Ollis Eulenhof
         HaustierNeustart.beimStart()
+        // Sprachen sind jetzt zum Einschalten. Wer sie schon nutzt, behält sie.
+        SprachAuswahl.voreinstellen(vorgaben)
         let schema = Schema([Klassenarbeit.self, Uebung.self, Aufgabe.self, RundenErgebnis.self])
         // SwiftData bleibt lokal auf dem Gerät. Ohne diese Zeile würde SwiftData
         // nach dem Aktivieren von iCloud die Daten automatisch in die private

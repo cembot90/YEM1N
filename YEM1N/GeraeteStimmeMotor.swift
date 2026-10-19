@@ -94,11 +94,15 @@ nonisolated final class GeraeteStimmeMotor: @unchecked Sendable {
         let ordner = StimmOrt.ordner(paket, in: wurzel).path
         let aussprache = StimmOrt.ordner(.aussprache, in: wurzel).path
         return autoreleasepool {
+            // Etwas mehr Zufall in Klang und Rhythmus als die Vorgabe (0,667 und 0,8),
+            // dann betont die Stimme lebendiger und klingt weniger gleichförmig.
             let vits = sherpaOnnxOfflineTtsVitsModelConfig(
                 model: ordner + "/stimme.onnx",
                 lexicon: "",
                 tokens: ordner + "/tokens.txt",
-                dataDir: aussprache)
+                dataDir: aussprache,
+                noiseScale: 0.8,
+                noiseScaleW: 1.0)
             let modell = sherpaOnnxOfflineTtsModelConfig(vits: vits, numThreads: 2, debug: 0, provider: "cpu")
             var einstellung = sherpaOnnxOfflineTtsConfig(model: modell)
             let tts = SherpaOnnxOfflineTtsWrapper(config: &einstellung)

@@ -60,9 +60,10 @@ python3 pruefen/auszug.py $Y "$arbeit/vor.swift" \
   Vorschule.swift:VorschulArt,VorschulText,VorschulFrage,VorschulGenerator,VorschulTon VorschuleMehr.swift:VorschulMehr
 ohneApp $T/VorschuleTests.swift > "$arbeit/VorschuleTests.swift"
 ohneApp $T/StimmenTests.swift > "$arbeit/StimmenTests.swift"
+ohneApp $T/LobTests.swift > "$arbeit/LobTests.swift"
 "$SWIFTC" -parse-as-library -O -o "$arbeit/vor" "$arbeit/vor.swift" pruefen/platzhalter.swift \
-  $Y/VorleseText.swift $Y/GeraeteStimmeDaten.swift \
-  "$arbeit/VorschuleTests.swift" "$arbeit/StimmenTests.swift" "$arbeit/start.swift"
+  $Y/VorleseText.swift $Y/GeraeteStimmeDaten.swift $Y/Lob.swift \
+  "$arbeit/VorschuleTests.swift" "$arbeit/StimmenTests.swift" "$arbeit/LobTests.swift" "$arbeit/start.swift"
 laufen "$arbeit/vor"
 
 echo "== Erklärbilder, Duell, Handschrift"

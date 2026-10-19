@@ -286,6 +286,9 @@ struct UebungInhalt: View {
     @Environment(\.modelContext) private var context
     @AppStorage("modus") private var modus = ""
     @State private var lobWort = "Richtig."
+    @State private var danebenWort = "Noch nicht richtig."
+    /// So viele richtig hintereinander, für besonderes Lob
+    @State private var serie = 0
     @State private var erklaerungText = ""
     @State private var mauerWerte: [[Int?]] = []
     @State private var mauerSchritt = 0
@@ -635,7 +638,7 @@ struct UebungInhalt: View {
     private var rueckTitel: String {
         switch bewertung {
         case .richtig: return lobWort
-        case .falsch: return "Noch nicht richtig."
+        case .falsch: return danebenWort
         case .loesung: return "Lösung angezeigt"
         }
     }
@@ -936,7 +939,18 @@ struct UebungInhalt: View {
         bewertet = a
         bewertung = ok ? .richtig : .falsch
         kurzerHinweis = nil
-        lobWort = ["Richtig.", "Stimmt.", "Genau so.", "Sehr gut."].randomElement() ?? "Richtig."
+        let name = UserDefaults.standard.string(forKey: "kindName") ?? ""
+        if ok {
+            serie += 1
+            lobWort = Lob.fuerRichtig(serie: serie, nachFehler: false, name: name).de
+            // Bei einer schönen Serie sagt es die Stimme auch laut, nicht bei jeder Aufgabe
+            if Lob.serienLob(serie) != nil, !uebung.istFertig, !istProbe {
+                Sprecher.shared.sprich(lobWort, code: "de-DE", stimmung: .froh)
+            }
+        } else {
+            serie = 0
+            danebenWort = Lob.titelDaneben()
+        }
         if ok {
             Haptik.erfolg()
             erfolg += 1
@@ -995,6 +1009,9 @@ struct UebungInhalt: View {
 
     private func abschliessen() {
         let gut = uebung.richtigAnzahl
+        let name = UserDefaults.standard.string(forKey: "kindName") ?? ""
+        Sprecher.shared.sprich(Lob.fuerEnde(richtig: gut, gesamt: uebung.aufgaben.count, name: name).de,
+                               code: "de-DE", stimmung: .froh)
         // Ein Rekord zählt nur, wenn es schon einmal einen Bestwert gab
         neuerRekord = Belohnung.istNeuerRekord(gut: gut, beste: uebung.beste)
         frischGeschafft = true
