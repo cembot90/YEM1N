@@ -492,6 +492,8 @@ struct BereicheEinstellungen: View {
     @AppStorage("modus") private var modus = ""
     @AppStorage("vorschulTab") private var vorschulAn = true
     @AppStorage(SprachAuswahl.anSchluessel) private var sprachenAn = false
+    @AppStorage(VorschulSprache.englischSchluessel) private var vorschulEnglisch = false
+    @AppStorage(VorschulSprache.tuerkischSchluessel) private var vorschulTuerkisch = false
 
     private var eltern: Bool { modus == "eltern" }
 
@@ -508,6 +510,20 @@ struct BereicheEinstellungen: View {
                      : "Zählen, Formen, Buchstaben und Spiele für Kinder, die noch nicht in die Schule gehen. Aus heißt: Der Reiter Vorschule verschwindet.")
             }
             .listRowBackground(zeilenGrund)
+
+            if vorschulAn {
+                Section {
+                    Toggle("🇬🇧 Vorschule auch auf Englisch", isOn: $vorschulEnglisch)
+                        .tint(Theme.gelb)
+                    Toggle("🇹🇷 Vorschule auch auf Türkisch", isOn: $vorschulTuerkisch)
+                        .tint(Theme.gelb)
+                } header: {
+                    Text("Vorschule in anderen Sprachen (Versuch)")
+                } footer: {
+                    Text("Die Vorschule spricht Deutsch. Mit diesen Schaltern erscheint oben in der Vorschule ein Umschalter, dann liest die App die Spiele auch auf Englisch oder Türkisch vor. Spiele mit deutschen Wörtern wie Reime, Silben und Anfangsbuchstaben bleiben auf Deutsch.")
+                }
+                .listRowBackground(zeilenGrund)
+            }
 
             Section {
                 Toggle("🌍 Sprachen anzeigen", isOn: $sprachenAn)

@@ -148,8 +148,8 @@ bringen</a></li>
 <li><a href="#aufgaben-editor" id="toc-aufgaben-editor">11.3
 Aufgaben-Editor</a></li>
 <li><a href="#eigene-aufgaben-vorlage"
-id="toc-eigene-aufgaben-vorlage">11.4 Eigene Aufgaben mit Claude
-erstellen (Vorlage)</a></li>
+id="toc-eigene-aufgaben-vorlage">11.4 Eigene Aufgaben aus Fotos mit
+einer KI erstellen (Vorlage)</a></li>
 </ul></li>
 <li><a href="#klassencode-für-eine-ganze-klasse"
 id="toc-klassencode-für-eine-ganze-klasse">12. Klassencode für eine
@@ -1033,9 +1033,17 @@ anderen Sprachen.</p>
 nicht schreiben. Alle Aufgaben bestehen aus großen Knöpfen, Bildern und
 Vorlesen.</p>
 <ul>
-<li><strong>Sprache</strong> (Deutsch oder Türkisch) stellst du oben
-ein. Am natürlichsten klingt das Vorlesen mit der Gerätestimme (siehe
+<li><strong>Sprache:</strong> Die Vorschule spricht Deutsch. Am
+natürlichsten klingt das Vorlesen mit der Gerätestimme (siehe
 Kapitel 13).</li>
+<li><strong>Englisch und Türkisch (Versuch):</strong> Unter
+<strong>Einstellungen, Bereiche</strong> lässt sich die Vorschule
+zusätzlich auf Englisch oder Türkisch einschalten. Dann steht oben in
+der Vorschule ein Umschalter, und Fragen, Lob und Mutmacher kommen in
+der gewählten Sprache. Reime, Silben und Anfangsbuchstaben bleiben auf
+Deutsch, weil es dort um deutsche Wörter geht. Eigene Pakete haben nur
+Deutsch und, wenn darin angegeben, Türkisch. Englisch liest die
+iOS-Stimme vor, eine englische Gerätestimme gibt es noch nicht.</li>
 <li><strong>Zahlenraum</strong> (Bis 5, Bis 10, Bis 20) steht im
 Bereich <strong>Zahlen und Rechnen</strong> und gilt nur für die
 Zahlen-Übungen. Bei „Alles gemischt“ gilt er für die Zahlen-Aufgaben
@@ -1079,18 +1087,25 @@ kurz hintereinander.</p>
 <h1 id="aufgaben-bereitstellen-eltern">11. Aufgaben bereitstellen
 (Eltern)</h1>
 <h2 id="aufgaben-erstellen-lassen">11.1 Aufgaben erstellen lassen</h2>
-<p>Aufgaben liegen als <strong>JSON-Datei</strong> vor. Du lässt sie von
-Claude im Claude-Projekt “Yemins Schul App” erstellen:</p>
+<p>Aufgaben kommen als <strong>JSON</strong> in die App, ein Text in
+einem festen Format. Du musst ihn nicht selbst schreiben. Es gibt drei
+Wege:</p>
 <ul>
-<li>Mathe: “Klassenarbeit Mathe Nr. 2” schreiben, optional mit Foto
-einer echten Arbeit.</li>
-<li>Deutsch: Fotos aus dem Arbeitsheft schicken und einen Namen nennen,
-zum Beispiel “Richtig schreiben Ferien Nr.2”.</li>
-<li>Vorschule: “Vorschule Zählen Nr. 2”.</li>
+<li><strong>Aus Fotos mit einer KI</strong> (für alle Eltern): Fotos
+von Schulbuch- oder Arbeitsheftseiten an eine KI schicken, die Fotos
+lesen kann, zum Beispiel Claude oder ChatGPT. Damit die KI genau das
+Format der App liefert, schickst du zuerst die Vorlage aus
+<a href="#eigene-aufgaben-vorlage">Abschnitt 11.4</a>. Schritt für
+Schritt steht es dort.</li>
+<li><strong>Ohne KI</strong> im Aufgaben-Editor, siehe
+<a href="#aufgaben-editor">Abschnitt 11.3</a>.</li>
+<li><strong>Im Claude-Projekt des Admins</strong> sind die Vorgaben
+schon hinterlegt. Dort reicht ein kurzer Satz wie “Klassenarbeit Mathe
+Nr. 2”, “Vorschule Zählen Nr. 2” oder Fotos aus dem Arbeitsheft mit
+einem Namen.</li>
 </ul>
-<p>Claude antwortet mit genau einem JSON-Block. Kopiere ihn.</p>
-<p>Du hast kein eigenes Claude-Projekt? Dann nimm die Vorlage aus
-<a href="#eigene-aufgaben-vorlage">Abschnitt 11.4</a>.</p>
+<p>Die KI antwortet mit genau einem JSON-Block. Kopiere ihn und bring
+ihn in die App, wie im nächsten Abschnitt beschrieben.</p>
 <h2 id="aufgaben-in-die-app-bringen">11.2 Aufgaben in die App
 bringen</h2>
 <p>Auf dem Eltern-Gerät im Reiter <strong>Lernen</strong> die <strong>Schule</strong> öffnen und auf das <strong>Plus</strong>
@@ -1137,17 +1152,23 @@ links.</p>
 <p>Ohne Claude kannst du im <strong>Aufgaben-Editor</strong> (Eltern,
 Menü Plus) selbst Arbeiten, Übungen und Aufgaben anlegen. Auch Vokabeln
 für den Sprach-Tab lassen sich dort erstellen.</p>
-<h2 id="eigene-aufgaben-vorlage">11.4 Eigene Aufgaben mit Claude
-erstellen (Vorlage)</h2>
+<h2 id="eigene-aufgaben-vorlage">11.4 Eigene Aufgaben aus Fotos mit
+einer KI erstellen (Vorlage)</h2>
 <p>Du kannst Übungen aus Fotos von Schulbuch- oder Arbeitsheftseiten
-selbst erstellen lassen. Du brauchst dafür nur ein Gespräch mit Claude
-(oder einer anderen KI, die Fotos lesen kann) und die Vorlage unten.</p>
+selbst erstellen lassen. Du brauchst dafür nur ein Gespräch mit einer
+KI, die Fotos lesen kann, zum Beispiel Claude (claude.ai) oder ChatGPT,
+und die Vorlage unten. Die Vorlage sagt der KI genau, welches Format die
+App braucht. Ein Konto bei der KI brauchst du selbst, YEM1N schickt dort
+nichts hin.</p>
 <ol type="1">
 <li>Tippe auf <strong>Vorlage kopieren</strong> und füge den Text als
-<strong>erste Nachricht</strong> in ein neues Gespräch ein.</li>
-<li>Schicke danach die Fotos der Seiten und einen Namen, zum Beispiel
-“Mathe Seite 42” oder “Richtig schreiben Nr. 3”. Der Name wird später
-der Titel der Arbeit in der App.</li>
+<strong>erste Nachricht</strong> in ein neues Gespräch ein und warte
+die kurze Antwort ab.</li>
+<li>Fotografiere die Seiten gerade und gut lesbar, eine Seite pro Foto.
+Schicke die Fotos und einen Namen, zum Beispiel “Mathe Seite 42” oder
+“Richtig schreiben Nr. 3”. Der Name wird später der Titel der Arbeit in
+der App. Du kannst dazuschreiben, was du willst, zum Beispiel “Klasse
+2, nur Plus und Minus” oder “mehr Aufgaben zum Einmaleins”.</li>
 <li>Die KI antwortet nur mit einem JSON-Block. Kopiere ihn.</li>
 <li>Füge ihn in YEM1N ein, wie in
 <a href="#aufgaben-in-die-app-bringen">Abschnitt 11.2</a> beschrieben
@@ -1161,6 +1182,10 @@ aber nicht deinen Blick darauf.</p>
 <p>Wenn die App das JSON nicht annimmt, schreibe der KI: “Das JSON ist
 ungültig. Gib es bitte noch einmal vollständig als einen JSON-Block
 aus.”</p>
+<p><strong>Tipp:</strong> Bei Claude kannst du die Vorlage in einem
+Projekt unter Anweisungen ablegen, bei ChatGPT in einem eigenen GPT oder
+Projekt. Dann musst du sie nicht jedes Mal neu einfügen und schickst nur
+noch Fotos und Namen.</p>
 <button class="kopieren" type="button" id="kopieren">Vorlage kopieren</button>
 <pre class="vorlage" id="vorlage">Du bist mein Helfer für die Übungs-App YEM1N. Ich bin Elternteil eines Grundschulkindes in Deutschland. Wenn ich Fotos von Schulbuch- oder Arbeitsheftseiten schicke und einen Namen nenne (zum Beispiel "Mathe Seite 42" oder "Richtig schreiben Nr. 3"), erstellst du passende Übungen als JSON, das ich in die App importiere.
 
@@ -1304,6 +1329,8 @@ QR-Code scannen. <strong>Klassencode:</strong> siehe Kapitel 12</td>
 Tag, tägliche Erinnerung mit Uhrzeit. <strong>Bereiche:</strong>
 Vorschule und Sprachen ein- und ausschalten, bei den Sprachen auch
 welche gelernt werden. Die Sprachen sind ein Versuch und zuerst aus.
+Dort lässt sich auch die Vorschule zusätzlich auf Englisch oder Türkisch
+einschalten (Versuch, zuerst aus).
 <strong>Vorlese-Stimmen:</strong> ganz oben
 die <strong>Natürlichen Stimmen</strong>. Eine <strong>Gerätestimme</strong>
 (Thorsten für Deutsch, Fahrettin für Türkisch) liest Vorschule, Mathe,

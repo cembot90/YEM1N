@@ -17,7 +17,8 @@ struct LobTests {
         #expect(Lob.daneben.count >= 6)
         for liste in Self.alleListen {
             #expect(Set(liste.map(\.de)).count == liste.count, "doppelte Sätze")
-            #expect(liste.allSatisfy { !$0.de.isEmpty && !$0.tr.isEmpty })
+            #expect(liste.allSatisfy { !$0.de.isEmpty && !$0.tr.isEmpty && !$0.en.isEmpty })
+            #expect(Set(liste.map(\.en)).count == liste.count, "doppelte Sätze auf Englisch")
         }
     }
 
@@ -51,7 +52,8 @@ struct LobTests {
         for liste in Self.alleListen {
             for t in liste {
                 let ohne = Lob.mitNamen(t, "")
-                #expect(!ohne.de.contains("{") && !ohne.tr.contains("{"), "\(t.de)")
+                #expect(!ohne.de.contains("{") && !ohne.tr.contains("{") && !ohne.en.contains("{"), "\(t.de)")
+                #expect(!ohne.en.contains(" !") && !ohne.en.contains(",!"), "\(ohne.en)")
                 #expect(!ohne.de.contains(" !") && !ohne.de.contains(",!"), "\(ohne.de)")
             }
         }
@@ -88,8 +90,19 @@ struct LobTests {
             .contains(Lob.fuerEnde(richtig: 0, gesamt: 0, name: "").de))
     }
 
+    @Test func jedeSpracheHatIhrenSatz() {
+        let t = LobText(de: "Super!", tr: "Süper!", en: "Great!")
+        #expect(t.text("de") == "Super!")
+        #expect(t.text("tr") == "Süper!")
+        #expect(t.text("en") == "Great!")
+        #expect(t.text("it") == "Super!")
+        #expect(Lob.mitNamen(LobText(de: "Toll, {name}!", tr: "Aferin {name}!", en: "Well done, {name}!"), "Mia").en
+                == "Well done, Mia!")
+        #expect(Lob.serienLob(25)?.en.contains("25") == true)
+    }
+
     @Test func keineGedankenstriche() {
-        let alle = Self.alleListen.flatMap { $0 }.flatMap { [$0.de, $0.tr] } + Lob.daneben
+        let alle = Self.alleListen.flatMap { $0 }.flatMap { [$0.de, $0.tr, $0.en] } + Lob.daneben
         for t in alle {
             #expect(!t.contains("\u{2013}") && !t.contains("\u{2014}"), "\(t)")
         }

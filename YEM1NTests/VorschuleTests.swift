@@ -86,10 +86,69 @@ struct VorschuleTests {
         for art in Self.neue {
             for _ in 0..<15 {
                 let f = VorschulGenerator.eine(art, stufe: 2)
-                for t in [f.text.de, f.text.tr ?? ""] + f.optionen {
+                for t in [f.text.de, f.text.tr ?? "", f.text.en ?? ""] + f.optionen {
                     #expect(!t.contains("\u{2013}") && !t.contains("\u{2014}"), "\(t)")
                 }
             }
         }
+    }
+
+    // MARK: Sprachen: Deutsch fest, Englisch und Türkisch nur als Zusatz
+
+    /// Diese Spiele drehen sich um deutsche Wörter und bleiben auf Deutsch
+    static let nurDeutsch: Set<VorschulArt> = [.anlaut, .reime, .silben]
+
+    @Test func ohneZusatzBleibtEsBeiDeutsch() {
+        #expect(VorschulSprache.angebot(englisch: false, tuerkisch: false) == ["de"])
+        #expect(VorschulSprache.angebot(englisch: true, tuerkisch: true) == ["de", "en", "tr"])
+        // Wer früher Türkisch gewählt hatte, bekommt Deutsch, solange Türkisch nicht eingeschaltet ist
+        #expect(VorschulSprache.aktiv(gewaehlt: "tr", englisch: false, tuerkisch: false) == "de")
+        #expect(VorschulSprache.aktiv(gewaehlt: "tr", englisch: true, tuerkisch: false) == "de")
+        #expect(VorschulSprache.aktiv(gewaehlt: "tr", englisch: false, tuerkisch: true) == "tr")
+        #expect(VorschulSprache.aktiv(gewaehlt: "en", englisch: true, tuerkisch: false) == "en")
+        #expect(VorschulSprache.aktiv(gewaehlt: "xx", englisch: true, tuerkisch: true) == "de")
+        #expect(VorschulSprache.code("en") == "en-GB")
+        #expect(VorschulSprache.code("tr") == "tr-TR")
+        #expect(VorschulSprache.code("de") == "de-DE")
+    }
+
+    @Test func jedesSpielGibtEsAuchAufEnglisch() {
+        let arten = VorschulArt.allCases.filter { $0 != .mix && $0 != .memory }
+        for art in arten {
+            for stufe in 1...3 {
+                for _ in 0..<20 {
+                    let f = VorschulGenerator.eine(art, stufe: stufe)
+                    if Self.nurDeutsch.contains(art) {
+                        #expect(f.text.en == nil, "\(art)")
+                        #expect(f.text.sprache("en") == "de" && f.text.text("en") == f.text.de, "\(art)")
+                    } else {
+                        let en = f.text.en ?? ""
+                        #expect(!en.isEmpty, "\(art) hat keinen englischen Text")
+                        #expect(f.text.sprache("en") == "en" && f.text.text("en") == en, "\(art)")
+                        #expect(en != f.text.de, "\(art): \(en)")
+                    }
+                }
+            }
+        }
+    }
+
+    @Test func zahlenStimmenInJederSprache() {
+        for _ in 0..<60 {
+            let f = VorschulGenerator.eine(.zahlen, stufe: 3)
+            let n = f.optionen[f.richtig]
+            #expect(f.text.de.contains(n) && (f.text.en ?? "").contains(n) && (f.text.tr ?? "").contains(n))
+            let g = VorschulMehr.minus(2)
+            let da = g.zeige.filter { $0 != "💨" }.count
+            let weg = g.zeige.count - da
+            #expect((g.text.en ?? "").contains("There were \(g.zeige.count).") && (g.text.en ?? "").contains(weg == 1 ? "One flew" : "\(weg) flew"))
+        }
+    }
+
+    @Test func fehltDieSpracheKommtDeutsch() {
+        let t = VorschulText(de: "Hallo", tr: nil)
+        #expect(t.text("tr") == "Hallo" && t.text("en") == "Hallo")
+        #expect(t.sprache("tr") == "de" && t.sprache("en") == "de")
+        let u = VorschulText(de: "Hallo", tr: "Merhaba", en: "Hello")
+        #expect(u.text("tr") == "Merhaba" && u.text("en") == "Hello" && u.text("de") == "Hallo")
     }
 }

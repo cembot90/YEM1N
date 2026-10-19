@@ -290,7 +290,7 @@ struct PaketeView: View {
                         Label("JSON einfügen und veröffentlichen", systemImage: "doc.on.clipboard")
                     }
                 } footer: {
-                    Text("Das JSON von Claude einfügen. Es landet direkt in der Cloud und auch hier auf dem Gerät.")
+                    Text("Das JSON aus dem KI-Chat einfügen. Es landet direkt in der Cloud und auch hier auf dem Gerät.")
                 }
                 .listRowBackground(zeile)
 
@@ -501,7 +501,7 @@ struct PaketeView: View {
               let paket = try? JSONDecoder().decode(ArbeitPaket.self, from: daten),
               !paket.uebungen.isEmpty,
               paket.uebungen.allSatisfy({ !$0.aufgaben.isEmpty }) else {
-            fehlerText = "Das Format passt nicht. Es geht um Klassenarbeiten und Übungssets, bitte das JSON von Claude komplett kopieren."
+            fehlerText = "Das Format passt nicht. Es geht um Klassenarbeiten und Übungssets, bitte das JSON aus dem KI-Chat komplett kopieren."
             return
         }
         fehlerText = ""

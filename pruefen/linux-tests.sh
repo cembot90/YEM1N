@@ -57,7 +57,7 @@ laufen "$arbeit/lern"
 
 echo "== Vorschule und Stimmen"
 python3 pruefen/auszug.py $Y "$arbeit/vor.swift" \
-  Vorschule.swift:VorschulArt,VorschulText,VorschulFrage,VorschulGenerator,VorschulTon VorschuleMehr.swift:VorschulMehr
+  Vorschule.swift:VorschulArt,VorschulText,VorschulSprache,VorschulFrage,VorschulGenerator,VorschulTon VorschuleMehr.swift:VorschulMehr
 ohneApp $T/VorschuleTests.swift > "$arbeit/VorschuleTests.swift"
 ohneApp $T/StimmenTests.swift > "$arbeit/StimmenTests.swift"
 ohneApp $T/LobTests.swift > "$arbeit/LobTests.swift"

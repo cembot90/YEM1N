@@ -11,7 +11,7 @@ import Foundation
 //   Mengen auf einen Blick erfassen und vergleichen, die Zahlwortreihe, einfache Rechengeschichten,
 //   Laute wahrnehmen (Reime, Silben, Anlaute), Lagebegriffe wie links und rechts,
 //   Gefühle erkennen, Reihenfolgen verstehen, genau hinschauen, sicher im Straßenverkehr.
-// Jede Frage hier hat eine deutsche und, wo es Sinn ergibt, eine türkische Fassung.
+// Jede Frage hier hat eine deutsche und, wo es Sinn ergibt, eine türkische und englische Fassung.
 // Bei Reimen und Silben geht es um deutsche Wörter, darum gibt es dort nur Deutsch.
 
 enum VorschulMehr {
@@ -52,7 +52,8 @@ enum VorschulMehr {
     static func wuerfel() -> F {
         let n = Int.random(in: 1...6)
         let o = VorschulGenerator.zahlenOptionen(richtig: n, von: 1, bis: 6)
-        return F(text: VorschulText(de: "Wie viele Punkte hat der Würfel?", tr: "Zarda kaç nokta var?"),
+        return F(text: VorschulText(de: "Wie viele Punkte hat der Würfel?", tr: "Zarda kaç nokta var?",
+                                    en: "How many dots are on the dice?"),
                  gross: wuerfelBilder[n - 1], optionen: o.optionen, richtig: o.index)
     }
 
@@ -63,8 +64,10 @@ enum VorschulMehr {
         let e = ["🎈", "🐦", "🦋", "🐝"].randomElement() ?? "🎈"
         let o = VorschulGenerator.zahlenOptionen(richtig: n - weg, von: 0, bis: m)
         let wegDe = weg == 1 ? "Einer ist" : "\(weg) sind"
+        let wegEn = weg == 1 ? "One" : "\(weg)"
         return F(text: VorschulText(de: "Es waren \(n). \(wegDe) weggeflogen. Wie viele sind noch da?",
-                                    tr: "\(n) tane vardı. \(weg) tanesi uçtu. Kaç tane kaldı?"),
+                                    tr: "\(n) tane vardı. \(weg) tanesi uçtu. Kaç tane kaldı?",
+                                    en: "There were \(n). \(wegEn) flew away. How many are left?"),
                  zeige: Array(repeating: e, count: n - weg) + Array(repeating: "💨", count: weg),
                  optionen: o.optionen, richtig: o.index)
     }
@@ -74,7 +77,7 @@ enum VorschulMehr {
         let n = Int.random(in: 1...m)
         let e = VorschulGenerator.dinge.randomElement() ?? "⭐"
         let o = VorschulGenerator.zahlenOptionen(richtig: n, von: 1, bis: m)
-        return F(text: VorschulText(de: "Wo sind es \(n)?", tr: "Hangisinde \(n) tane var?"),
+        return F(text: VorschulText(de: "Wo sind es \(n)?", tr: "Hangisinde \(n) tane var?", en: "Which one has \(n)?"),
                  gross: String(n),
                  optionen: o.optionen.map { VorschulGenerator.gruppe(Int($0) ?? 1, e) }, richtig: o.index,
                  gruppenOptionen: true)
@@ -86,7 +89,8 @@ enum VorschulMehr {
         let e = ["🍪", "🍓", "🍬", "🍎"].randomElement() ?? "🍪"
         let o = VorschulGenerator.zahlenOptionen(richtig: je, von: 1, bis: 10)
         return F(text: VorschulText(de: "Teile gerecht auf \(kinder) Kinder auf. Wie viele bekommt jedes Kind?",
-                                    tr: "\(kinder) çocuğa eşit paylaştır. Her çocuk kaç tane alır?"),
+                                    tr: "\(kinder) çocuğa eşit paylaştır. Her çocuk kaç tane alır?",
+                                    en: "Share fairly between \(kinder) children. How many does each child get?"),
                  zeige: Array(repeating: e, count: kinder * je),
                  optionen: o.optionen, richtig: o.index)
     }
@@ -98,7 +102,7 @@ enum VorschulMehr {
     static func buchstabe() -> F {
         let b = buchstaben.randomElement() ?? "A"
         let o = gemischt(b, buchstaben)
-        return F(text: VorschulText(de: "Tippe auf das \(b).", tr: "\(b) harfine dokun."),
+        return F(text: VorschulText(de: "Tippe auf das \(b).", tr: "\(b) harfine dokun.", en: "Tap the letter \(b)."),
                  optionen: o.optionen, richtig: o.index)
     }
 
@@ -140,22 +144,22 @@ enum VorschulMehr {
     static func lage() -> F {
         let drei = Array(tierReihe.shuffled().prefix(3))
         let wahl = Int.random(in: 0...2)
-        let texte = [VorschulText(de: "Wer ist ganz links?", tr: "En solda kim var?"),
-                     VorschulText(de: "Wer ist in der Mitte?", tr: "Ortada kim var?"),
-                     VorschulText(de: "Wer ist ganz rechts?", tr: "En sağda kim var?")]
+        let texte = [VorschulText(de: "Wer ist ganz links?", tr: "En solda kim var?", en: "Who is on the far left?"),
+                     VorschulText(de: "Wer ist in der Mitte?", tr: "Ortada kim var?", en: "Who is in the middle?"),
+                     VorschulText(de: "Wer ist ganz rechts?", tr: "En sağda kim var?", en: "Who is on the far right?")]
         let o = gemischt(drei[wahl], drei)
         return F(text: texte[wahl], zeige: drei, optionen: o.optionen, richtig: o.index)
     }
 
-    static let gefuehle: [(String, String, String)] = [
-        ("😀", "fröhlich", "mutlu"), ("😢", "traurig", "üzgün"), ("😠", "wütend", "kızgın"),
-        ("😨", "ängstlich", "korkmuş"), ("😲", "überrascht", "şaşırmış"), ("😴", "müde", "uykulu")
+    static let gefuehle: [(String, String, String, String)] = [
+        ("😀", "fröhlich", "mutlu", "happy"), ("😢", "traurig", "üzgün", "sad"), ("😠", "wütend", "kızgın", "angry"),
+        ("😨", "ängstlich", "korkmuş", "scared"), ("😲", "überrascht", "şaşırmış", "surprised"), ("😴", "müde", "uykulu", "tired")
     ]
 
     static func gefuehl() -> F {
         let g = gefuehle.randomElement() ?? gefuehle[0]
         let o = gemischt(g.0, gefuehle.map { $0.0 })
-        return F(text: VorschulText(de: "Wer ist \(g.1)?", tr: "Hangisi \(g.2)?"),
+        return F(text: VorschulText(de: "Wer ist \(g.1)?", tr: "Hangisi \(g.2)?", en: "Who is \(g.3)?"),
                  optionen: o.optionen, richtig: o.index)
     }
 
@@ -169,7 +173,7 @@ enum VorschulMehr {
     static func reihenfolge() -> F {
         let a = ablaeufe.randomElement() ?? ablaeufe[0]
         let o = gemischt(a.1, ablaeufe.map { $0.1 })
-        return F(text: VorschulText(de: "Was kommt als Nächstes?", tr: "Sırada ne var?"),
+        return F(text: VorschulText(de: "Was kommt als Nächstes?", tr: "Sırada ne var?", en: "What happens next?"),
                  folge: a.0, optionen: o.optionen, richtig: o.index)
     }
 
@@ -182,17 +186,23 @@ enum VorschulMehr {
     static func tierwelt() -> F {
         let (tier, ort) = lebensraeume.randomElement() ?? lebensraeume[0]
         let o = gemischt(ort, ["🌊", "🌳", "🏜️", "🧊", "🏡"])
-        return F(text: VorschulText(de: "Wo lebt dieses Tier?", tr: "Bu hayvan nerede yaşar?"),
+        return F(text: VorschulText(de: "Wo lebt dieses Tier?", tr: "Bu hayvan nerede yaşar?", en: "Where does this animal live?"),
                  gross: tier, optionen: o.optionen, richtig: o.index)
     }
 
     static let verkehrsFragen: [(VorschulText, String, [String])] = [
-        (VorschulText(de: "Bei welcher Ampelfarbe darfst du gehen?", tr: "Hangi ışıkta karşıya geçebilirsin?"), "🟢", ["🔴", "🟡"]),
-        (VorschulText(de: "Bei welcher Ampelfarbe bleibst du stehen?", tr: "Hangi ışıkta durursun?"), "🔴", ["🟢", "🔵"]),
-        (VorschulText(de: "Was machst du, bevor du über die Straße gehst?", tr: "Karşıya geçmeden önce ne yaparsın?"), "👀", ["🏃", "🙈"]),
-        (VorschulText(de: "Was setzt du beim Fahrradfahren auf den Kopf?", tr: "Bisiklete binerken başına ne takarsın?"), "⛑️", ["🎩", "👑"]),
-        (VorschulText(de: "Was macht dich im Dunkeln gut sichtbar?", tr: "Karanlıkta seni ne görünür yapar?"), "🦺", ["🕶️", "🧢"]),
-        (VorschulText(de: "Wo gehst du sicher über die Straße?", tr: "Karşıya nerede güvenle geçersin?"), "🚸", ["🌳", "🚧"])
+        (VorschulText(de: "Bei welcher Ampelfarbe darfst du gehen?", tr: "Hangi ışıkta karşıya geçebilirsin?",
+                      en: "Which light means you may cross?"), "🟢", ["🔴", "🟡"]),
+        (VorschulText(de: "Bei welcher Ampelfarbe bleibst du stehen?", tr: "Hangi ışıkta durursun?",
+                      en: "Which light means you stop?"), "🔴", ["🟢", "🔵"]),
+        (VorschulText(de: "Was machst du, bevor du über die Straße gehst?", tr: "Karşıya geçmeden önce ne yaparsın?",
+                      en: "What do you do before you cross the road?"), "👀", ["🏃", "🙈"]),
+        (VorschulText(de: "Was setzt du beim Fahrradfahren auf den Kopf?", tr: "Bisiklete binerken başına ne takarsın?",
+                      en: "What do you wear on your head on a bike?"), "⛑️", ["🎩", "👑"]),
+        (VorschulText(de: "Was macht dich im Dunkeln gut sichtbar?", tr: "Karanlıkta seni ne görünür yapar?",
+                      en: "What helps others see you in the dark?"), "🦺", ["🕶️", "🧢"]),
+        (VorschulText(de: "Wo gehst du sicher über die Straße?", tr: "Karşıya nerede güvenle geçersin?",
+                      en: "Where can you cross the road safely?"), "🚸", ["🌳", "🚧"])
     ]
 
     static func verkehr() -> F {
@@ -212,7 +222,7 @@ enum VorschulMehr {
         var bilder = Array(repeating: gleich, count: 3)
         let stelle = Int.random(in: 0...3)
         bilder.insert(anders, at: stelle)
-        return F(text: VorschulText(de: "Welches Bild ist anders?", tr: "Hangi resim farklı?"),
+        return F(text: VorschulText(de: "Welches Bild ist anders?", tr: "Hangi resim farklı?", en: "Which picture is different?"),
                  optionen: bilder, richtig: stelle)
     }
 }

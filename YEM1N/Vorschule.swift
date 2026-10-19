@@ -89,9 +89,73 @@ enum VorschulArt: String, CaseIterable, Identifiable, Hashable {
     }
 }
 
+/// Eine Frage auf Deutsch und, wo es passt, auf Türkisch und Englisch.
+/// Fehlt eine Sprache, wird die Frage auf Deutsch gezeigt und vorgelesen.
 struct VorschulText {
     let de: String
     let tr: String?
+    var en: String? = nil
+
+    /// Die Sprache, in der diese Frage wirklich kommt: die gewünschte, wenn es sie gibt, sonst Deutsch
+    func sprache(_ wunsch: String) -> String {
+        switch wunsch {
+        case "tr": return tr == nil ? "de" : "tr"
+        case "en": return en == nil ? "de" : "en"
+        default: return "de"
+        }
+    }
+
+    func text(_ wunsch: String) -> String {
+        switch sprache(wunsch) {
+        case "tr": return tr ?? de
+        case "en": return en ?? de
+        default: return de
+        }
+    }
+}
+
+/// Die Vorschule spricht Deutsch. Englisch und Türkisch sind ein Zusatz, den die Eltern
+/// unter Einstellungen, Bereiche einschalten. Erst dann gibt es den Umschalter in der Vorschule.
+enum VorschulSprache {
+    static let wahlSchluessel = "vorschulSprache"
+    static let englischSchluessel = "vorschulEnglisch"
+    static let tuerkischSchluessel = "vorschulTuerkisch"
+
+    /// Was der Umschalter anbietet. Nur Deutsch heißt: kein Umschalter.
+    static func angebot(englisch: Bool, tuerkisch: Bool) -> [String] {
+        ["de"] + (englisch ? ["en"] : []) + (tuerkisch ? ["tr"] : [])
+    }
+
+    /// Die Sprache, die gerade gilt. Ist die gewählte Sprache ausgeschaltet, gilt Deutsch.
+    static func aktiv(gewaehlt: String, englisch: Bool, tuerkisch: Bool) -> String {
+        angebot(englisch: englisch, tuerkisch: tuerkisch).contains(gewaehlt) ? gewaehlt : "de"
+    }
+
+    /// Die Sprache aus den Einstellungen dieses Geräts
+    static var jetzt: String {
+        let d = UserDefaults.standard
+        return aktiv(gewaehlt: d.string(forKey: wahlSchluessel) ?? "de",
+                     englisch: d.bool(forKey: englischSchluessel),
+                     tuerkisch: d.bool(forKey: tuerkischSchluessel))
+    }
+
+    /// Sprachcode für die Stimme
+    static func code(_ sprache: String) -> String {
+        switch sprache {
+        case "tr": return "tr-TR"
+        case "en": return "en-GB"
+        default: return "de-DE"
+        }
+    }
+
+    /// Name auf dem Umschalter, in der Sprache selbst
+    static func name(_ sprache: String) -> String {
+        switch sprache {
+        case "tr": return "Türkçe"
+        case "en": return "English"
+        default: return "Deutsch"
+        }
+    }
 }
 
 struct VorschulFrage: Identifiable {
@@ -115,21 +179,21 @@ struct VorschulFrage: Identifiable {
 enum VorschulGenerator {
     static let dinge = ["🍎", "⭐", "🐶", "🎈", "🚗", "🐟", "🌸", "🍪", "🐱", "🍓"]
 
-    static let formen: [(frageDe: String, frageTr: String, emoji: String)] = [
-        ("Wo ist der Kreis?", "Daire hangisi?", "🔵"),
-        ("Wo ist das Quadrat?", "Kare hangisi?", "🟩"),
-        ("Wo ist das Dreieck?", "Üçgen hangisi?", "🔺"),
-        ("Wo ist der Stern?", "Yıldız hangisi?", "⭐"),
-        ("Wo ist das Herz?", "Kalp hangisi?", "💜")
+    static let formen: [(frage: VorschulText, emoji: String)] = [
+        (VorschulText(de: "Wo ist der Kreis?", tr: "Daire hangisi?", en: "Where is the circle?"), "🔵"),
+        (VorschulText(de: "Wo ist das Quadrat?", tr: "Kare hangisi?", en: "Where is the square?"), "🟩"),
+        (VorschulText(de: "Wo ist das Dreieck?", tr: "Üçgen hangisi?", en: "Where is the triangle?"), "🔺"),
+        (VorschulText(de: "Wo ist der Stern?", tr: "Yıldız hangisi?", en: "Where is the star?"), "⭐"),
+        (VorschulText(de: "Wo ist das Herz?", tr: "Kalp hangisi?", en: "Where is the heart?"), "💜")
     ]
 
-    static let farben: [(frageDe: String, frageTr: String, emoji: String)] = [
-        ("Tippe auf Rot.", "Kırmızı olanı bul.", "🔴"),
-        ("Tippe auf Blau.", "Mavi olanı bul.", "🔵"),
-        ("Tippe auf Gelb.", "Sarı olanı bul.", "🟡"),
-        ("Tippe auf Grün.", "Yeşil olanı bul.", "🟢"),
-        ("Tippe auf Lila.", "Mor olanı bul.", "🟣"),
-        ("Tippe auf Orange.", "Turuncu olanı bul.", "🟠")
+    static let farben: [(frage: VorschulText, emoji: String)] = [
+        (VorschulText(de: "Tippe auf Rot.", tr: "Kırmızı olanı bul.", en: "Tap the red one."), "🔴"),
+        (VorschulText(de: "Tippe auf Blau.", tr: "Mavi olanı bul.", en: "Tap the blue one."), "🔵"),
+        (VorschulText(de: "Tippe auf Gelb.", tr: "Sarı olanı bul.", en: "Tap the yellow one."), "🟡"),
+        (VorschulText(de: "Tippe auf Grün.", tr: "Yeşil olanı bul.", en: "Tap the green one."), "🟢"),
+        (VorschulText(de: "Tippe auf Lila.", tr: "Mor olanı bul.", en: "Tap the purple one."), "🟣"),
+        (VorschulText(de: "Tippe auf Orange.", tr: "Turuncu olanı bul.", en: "Tap the orange one."), "🟠")
     ]
 
     static let anlaute: [(emoji: String, wort: String, buchstabe: String)] = [
@@ -206,7 +270,7 @@ enum VorschulGenerator {
             let n = Int.random(in: 1...m)
             let e = dinge.randomElement() ?? "⭐"
             let o = zahlenOptionen(richtig: n, von: 1, bis: m)
-            return VorschulFrage(text: VorschulText(de: "Wie viele siehst du?", tr: "Kaç tane görüyorsun?"),
+            return VorschulFrage(text: VorschulText(de: "Wie viele siehst du?", tr: "Kaç tane görüyorsun?", en: "How many can you see?"),
                                  zeige: Array(repeating: e, count: n),
                                  optionen: o.optionen, richtig: o.index)
 
@@ -214,7 +278,7 @@ enum VorschulGenerator {
             let m = grenze(stufe)
             let n = Int.random(in: 1...m)
             let o = zahlenOptionen(richtig: n, von: 1, bis: m)
-            return VorschulFrage(text: VorschulText(de: "Tippe auf die \(n).", tr: "\(n) sayısına dokun."),
+            return VorschulFrage(text: VorschulText(de: "Tippe auf die \(n).", tr: "\(n) sayısına dokun.", en: "Tap the \(n)."),
                                  optionen: o.optionen, richtig: o.index)
 
         case .plus:
@@ -230,7 +294,8 @@ enum VorschulGenerator {
             }
             let paar = dinge.shuffled()
             let o = zahlenOptionen(richtig: x + y, von: 1, bis: m)
-            return VorschulFrage(text: VorschulText(de: "\(x) plus \(y). Wie viel ist das?", tr: "\(x) artı \(y) kaç eder?"),
+            return VorschulFrage(text: VorschulText(de: "\(x) plus \(y). Wie viel ist das?", tr: "\(x) artı \(y) kaç eder?",
+                                                    en: "\(x) plus \(y). How many is that?"),
                                  zeige: Array(repeating: paar[0], count: x),
                                  zeigeZwei: Array(repeating: paar[1], count: y),
                                  plus: true,
@@ -249,8 +314,8 @@ enum VorschulGenerator {
             let idx: Int
             if fragtMehr { idx = a > b ? 0 : 1 } else { idx = a < b ? 0 : 1 }
             let text = fragtMehr
-                ? VorschulText(de: "Wo sind mehr?", tr: "Hangisi daha fazla?")
-                : VorschulText(de: "Wo sind weniger?", tr: "Hangisi daha az?")
+                ? VorschulText(de: "Wo sind mehr?", tr: "Hangisi daha fazla?", en: "Which side has more?")
+                : VorschulText(de: "Wo sind weniger?", tr: "Hangisi daha az?", en: "Which side has fewer?")
             return VorschulFrage(text: text,
                                  optionen: [gruppe(a, e), gruppe(b, e)], richtig: idx,
                                  gruppenOptionen: true)
@@ -262,15 +327,17 @@ enum VorschulGenerator {
             let ziel = danach ? n + 1 : n - 1
             let o = zahlenOptionen(richtig: ziel, von: 0, bis: m)
             let text = danach
-                ? VorschulText(de: "Welche Zahl kommt nach der \(n)?", tr: "\(n) sayısından sonra hangi sayı gelir?")
-                : VorschulText(de: "Welche Zahl kommt vor der \(n)?", tr: "\(n) sayısından önce hangi sayı gelir?")
+                ? VorschulText(de: "Welche Zahl kommt nach der \(n)?", tr: "\(n) sayısından sonra hangi sayı gelir?",
+                               en: "Which number comes after \(n)?")
+                : VorschulText(de: "Welche Zahl kommt vor der \(n)?", tr: "\(n) sayısından önce hangi sayı gelir?",
+                               en: "Which number comes before \(n)?")
             return VorschulFrage(text: text, gross: String(n), optionen: o.optionen, richtig: o.index)
 
         case .formen:
             let quelle = Bool.random() ? formen : farben
             let drei = Array(quelle.shuffled().prefix(3))
             let r = Int.random(in: 0..<3)
-            return VorschulFrage(text: VorschulText(de: drei[r].frageDe, tr: drei[r].frageTr),
+            return VorschulFrage(text: drei[r].frage,
                                  optionen: drei.map { $0.emoji }, richtig: r)
 
         case .anlaut:
@@ -289,7 +356,8 @@ enum VorschulGenerator {
             let fremd = g[1].randomElement() ?? "🍎"
             var optionen = eigene + [fremd]
             optionen.shuffle()
-            return VorschulFrage(text: VorschulText(de: "Was passt nicht dazu?", tr: "Hangisi diğerlerine uymuyor?"),
+            return VorschulFrage(text: VorschulText(de: "Was passt nicht dazu?", tr: "Hangisi diğerlerine uymuyor?",
+                                                    en: "Which one does not belong?"),
                                  optionen: optionen, richtig: optionen.firstIndex(of: fremd) ?? 0)
 
         case .wuerfel, .minus, .zahlbild, .teilen, .buchstabe, .reime, .silben,
@@ -316,7 +384,7 @@ enum VorschulGenerator {
             var optionen = [richtig]
             for e in p where optionen.count < 3 && e != richtig { optionen.append(e) }
             optionen.shuffle()
-            return VorschulFrage(text: VorschulText(de: "Wie geht es weiter?", tr: "Sıradaki hangisi?"),
+            return VorschulFrage(text: VorschulText(de: "Wie geht es weiter?", tr: "Sıradaki hangisi?", en: "What comes next?"),
                                  folge: folge,
                                  optionen: optionen, richtig: optionen.firstIndex(of: richtig) ?? 0)
         }
@@ -325,18 +393,14 @@ enum VorschulGenerator {
 
 enum VorschulTon {
     static func sag(_ t: VorschulText, stimmung: SprechStimmung = .normal) {
-        let sprache = UserDefaults.standard.string(forKey: "vorschulSprache") ?? "de"
-        if sprache == "tr", let tr = t.tr {
-            Sprecher.shared.sprich(tr, code: "tr-TR", stimmung: stimmung)
-        } else {
-            Sprecher.shared.sprich(t.de, code: "de-DE", stimmung: stimmung)
-        }
+        let sprache = t.sprache(VorschulSprache.jetzt)
+        Sprecher.shared.sprich(t.text(sprache), code: VorschulSprache.code(sprache), stimmung: stimmung)
     }
 
     static var name: String { UserDefaults.standard.string(forKey: "kindName") ?? "" }
 
     static func sag(_ t: LobText, stimmung: SprechStimmung = .normal) {
-        sag(VorschulText(de: t.de, tr: t.tr), stimmung: stimmung)
+        sag(VorschulText(de: t.de, tr: t.tr, en: t.en), stimmung: stimmung)
     }
 
     /// Lob mit viel Abwechslung, siehe Lob.swift
@@ -444,7 +508,9 @@ struct VorschuleView: View {
     @Query(sort: \Klassenarbeit.erstellt) private var alleArbeiten: [Klassenarbeit]
     @State private var loeschen: Klassenarbeit?
     @AppStorage("vorschulStufe") private var stufe = 2
-    @AppStorage("vorschulSprache") private var sprache = "de"
+    @AppStorage(VorschulSprache.wahlSchluessel) private var sprache = "de"
+    @AppStorage(VorschulSprache.englischSchluessel) private var englisch = false
+    @AppStorage(VorschulSprache.tuerkischSchluessel) private var tuerkisch = false
     @AppStorage("kindName") private var kindName = ""
     @AppStorage("modus") private var modus = ""
     @Namespace private var zoomRaum
@@ -456,11 +522,16 @@ struct VorschuleView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {
                         kopf
-                        Picker("Sprache", selection: $sprache) {
-                            Text("Deutsch").tag("de")
-                            Text("Türkçe").tag("tr")
+                        // Nur wenn die Eltern Englisch oder Türkisch eingeschaltet haben
+                        let angebot = VorschulSprache.angebot(englisch: englisch, tuerkisch: tuerkisch)
+                        if angebot.count > 1 {
+                            Picker("Sprache", selection: Binding(
+                                get: { VorschulSprache.aktiv(gewaehlt: sprache, englisch: englisch, tuerkisch: tuerkisch) },
+                                set: { sprache = $0 })) {
+                                ForEach(angebot, id: \.self) { Text(VorschulSprache.name($0)).tag($0) }
+                            }
+                            .pickerStyle(.segmented)
                         }
-                        .pickerStyle(.segmented)
                         if modus != "eltern" {
                             SchulstartPass()
                         }
@@ -601,7 +672,9 @@ struct VorschulRunde: View {
     @Environment(\.dismiss) private var dismiss
     @AppStorage("modus") private var modus = ""
     @AppStorage("vorschulStufe") private var stufe = 2
-    @AppStorage("vorschulSprache") private var sprache = "de"
+    @AppStorage(VorschulSprache.wahlSchluessel) private var sprache = "de"
+    @AppStorage(VorschulSprache.englischSchluessel) private var englisch = false
+    @AppStorage(VorschulSprache.tuerkischSchluessel) private var tuerkisch = false
     @State private var fragen: [VorschulFrage] = []
     @State private var nr = 0
     @State private var perfekt = 0
@@ -639,7 +712,7 @@ struct VorschulRunde: View {
                     HStack(spacing: 10) {
                         Image(systemName: "speaker.wave.2.fill")
                             .foregroundStyle(Theme.gelb)
-                        Text(sprache == "tr" ? (f.text.tr ?? f.text.de) : f.text.de)
+                        Text(f.text.text(VorschulSprache.aktiv(gewaehlt: sprache, englisch: englisch, tuerkisch: tuerkisch)))
                             .font(.system(.title3, design: .rounded).weight(.heavy))
                             .foregroundStyle(Color.white)
                             .multilineTextAlignment(.leading)
