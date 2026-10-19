@@ -93,34 +93,34 @@ enum LehrplanMusik {
     static var themen: [LernThema] {
         [
             LernThema(id: "mu1-instrumente", fach: .musik, titel: "Instrumente erkennen", emoji: "🥁",
-                      beschreibung: "Wie heißt das Instrument?", klasse: 1, erzeuge: instrument),
+                      beschreibung: "Wie heißt das Instrument?", klasse: 1, erzeuge: { instrument() }),
             LernThema(id: "mu1-laut", fach: .musik, titel: "Laut oder leise?", emoji: "🔊",
-                      beschreibung: "Geräusche um uns herum", klasse: 1, erzeuge: lautLeise),
+                      beschreibung: "Geräusche um uns herum", klasse: 1, erzeuge: { lautLeise() }),
             LernThema(id: "mu2-notenwerte", fach: .musik, titel: "Notenwerte", emoji: "🎼",
                       beschreibung: "Ganze, halbe und Viertelnoten", klasse: 2,
                       tipp: "Eine ganze Note dauert 4 Schläge, eine halbe 2 und eine Viertelnote 1.",
-                      erzeuge: notenwert),
+                      erzeuge: { notenwert() }),
             LernThema(id: "mu3-noten", fach: .musik, titel: "Noten lesen", emoji: "🎵",
                       beschreibung: "c, d, e, f, g, a, h im Violinschlüssel", klasse: 3,
                       tipp: "Die unterste Linie ist das e. Das c hat eine eigene kleine Hilfslinie.",
-                      erzeuge: noteLesen),
+                      erzeuge: { noteLesen() }),
             LernThema(id: "mu3-familien", fach: .musik, titel: "Instrumentenfamilien", emoji: "🎻",
-                      beschreibung: "Streichen, zupfen, blasen, schlagen, Tasten", klasse: 3, erzeuge: familie),
+                      beschreibung: "Streichen, zupfen, blasen, schlagen, Tasten", klasse: 3, erzeuge: { familie() }),
             LernThema(id: "mu4-takt", fach: .musik, titel: "Takt", emoji: "🥢",
                       beschreibung: "Wie viele Noten passen in einen Takt?", klasse: 4,
-                      tipp: "Im 3/4-Takt passen 3 Viertelnoten in einen Takt.", erzeuge: takt),
+                      tipp: "Im 3/4-Takt passen 3 Viertelnoten in einen Takt.", erzeuge: { takt() }),
             LernThema(id: "mu4-begriffe", fach: .musik, titel: "piano, forte und mehr", emoji: "🎚️",
-                      beschreibung: "Wie laut und wie schnell?", klasse: 4, erzeuge: begriff),
+                      beschreibung: "Wie laut und wie schnell?", klasse: 4, erzeuge: { begriff() }),
             LernThema(id: "mu4-komponisten", fach: .musik, titel: "Berühmte Komponisten", emoji: "🎹",
-                      beschreibung: "Wer hat das komponiert?", klasse: 4, erzeuge: komponist),
+                      beschreibung: "Wer hat das komponiert?", klasse: 4, erzeuge: { komponist() }),
             LernThema(id: "mu1-hochtief", fach: .musik, titel: "Hoch oder tief?", emoji: "🐦",
                       beschreibung: "Zwei Töne anhören und vergleichen", klasse: 1,
-                      tipp: "Ein hoher Ton klingt wie ein Vogel, ein tiefer wie ein Bär.", erzeuge: hochTief),
+                      tipp: "Ein hoher Ton klingt wie ein Vogel, ein tiefer wie ein Bär.", erzeuge: { hochTief() }),
             LernThema(id: "mu3-tonleiter", fach: .musik, titel: "Die Tonleiter", emoji: "🪜",
                       beschreibung: "c, d, e, f, g, a, h, c", klasse: 3,
-                      tipp: "Die Tonleiter geht c, d, e, f, g, a, h und dann wieder c.", erzeuge: tonleiter),
+                      tipp: "Die Tonleiter geht c, d, e, f, g, a, h und dann wieder c.", erzeuge: { tonleiter() }),
             LernThema(id: "mu4-stimmen", fach: .musik, titel: "Singstimmen", emoji: "🎤",
-                      beschreibung: "Sopran, Alt, Tenor und Bass", klasse: 4, erzeuge: stimmen)
+                      beschreibung: "Sopran, Alt, Tenor und Bass", klasse: 4, erzeuge: { stimmen() })
         ]
     }
 
@@ -322,26 +322,26 @@ enum LehrplanKunst {
     static var themen: [LernThema] {
         [
             LernThema(id: "ku1-farben", fach: .kunst, titel: "Farben und Grundfarben", emoji: "🖍️",
-                      beschreibung: "Rot, Gelb und Blau sind die Grundfarben", klasse: 1, erzeuge: grundfarben),
+                      beschreibung: "Rot, Gelb und Blau sind die Grundfarben", klasse: 1, erzeuge: { grundfarben() }),
             LernThema(id: "ku1-formen", fach: .kunst, titel: "Formen", emoji: "🔺",
-                      beschreibung: "Kreis, Dreieck, Quadrat und mehr", klasse: 1, erzeuge: formen),
+                      beschreibung: "Kreis, Dreieck, Quadrat und mehr", klasse: 1, erzeuge: { formen() }),
             LernThema(id: "ku2-mischen", fach: .kunst, titel: "Farben mischen", emoji: "🎨",
                       beschreibung: "Aus zwei Farben wird eine neue", klasse: 2,
-                      tipp: "Blau und Gelb ergibt Grün. Mit Weiß wird eine Farbe heller.", erzeuge: mischen),
+                      tipp: "Blau und Gelb ergibt Grün. Mit Weiß wird eine Farbe heller.", erzeuge: { mischen() }),
             LernThema(id: "ku3-farbkreis", fach: .kunst, titel: "Farbkreis", emoji: "🌈",
                       beschreibung: "Warme, kalte und Gegenfarben", klasse: 3,
                       tipp: "Gegenfarben liegen sich im Farbkreis gegenüber: Rot und Grün, Blau und Orange, Gelb und Violett.",
-                      erzeuge: farbkreis),
+                      erzeuge: { farbkreis() }),
             LernThema(id: "ku3-techniken", fach: .kunst, titel: "Techniken und Bildarten", emoji: "✂️",
-                      beschreibung: "Collage, Aquarell, Porträt ...", klasse: 3, erzeuge: technik),
+                      beschreibung: "Collage, Aquarell, Porträt ...", klasse: 3, erzeuge: { technik() }),
             LernThema(id: "ku4-kuenstler", fach: .kunst, titel: "Berühmte Künstler", emoji: "🖼️",
-                      beschreibung: "Wer hat das gemacht?", klasse: 4, erzeuge: kuenstler),
+                      beschreibung: "Wer hat das gemacht?", klasse: 4, erzeuge: { kuenstler() }),
             LernThema(id: "ku2-helldunkel", fach: .kunst, titel: "Heller und dunkler", emoji: "🌗",
-                      beschreibung: "Farben mit Weiß und Schwarz mischen", klasse: 2, erzeuge: hellDunkel),
+                      beschreibung: "Farben mit Weiß und Schwarz mischen", klasse: 2, erzeuge: { hellDunkel() }),
             LernThema(id: "ku1-werkzeuge", fach: .kunst, titel: "Malwerkzeuge", emoji: "🖌️",
-                      beschreibung: "Pinsel, Schere, Lineal und mehr", klasse: 1, erzeuge: werkzeug),
+                      beschreibung: "Pinsel, Schere, Lineal und mehr", klasse: 1, erzeuge: { werkzeug() }),
             LernThema(id: "ku4-bildaufbau", fach: .kunst, titel: "Bildaufbau", emoji: "🏞️",
-                      beschreibung: "Vordergrund, Hintergrund und Formate", klasse: 4, erzeuge: bildaufbau)
+                      beschreibung: "Vordergrund, Hintergrund und Formate", klasse: 4, erzeuge: { bildaufbau() })
         ]
     }
 

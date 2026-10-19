@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		27120F36308584AF00CA070B /* sherpa-onnx in Frameworks */ = {isa = PBXBuildFile; productRef = 27120F35308584AF00CA070B /* sherpa-onnx */; };
+		27120F36308584AF00CA070B /* sherpa-onnx-shared in Frameworks */ = {isa = PBXBuildFile; productRef = 27120F35308584AF00CA070B /* sherpa-onnx-shared */; };
 		274492AE307785EE004D8E2E /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 274492AD307785EE004D8E2E /* WidgetKit.framework */; };
 		274492B0307785EE004D8E2E /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 274492AF307785EE004D8E2E /* SwiftUI.framework */; };
 		274492BD307785EF004D8E2E /* YEM1NWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 274492AC307785EE004D8E2E /* YEM1NWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -96,7 +96,7 @@
 		000000000000000130000000 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			files = (
-				27120F36308584AF00CA070B /* sherpa-onnx in Frameworks */,
+				27120F36308584AF00CA070B /* sherpa-onnx-shared in Frameworks */,
 			);
 		};
 		274492A9307785EE004D8E2E /* Frameworks */ = {
@@ -167,7 +167,7 @@
 			);
 			name = YEM1N;
 			packageProductDependencies = (
-				27120F35308584AF00CA070B /* sherpa-onnx */,
+				27120F35308584AF00CA070B /* sherpa-onnx-shared */,
 			);
 			productName = MyApp;
 			productReference = 000000000000000000000120 /* YEM1N.app */;
@@ -705,10 +705,10 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		27120F35308584AF00CA070B /* sherpa-onnx */ = {
+		27120F35308584AF00CA070B /* sherpa-onnx-shared */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 27120F34308583D100CA070B /* XCRemoteSwiftPackageReference "sherpa-onnx" */;
-			productName = "sherpa-onnx";
+			productName = "sherpa-onnx-shared";
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

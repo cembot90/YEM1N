@@ -1,5 +1,10 @@
 import Foundation
-#if canImport(SherpaOnnx)
+// Das Paket sherpa-onnx gibt es fest eingebaut (SherpaOnnx) und als eigene
+// Bibliothek (SherpaOnnxShared). Die App nimmt die eigene Bibliothek, weil Apple
+// die fest eingebaute Fassung beim Hochladen ablehnt (ITMS-90208).
+#if canImport(SherpaOnnxShared)
+import SherpaOnnxShared
+#elseif canImport(SherpaOnnx)
 import SherpaOnnx
 #endif
 
@@ -17,7 +22,7 @@ nonisolated final class GeraeteStimmeMotor: @unchecked Sendable {
 
     /// Ist die Technik für Gerätestimmen in dieser App-Fassung eingebaut?
     static var eingebaut: Bool {
-        #if canImport(SherpaOnnx)
+        #if canImport(SherpaOnnxShared) || canImport(SherpaOnnx)
         return true
         #else
         return false
@@ -30,7 +35,7 @@ nonisolated final class GeraeteStimmeMotor: @unchecked Sendable {
     }
 
     private let schlange = DispatchQueue(label: "de.cemaras.yem1n.geraetestimme", qos: .userInitiated)
-    #if canImport(SherpaOnnx)
+    #if canImport(SherpaOnnxShared) || canImport(SherpaOnnx)
     /// Nur eine Stimme bleibt geladen, jede braucht gut 100 MB Arbeitsspeicher
     private var geladen: (id: String, tts: SherpaOnnxOfflineTtsWrapper)?
     #endif
@@ -49,7 +54,7 @@ nonisolated final class GeraeteStimmeMotor: @unchecked Sendable {
     /// Lädt die Stimme schon vorher, damit der erste Satz ohne Wartezeit kommt.
     func vorbereiten(_ paket: GeraetePaket, wurzel: URL = StimmOrt.wurzel) {
         schlange.async {
-            #if canImport(SherpaOnnx)
+            #if canImport(SherpaOnnxShared) || canImport(SherpaOnnx)
             _ = self.motor(paket, wurzel: wurzel)
             #endif
         }
@@ -58,14 +63,14 @@ nonisolated final class GeraeteStimmeMotor: @unchecked Sendable {
     /// Gibt den Speicher frei, zum Beispiel wenn iOS knapp wird.
     func freigeben() {
         schlange.async {
-            #if canImport(SherpaOnnx)
+            #if canImport(SherpaOnnxShared) || canImport(SherpaOnnx)
             self.geladen = nil
             #endif
         }
     }
 
     private func rechne(_ text: String, paket: GeraetePaket, sprecher: Int, tempo: Float, wurzel: URL) -> Ton? {
-        #if canImport(SherpaOnnx)
+        #if canImport(SherpaOnnxShared) || canImport(SherpaOnnx)
         return autoreleasepool {
             guard let tts = motor(paket, wurzel: wurzel) else { return nil }
             let anzahl = max(Int(tts.numSpeakers), 1)
@@ -80,7 +85,7 @@ nonisolated final class GeraeteStimmeMotor: @unchecked Sendable {
         #endif
     }
 
-    #if canImport(SherpaOnnx)
+    #if canImport(SherpaOnnxShared) || canImport(SherpaOnnx)
     private func motor(_ paket: GeraetePaket, wurzel: URL) -> SherpaOnnxOfflineTtsWrapper? {
         if let g = geladen, g.id == paket.id { return g.tts }
         guard StimmOrt.installiert(paket, in: wurzel),
