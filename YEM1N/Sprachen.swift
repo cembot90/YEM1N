@@ -615,7 +615,12 @@ final class Sprecher {
     func probeGeraet(_ paket: GeraetePaket) {
         sitzungEinrichten()
         still()
-        let satz = paket.sprache == "tr" ? "Merhaba! Sana böyle kitap okurum." : "Hallo! So klinge ich, wenn ich dir vorlese."
+        let satz: String
+        switch paket.sprache {
+        case "tr": satz = "Merhaba! Sana böyle kitap okurum."
+        case "en": satz = "Hello! This is how I sound when I read to you."
+        default: satz = "Hallo! So klinge ich, wenn ich dir vorlese."
+        }
         let meine = satzNummer
         Task {
             _ = await GeraeteVorleser.shared.sprich(satz, paket: paket, stimmung: .normal, tonhoehe: 1,

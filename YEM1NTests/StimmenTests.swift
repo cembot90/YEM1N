@@ -35,7 +35,8 @@ struct StimmenTests {
         }
         #expect(GeraetePaket.fuer(sprache: "de")?.name == "Thorsten")
         #expect(GeraetePaket.fuer(sprache: "tr")?.name == "Fahrettin")
-        #expect(GeraetePaket.fuer(sprache: "en") == nil)
+        #expect(GeraetePaket.fuer(sprache: "en")?.name == "Cori")
+        #expect(GeraetePaket.fuer(sprache: "it") == nil)
     }
 
     @Test func thorstenIstDieKlareFassung() {

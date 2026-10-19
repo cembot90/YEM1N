@@ -4,14 +4,14 @@ import Foundation
 // MARK: - Gerätestimmen: Pakete, Speicherort, Auspacken
 // ============================================================
 //
-// Die Gerätestimmen sind freie Piper-Stimmen (Lizenz CC0). Die App lädt sie
+// Die Gerätestimmen sind freie Piper-Stimmen (Lizenz CC0 oder gemeinfrei). Die App lädt sie
 // auf Wunsch einmal von GitHub und liest danach ohne Internet damit vor.
 // Diese Datei braucht nur Foundation, damit sie auch unter Linux geprüft werden kann.
 
 /// Eine Stimme oder die Aussprachedaten, so wie sie zum Laden bereitliegen.
 nonisolated struct GeraetePaket: Identifiable, Hashable, Sendable {
     let id: String
-    /// "de" oder "tr", leer bei den Aussprachedaten
+    /// "de", "tr" oder "en", leer bei den Aussprachedaten
     let sprache: String
     let name: String
     /// Ordner nach dem Auspacken, so wie er im Paket steht
@@ -52,6 +52,10 @@ nonisolated struct GeraetePaket: Identifiable, Hashable, Sendable {
                      sprecherNormal: 0, sprecherFroh: 0, sprecherLeise: 0),
         GeraetePaket(id: "tr-fahrettin-1", sprache: "tr", name: "Fahrettin", ordner: "tr-fahrettin",
                      bytes: 63_160_320, sha256: "f092809a87d8a1d1d15710963097c273d728550f73d3ff8abcf27d6141b3ad6d",
+                     sprecherNormal: 0, sprecherFroh: 0, sprecherLeise: 0),
+        // Cori, eine britische Frauenstimme aus gemeinfreien LibriVox-Hörbüchern
+        GeraetePaket(id: "en-cori-1", sprache: "en", name: "Cori", ordner: "en-cori",
+                     bytes: 63_539_200, sha256: "1f1e56c5054f9d055b406c5debed4bf73bd7dfe9d82ee10f97c5b447b765dc97",
                      sprecherNormal: 0, sprecherFroh: 0, sprecherLeise: 0)
     ]
 

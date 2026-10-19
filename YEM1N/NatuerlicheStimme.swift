@@ -8,7 +8,7 @@ import CryptoKit
 // ============================================================
 //
 // Reihenfolge beim Vorlesen:
-// 1. Die Gerätestimme (Thorsten oder Fahrettin), wenn sie geladen ist.
+// 1. Die Gerätestimme (Thorsten, Fahrettin oder Cori), wenn sie geladen ist.
 // 2. Sonst wie bisher die iOS-Stimme.
 // Alles läuft auf dem Gerät. Nur das einmalige Laden einer Gerätestimme braucht Internet.
 
@@ -344,17 +344,26 @@ struct NatuerlicheStimmenAbschnitt: View {
         } header: {
             Text("Natürliche Stimmen")
         } footer: {
-            Text("Die Gerätestimme liest Vorschule, Mathe, Lernwelt, Olli und das Haustier vor, auch ohne Internet. Sie wird einmal von GitHub geladen, am besten im WLAN. Dabei werden keine Daten aus der App gesendet.")
+            Text("Die Gerätestimme liest Vorschule, Mathe, Lernwelt, Sprachen, Olli und das Haustier vor, auch ohne Internet. Jede Sprache hat ihre eigene Stimme. Sie wird einmal von GitHub geladen, am besten im WLAN. Dabei werden keine Daten aus der App gesendet.")
         }
         .listRowBackground(hintergrund)
     }
 
     private func flagge(_ p: GeraetePaket) -> String {
-        p.sprache == "tr" ? "🇹🇷" : "🇩🇪"
+        switch p.sprache {
+        case "tr": return "🇹🇷"
+        case "en": return "🇬🇧"
+        default: return "🇩🇪"
+        }
     }
 
     private func untertitel(_ p: GeraetePaket, _ z: GeraeteStimmen.Zustand) -> String {
-        let sprache = p.sprache == "tr" ? "Türkisch" : "Deutsch"
+        let sprache: String
+        switch p.sprache {
+        case "tr": sprache = "Türkisch"
+        case "en": sprache = "Englisch"
+        default: sprache = "Deutsch"
+        }
         switch z {
         case .fehlt: return "\(sprache) · \(p.megabyte) MB laden"
         case .laedt(let a): return "Lädt \(Int(a * 100)) %"
