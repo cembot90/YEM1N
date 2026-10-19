@@ -152,3 +152,61 @@ struct VorschuleTests {
         #expect(u.text("tr") == "Merhaba" && u.text("en") == "Hello" && u.text("de") == "Hallo")
     }
 }
+
+// MARK: - Englisch für Kleine
+
+@MainActor
+struct VorschulEnglischTests {
+
+    @Test func jedesThemaHatGenugEindeutigeWoerter() {
+        for t in EnglischThema.mitWoertern {
+            let w = t.woerter
+            #expect(w.count >= 8, "\(t) hat zu wenige Wörter")
+            #expect(Set(w.map(\.en)).count == w.count, "\(t): doppeltes Wort")
+            #expect(Set(w.map(\.bild)).count == w.count, "\(t): doppeltes Bild")
+            #expect(w.allSatisfy { !$0.de.isEmpty && !$0.en.isEmpty && !$0.bild.isEmpty })
+        }
+        let alle = EnglischThema.gemischt.woerter.map(\.en)
+        #expect(Set(alle).count == alle.count, "Ein Wort steht in zwei Themen")
+        #expect(Set(EnglischThema.allCases.map(\.emoji)).count == EnglischThema.allCases.count)
+    }
+
+    @Test func jedeRundeFragtVerschiedeneWoerterMitDemRichtigenBild() {
+        for t in EnglischThema.allCases {
+            for _ in 0..<30 {
+                let runde = VorschulEnglisch.fragen(t)
+                #expect(runde.count == 8, "\(t)")
+                #expect(Set(runde.map { $0.text.en ?? "" }).count == runde.count, "\(t): Wort doppelt in einer Runde")
+                for f in runde {
+                    #expect(f.optionen.count == 3 && Set(f.optionen).count == 3, "\(t): \(f.optionen)")
+                    #expect(f.optionen.indices.contains(f.richtig))
+                    // Das gesuchte Wort steht in der Aufforderung, das richtige Bild gehört dazu
+                    let gesucht = EnglischThema.gemischt.woerter.first { $0.bild == f.optionen[f.richtig] }
+                    #expect(gesucht != nil && (f.text.en ?? "").contains(gesucht?.en ?? "?"), "\(f.text.en ?? "")")
+                    #expect(f.text.sprache("en") == "en")
+                }
+            }
+        }
+    }
+
+    @Test func dieSaetzeSindRichtigesEnglisch() {
+        let hund = EnglischWort(bild: "🐶", de: "der Hund", en: "dog")
+        let hose = EnglischWort(bild: "👖", de: "die Hose", en: "trousers", mehrzahl: true)
+        let rot = VorschulEnglisch.f("🔴", "rot", "red")
+        #expect(VorschulEnglisch.aufforderung(hund, art: 0) == "Tap the dog!")
+        #expect(VorschulEnglisch.aufforderung(hund, art: 1) == "Where is the dog?")
+        #expect(VorschulEnglisch.aufforderung(hund, art: 2) == "Find the dog!")
+        #expect(VorschulEnglisch.aufforderung(hose, art: 1) == "Where are the trousers?")
+        #expect(VorschulEnglisch.aufforderung(rot, art: 0) == "Tap red!")
+        #expect(VorschulEnglisch.aufforderung(rot, art: 1) == "Where is red?")
+        #expect(VorschulEnglisch.bedeutung(hund) == "dog: der Hund")
+    }
+
+    @Test func keineGedankenstriche() {
+        for w in EnglischThema.gemischt.woerter {
+            for t in [w.de, w.en, VorschulEnglisch.aufforderung(w, art: 1)] {
+                #expect(!t.contains("\u{2013}") && !t.contains("\u{2014}"), "\(t)")
+            }
+        }
+    }
+}

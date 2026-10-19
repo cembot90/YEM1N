@@ -513,14 +513,14 @@ struct BereicheEinstellungen: View {
 
             if vorschulAn {
                 Section {
-                    Toggle("🇬🇧 Vorschule auch auf Englisch", isOn: $vorschulEnglisch)
+                    Toggle("🇬🇧 Englisch in der Vorschule", isOn: $vorschulEnglisch)
                         .tint(Theme.gelb)
                     Toggle("🇹🇷 Vorschule auch auf Türkisch", isOn: $vorschulTuerkisch)
                         .tint(Theme.gelb)
                 } header: {
                     Text("Vorschule in anderen Sprachen (Versuch)")
                 } footer: {
-                    Text("Die Vorschule spricht Deutsch. Mit diesen Schaltern erscheint oben in der Vorschule ein Umschalter, dann liest die App die Spiele auch auf Englisch oder Türkisch vor. Spiele mit deutschen Wörtern wie Reime, Silben und Anfangsbuchstaben bleiben auf Deutsch.")
+                    Text("Die Vorschule spricht Deutsch. Englisch bringt den Bereich Englisch für Kleine: Wörter hören und Bilder antippen. Mit Englisch oder Türkisch erscheint außerdem oben in der Vorschule ein Umschalter, dann liest die App die übrigen Spiele auch in dieser Sprache vor. Reime, Silben und Anfangsbuchstaben bleiben auf Deutsch.")
                 }
                 .listRowBackground(zeilenGrund)
             }

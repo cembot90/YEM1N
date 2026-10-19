@@ -62,7 +62,7 @@ ohneApp $T/VorschuleTests.swift > "$arbeit/VorschuleTests.swift"
 ohneApp $T/StimmenTests.swift > "$arbeit/StimmenTests.swift"
 ohneApp $T/LobTests.swift > "$arbeit/LobTests.swift"
 "$SWIFTC" -parse-as-library -O -o "$arbeit/vor" "$arbeit/vor.swift" pruefen/platzhalter.swift \
-  $Y/VorleseText.swift $Y/GeraeteStimmeDaten.swift $Y/Lob.swift \
+  $Y/VorleseText.swift $Y/GeraeteStimmeDaten.swift $Y/Lob.swift $Y/VorschulEnglisch.swift \
   "$arbeit/VorschuleTests.swift" "$arbeit/StimmenTests.swift" "$arbeit/LobTests.swift" "$arbeit/start.swift"
 laufen "$arbeit/vor"
 

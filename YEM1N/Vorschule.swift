@@ -392,28 +392,30 @@ enum VorschulGenerator {
 }
 
 enum VorschulTon {
-    static func sag(_ t: VorschulText, stimmung: SprechStimmung = .normal) {
-        let sprache = t.sprache(VorschulSprache.jetzt)
+    /// `sprache`: fest vorgegeben, zum Beispiel "en" bei Englisch für Kleine.
+    /// Ohne Vorgabe gilt die Sprache aus dem Umschalter der Vorschule.
+    static func sag(_ t: VorschulText, stimmung: SprechStimmung = .normal, sprache fest: String? = nil) {
+        let sprache = t.sprache(fest ?? VorschulSprache.jetzt)
         Sprecher.shared.sprich(t.text(sprache), code: VorschulSprache.code(sprache), stimmung: stimmung)
     }
 
     static var name: String { UserDefaults.standard.string(forKey: "kindName") ?? "" }
 
-    static func sag(_ t: LobText, stimmung: SprechStimmung = .normal) {
-        sag(VorschulText(de: t.de, tr: t.tr, en: t.en), stimmung: stimmung)
+    static func sag(_ t: LobText, stimmung: SprechStimmung = .normal, sprache: String? = nil) {
+        sag(VorschulText(de: t.de, tr: t.tr, en: t.en), stimmung: stimmung, sprache: sprache)
     }
 
     /// Lob mit viel Abwechslung, siehe Lob.swift
-    static func lob(serie: Int = 0, nachFehler: Bool = false) {
-        sag(Lob.fuerRichtig(serie: serie, nachFehler: nachFehler, name: name), stimmung: .froh)
+    static func lob(serie: Int = 0, nachFehler: Bool = false, sprache: String? = nil) {
+        sag(Lob.fuerRichtig(serie: serie, nachFehler: nachFehler, name: name), stimmung: .froh, sprache: sprache)
     }
 
-    static func nochmal() {
-        sag(Lob.fuerNochmal())
+    static func nochmal(sprache: String? = nil) {
+        sag(Lob.fuerNochmal(), sprache: sprache)
     }
 
-    static func ende(richtig: Int, gesamt: Int) {
-        sag(Lob.fuerEnde(richtig: richtig, gesamt: gesamt, name: name), stimmung: .froh)
+    static func ende(richtig: Int, gesamt: Int, sprache: String? = nil) {
+        sag(Lob.fuerEnde(richtig: richtig, gesamt: gesamt, name: name), stimmung: .froh, sprache: sprache)
     }
 }
 
@@ -542,6 +544,10 @@ struct VorschuleView: View {
                         raster(VorschulArt.sprache)
                         abschnitt("Spielen und Entdecken")
                         raster(VorschulArt.spielen)
+                        if englisch {
+                            abschnitt("🇬🇧 Englisch für Kleine")
+                            englischRaster
+                        }
                         pakete
                     }
                     .padding(20)
@@ -559,6 +565,7 @@ struct VorschuleView: View {
                 }
                 .zoomZiel(art, in: zoomRaum)
             }
+            .navigationDestination(for: EnglischThema.self) { EnglischThemaView(thema: $0) }
             .navigationDestination(for: Klassenarbeit.self) { VorschulPaketListe(arbeit: $0) }
             .navigationDestination(for: Uebung.self) { VorschulRunde(art: .mix, quelle: $0) }
             .confirmationDialog("Paket löschen?", isPresented: Binding(get: { loeschen != nil },
@@ -650,10 +657,26 @@ struct VorschuleView: View {
         }
     }
 
+    private var englischRaster: some View {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 14)], spacing: 14) {
+            ForEach(Array(EnglischThema.allCases.enumerated()), id: \.element.id) { i, thema in
+                NavigationLink(value: thema) {
+                    karte(emoji: thema.emoji, titel: thema.titel)
+                }
+                .buttonStyle(TastenStil())
+                .einblenden(i)
+            }
+        }
+    }
+
     private func karte(_ art: VorschulArt) -> some View {
+        karte(emoji: art.emoji, titel: art.titel)
+    }
+
+    private func karte(emoji: String, titel: String) -> some View {
         VStack(spacing: 8) {
-            Text(art.emoji).font(.system(size: 52))
-            Text(art.titel)
+            Text(emoji).font(.system(size: 52))
+            Text(titel)
                 .font(.system(.subheadline, design: .rounded).weight(.heavy))
                 .foregroundStyle(Color.white)
                 .multilineTextAlignment(.center)
@@ -668,12 +691,14 @@ struct VorschuleView: View {
 struct VorschulRunde: View {
     let art: VorschulArt
     var quelle: Uebung? = nil
+    /// Englisch für Kleine: Wörter hören und antippen, alles auf Englisch
+    var englisch: EnglischThema? = nil
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
     @AppStorage("modus") private var modus = ""
     @AppStorage("vorschulStufe") private var stufe = 2
     @AppStorage(VorschulSprache.wahlSchluessel) private var sprache = "de"
-    @AppStorage(VorschulSprache.englischSchluessel) private var englisch = false
+    @AppStorage(VorschulSprache.englischSchluessel) private var englischAn = false
     @AppStorage(VorschulSprache.tuerkischSchluessel) private var tuerkisch = false
     @State private var fragen: [VorschulFrage] = []
     @State private var nr = 0
@@ -697,7 +722,7 @@ struct VorschulRunde: View {
                 frage(fragen[nr])
             }
         }
-        .navigationTitle(quelle?.titel ?? art.titel)
+        .navigationTitle(englisch?.titel ?? quelle?.titel ?? art.titel)
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { if fragen.isEmpty { neu() } }
     }
@@ -708,14 +733,22 @@ struct VorschulRunde: View {
                 ProgressView(value: Double(nr), total: Double(fragen.count))
                     .tint(Theme.gelb)
 
-                Button { VorschulTon.sag(f.text) } label: {
+                Button { VorschulTon.sag(f.text, sprache: festeSprache) } label: {
                     HStack(spacing: 10) {
                         Image(systemName: "speaker.wave.2.fill")
                             .foregroundStyle(Theme.gelb)
-                        Text(f.text.text(VorschulSprache.aktiv(gewaehlt: sprache, englisch: englisch, tuerkisch: tuerkisch)))
-                            .font(.system(.title3, design: .rounded).weight(.heavy))
-                            .foregroundStyle(Color.white)
-                            .multilineTextAlignment(.leading)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(f.text.text(festeSprache ?? VorschulSprache.aktiv(gewaehlt: sprache, englisch: englischAn, tuerkisch: tuerkisch)))
+                                .font(.system(.title3, design: .rounded).weight(.heavy))
+                                .foregroundStyle(Color.white)
+                                .multilineTextAlignment(.leading)
+                            if englisch != nil {
+                                // Für die Eltern: was das Wort heißt
+                                Text(f.text.de)
+                                    .font(.footnote)
+                                    .foregroundStyle(Theme.textSanft)
+                            }
+                        }
                     }
                     .padding(.horizontal, 18)
                     .padding(.vertical, 12)
@@ -829,8 +862,13 @@ struct VorschulRunde: View {
         }
     }
 
+    /// Bei Englisch für Kleine spricht alles Englisch, egal was oben eingestellt ist
+    private var festeSprache: String? { englisch == nil ? nil : "en" }
+
     private func neu() {
-        if let u = quelle {
+        if let t = englisch {
+            fragen = VorschulEnglisch.fragen(t)
+        } else if let u = quelle {
             fragen = VorschulPaket.fragen(u)
         } else {
             fragen = VorschulGenerator.fragen(art, stufe: stufe)
@@ -840,7 +878,7 @@ struct VorschulRunde: View {
         serie = 0
         zuruecksetzen()
         gespeichert = false
-        if let f = fragen.first { VorschulTon.sag(f.text) }
+        if let f = fragen.first { VorschulTon.sag(f.text, sprache: festeSprache) }
     }
 
     private func zuruecksetzen() {
@@ -859,7 +897,7 @@ struct VorschulRunde: View {
             serie = ersterVersuch ? serie + 1 : 0
             sperre = true
             Haptik.erfolg()
-            VorschulTon.lob(serie: serie, nachFehler: !ersterVersuch)
+            VorschulTon.lob(serie: serie, nachFehler: !ersterVersuch, sprache: festeSprache)
             Task {
                 try? await Task.sleep(for: .seconds(1.2))
                 weiter()
@@ -869,7 +907,7 @@ struct VorschulRunde: View {
             schuettel = i
             serie = 0
             Haptik.fehler()
-            VorschulTon.nochmal()
+            VorschulTon.nochmal(sprache: festeSprache)
             Task {
                 try? await Task.sleep(for: .seconds(0.4))
                 schuettel = nil
@@ -881,7 +919,7 @@ struct VorschulRunde: View {
         nr += 1
         zuruecksetzen()
         if nr < fragen.count {
-            VorschulTon.sag(fragen[nr].text)
+            VorschulTon.sag(fragen[nr].text, sprache: festeSprache)
         } else {
             abschliessen()
         }
@@ -890,13 +928,14 @@ struct VorschulRunde: View {
     private func abschliessen() {
         guard !gespeichert else { return }
         gespeichert = true
-        VorschulTon.ende(richtig: perfekt, gesamt: fragen.count)
+        VorschulTon.ende(richtig: perfekt, gesamt: fragen.count, sprache: festeSprache)
         guard modus == "kind" else { return }
         Muenzen.gutschreiben(Muenzen.verdient(richtig: perfekt, gesamt: fragen.count, angesehen: 0))
         Muenzen.rundeGeschafft()
         HaustierDienst.rundeGeschafft(richtig: perfekt, gesamt: fragen.count, angesehen: 0)
         let arbeitName = quelle?.arbeit?.titel ?? "Übungen"
-        let uebungName = quelle.map { "\($0.symbol) \($0.titel)" } ?? "\(art.emoji) \(art.titel)"
+        let uebungName = englisch?.uebungName
+            ?? quelle.map { "\($0.symbol) \($0.titel)" } ?? "\(art.emoji) \(art.titel)"
         context.insert(RundenErgebnis(klasse: "Vorschule", fach: "Vorschule", arbeit: arbeitName,
                                       uebung: uebungName,
                                       richtig: perfekt, gesamt: fragen.count, angesehen: 0,
