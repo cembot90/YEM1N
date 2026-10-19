@@ -160,8 +160,14 @@ enum Lob {
     // MARK: Helfer
 
     /// Nur der erste Vorname, ohne Leerzeichen am Rand
+    /// "jonas" oder "JONAS" wird "Jonas", damit die Stimme den Namen nicht buchstabiert.
+    /// Gemischte Schreibweisen wie "LeAnn" bleiben so, wie sie eingetragen sind.
     static func vorname(_ name: String) -> String {
-        name.split(separator: " ").first.map(String.init) ?? ""
+        guard let erster = name.split(separator: " ").first.map(String.init) else { return "" }
+        if erster == erster.lowercased() || (erster.count > 1 && erster == erster.uppercased()) {
+            return erster.prefix(1).uppercased() + erster.dropFirst().lowercased()
+        }
+        return erster
     }
 
     /// Setzt den Namen ein. Ohne Namen fällt der Name samt Komma weg.

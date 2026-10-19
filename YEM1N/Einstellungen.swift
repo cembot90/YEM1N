@@ -217,7 +217,7 @@ struct ProfilEinstellungen: View {
                 .listRowBackground(zeilenGrund)
             } else {
                 Section {
-                    TextField("Name, zum Beispiel Yemin", text: $nameEntwurf)
+                    TextField("Vorname des Kindes", text: $nameEntwurf)
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.words)
                         .focused($fokus)

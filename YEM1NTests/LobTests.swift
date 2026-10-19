@@ -44,6 +44,10 @@ struct LobTests {
         #expect(Lob.einsetzen("{name}, du bist spitze!", "") == "Du bist spitze!")
         #expect(Lob.einsetzen("Aferin {name}!", "") == "Aferin!")
         #expect(Lob.vorname("Evîn Aras") == "Evîn")
+        #expect(Lob.vorname("jonas") == "Jonas")
+        #expect(Lob.vorname("JONAS") == "Jonas")
+        #expect(Lob.vorname("LeAnn") == "LeAnn")
+        #expect(Lob.vorname("") == "")
         for liste in Self.alleListen {
             for t in liste {
                 let ohne = Lob.mitNamen(t, "")
