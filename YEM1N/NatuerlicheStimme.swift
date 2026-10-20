@@ -37,6 +37,8 @@ final class StimmAbspieler {
     private let spieler = AVAudioPlayerNode()
     private let hoehe = AVAudioUnitVarispeed()
     private var format: AVAudioFormat?
+    /// Zählt jeden gespielten Satz. So weiß die Pause, ob inzwischen etwas Neues kam.
+    private var nummer = 0
 
     init() {
         engine.attach(spieler)
@@ -80,13 +82,29 @@ final class StimmAbspieler {
         guard bereit(fuer: puffer.format) else { return false }
         stelle(tonhoehe)
         spieler.stop()
-        spieler.scheduleBuffer(puffer, completionHandler: nil)
+        nummer += 1
+        let meine = nummer
+        // Nach dem Satz kurz warten und den Ton ganz anhalten. Eine laufende Tonausgabe
+        // kostet sonst die ganze Zeit Strom und Rechenzeit, auch wenn sie still ist.
+        spieler.scheduleBuffer(puffer, completionCallbackType: .dataPlayedBack) { @Sendable [weak self] _ in
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                MainActor.assumeIsolated { self?.ruhe(meine) }
+            }
+        }
         spieler.play()
         return true
     }
 
     func still() {
         if engine.isRunning { spieler.stop() }
+    }
+
+    /// Hält die Tonausgabe an, wenn seit dem Satz `n` nichts mehr gespielt wurde.
+    func ruhe(_ n: Int? = nil) {
+        if let n, n != nummer { return }
+        guard engine.isRunning else { return }
+        spieler.stop()
+        engine.pause()
     }
 
     static func puffer(_ ton: GeraeteStimmeMotor.Ton) -> AVAudioPCMBuffer? {
@@ -192,6 +210,16 @@ final class GeraeteStimmen {
         ) { _ in
             GeraeteStimmeMotor.shared.freigeben()
             MainActor.assumeIsolated { GeraeteVorleser.shared.vergiss() }
+        }
+        // Im Hintergrund braucht niemand die Stimme. Sie gibt gut 100 MB frei.
+        NotificationCenter.default.addObserver(
+            forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: .main
+        ) { _ in
+            GeraeteStimmeMotor.shared.freigeben()
+            MainActor.assumeIsolated {
+                GeraeteVorleser.shared.vergiss()
+                StimmAbspieler.shared.ruhe()
+            }
         }
     }
 

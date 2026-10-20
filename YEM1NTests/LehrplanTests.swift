@@ -325,6 +325,43 @@ struct LehrplanTests {
         }
     }
 
+    // MARK: Reihenfolge im Schuljahr
+
+    @Test func matheUndDeutschHabenEinenPlatzImSchuljahr() {
+        for t in Lernwelt.themen where t.fach == .mathe || t.fach == .deutsch {
+            let a = Schuljahr.abschnitt(t.id)
+            #expect(a != nil, "\(t.id) fehlt im Plan für das Schuljahr")
+            #expect((0...4).contains(a ?? -1))
+        }
+        // Keine Leichen: jede Kennung im Plan gibt es wirklich
+        let ids = Set(Lernwelt.themen.map(\.id))
+        for id in Schuljahr.plan.keys { #expect(ids.contains(id), "\(id) gibt es nicht") }
+    }
+
+    @Test func abschnittPasstZumMonat() {
+        func datum(_ m: Int) -> Date {
+            Calendar(identifier: .gregorian).date(from: DateComponents(year: 2026, month: m, day: 15))!
+        }
+        #expect([8, 9, 10].allSatisfy { Schuljahr.jetzt(datum($0)) == 1 })
+        #expect([11, 12].allSatisfy { Schuljahr.jetzt(datum($0)) == 2 })
+        #expect([1, 2, 3].allSatisfy { Schuljahr.jetzt(datum($0)) == 3 })
+        #expect([4, 5, 6, 7].allSatisfy { Schuljahr.jetzt(datum($0)) == 4 })
+    }
+
+    @Test func gruppenStehenInDerReihenfolgeDesSchuljahres() {
+        let liste = Lernwelt.themenFuer(.mathe, klasse: 3, land: .hessen)
+        let gruppen = Schuljahr.gruppiert(liste, land: .hessen)
+        #expect(gruppen.compactMap(\.abschnitt) == [1, 2, 3, 4])
+        #expect(gruppen.flatMap(\.themen).count == liste.count)
+        #expect(gruppen.first?.themen.contains { $0.id == "m3-tausend" } == true)
+        // Englisch hat keinen Plan, dort bleibt alles in einer Gruppe
+        let englisch = Schuljahr.gruppiert(Lernwelt.themenFuer(.englisch, klasse: 3, land: .hessen), land: .hessen)
+        #expect(englisch.count == 1 && englisch.first?.abschnitt == nil)
+        // In NRW kommt das Einmaleins in Klasse 3 gleich zu Beginn
+        let nrw = Schuljahr.gruppiert(Lernwelt.themenFuer(.mathe, klasse: 3, land: .nrw), land: .nrw)
+        #expect(nrw.first?.themen.contains { $0.id == "m2-einmaleins" } == true)
+    }
+
     // MARK: Speichern als Übung
 
     @Test func eineFertigeUebungBekommtNeueAufgabenUndBehaeltDieSterne() throws {

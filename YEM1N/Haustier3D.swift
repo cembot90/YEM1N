@@ -21,6 +21,15 @@ enum EulenFlug: Equatable {
     case schweben
 }
 
+/// Zeichnet nur, solange das Tier wirklich auf dem Bildschirm ist.
+/// In einem anderen Reiter oder unter einer anderen Seite ruht es.
+final class TierAnsicht: SCNView {
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        isPlaying = window != nil
+    }
+}
+
 struct Haustier3DView: UIViewRepresentable {
     let art: String
     let stufe: HaustierStufe
@@ -44,15 +53,17 @@ struct Haustier3DView: UIViewRepresentable {
 
     func makeCoordinator() -> Koordinator { Koordinator() }
 
-    func makeUIView(context: Context) -> SCNView {
-        let ansicht = SCNView(frame: .zero)
+    func makeUIView(context: Context) -> TierAnsicht {
+        let ansicht = TierAnsicht(frame: .zero)
         ansicht.backgroundColor = .clear
         ansicht.isOpaque = false
-        ansicht.antialiasingMode = .multisampling4X
+        // Das Tier bewegt sich ruhig. 30 Bilder pro Sekunde und einfache Kantenglättung
+        // sehen genauso aus, schonen aber Akku und ältere iPhones.
+        ansicht.antialiasingMode = .multisampling2X
         ansicht.allowsCameraControl = false
         ansicht.autoenablesDefaultLighting = false
         ansicht.isPlaying = true
-        ansicht.preferredFramesPerSecond = 60
+        ansicht.preferredFramesPerSecond = 30
 
         let szene = SCNScene()
         szene.background.contents = UIColor.clear
@@ -80,7 +91,7 @@ struct Haustier3DView: UIViewRepresentable {
         return ansicht
     }
 
-    func updateUIView(_ ansicht: SCNView, context: Context) {
+    func updateUIView(_ ansicht: TierAnsicht, context: Context) {
         let k = context.coordinator
         k.beiTipp = beiTipp
         k.beiEule = beiEule

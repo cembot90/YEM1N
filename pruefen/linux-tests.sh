@@ -1,6 +1,6 @@
 #!/bin/bash
 # Prüft die Logik ohne Oberfläche unter Linux: Lernwelt, Vorschule, Stimmen,
-# Erklärbilder, Duell und Handschrift.
+# Erklärbilder, Rechenweg, Duell und Handschrift.
 # SwiftUI, SwiftData und AVFoundation gibt es dort nicht. Deshalb schneidet
 # pruefen/auszug.py nur die reinen Typen aus den App-Dateien aus.
 # Braucht Swift 6.1 oder neuer (SWIFTC=/pfad/zu/swiftc) und Python 3.
@@ -21,7 +21,7 @@ ohneApp() { sed -e 's/@testable import YEM1N//' -e 's/^import SwiftData//' "$1";
 
 echo "== Lernwelt"
 python3 pruefen/auszug.py $Y "$arbeit/lern.swift" \
-  Lehrplan.swift:Bundesland,LehrFach,LernAufgabe,LernThema,Lern,Lernwelt AufgabenBild.swift:Noten \
+  Lehrplan.swift:Bundesland,LehrFach,LernAufgabe,LernThema,Schuljahr,Lern,Lernwelt AufgabenBild.swift:Noten \
   Sprachen.swift:SprachInfo,Wort,Thema,SprachKatalog,SprachHelfer SprachKatalog.swift:SprachKatalogDaten \
   MatheEditor.swift:MatheRechner
 python3 - "$arbeit" <<'PY'
@@ -66,7 +66,7 @@ ohneApp $T/LobTests.swift > "$arbeit/LobTests.swift"
   "$arbeit/VorschuleTests.swift" "$arbeit/StimmenTests.swift" "$arbeit/LobTests.swift" "$arbeit/start.swift"
 laufen "$arbeit/vor"
 
-echo "== Erklärbilder, Duell, Handschrift"
+echo "== Erklärbilder, Rechenweg, Duell, Handschrift"
 python3 pruefen/auszug.py $Y "$arbeit/rest.swift" \
   ErklaerBild.swift:ErklaerBild,ErklaerBildPlan MatheEditor.swift:MatheRechner \
   Duell.swift:DuellStufe,DuellAufgabe,DuellStand,DuellRegeln,DuellLauf \
@@ -94,8 +94,8 @@ final class CKNotification {
 """
 open(f"{a}/rest.swift", "w").write(s)
 PY
-for f in ErklaerBildTests DuellTests HandschriftTests; do ohneApp $T/$f.swift > "$arbeit/$f.swift"; done
-"$SWIFTC" -parse-as-library -O -o "$arbeit/rest" "$arbeit/rest.swift" "$arbeit/helfer.swift" \
-  "$arbeit/ErklaerBildTests.swift" "$arbeit/DuellTests.swift" "$arbeit/HandschriftTests.swift" "$arbeit/start.swift"
+for f in ErklaerBildTests RechenwegTests DuellTests HandschriftTests; do ohneApp $T/$f.swift > "$arbeit/$f.swift"; done
+"$SWIFTC" -parse-as-library -O -o "$arbeit/rest" "$arbeit/rest.swift" $Y/Rechenweg.swift "$arbeit/helfer.swift" \
+  "$arbeit/ErklaerBildTests.swift" "$arbeit/RechenwegTests.swift" "$arbeit/DuellTests.swift" "$arbeit/HandschriftTests.swift" "$arbeit/start.swift"
 laufen "$arbeit/rest"
 exit $fehler

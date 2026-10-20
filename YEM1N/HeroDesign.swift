@@ -166,8 +166,9 @@ struct HeroFlaeche: View {
             if ruhig {
                 verlauf(zeit: 0)
             } else {
-                // Die Lichter wandern langsam, 30 Bilder pro Sekunde reichen dafür
-                TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { z in
+                // Die Lichter wandern langsam, 15 Bilder pro Sekunde reichen dafür
+                // und schonen ältere iPhones
+                TimelineView(.animation(minimumInterval: 1.0 / 15.0)) { z in
                     verlauf(zeit: z.date.timeIntervalSinceReferenceDate)
                 }
             }

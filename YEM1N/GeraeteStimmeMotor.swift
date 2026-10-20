@@ -39,6 +39,9 @@ nonisolated final class GeraeteStimmeMotor: @unchecked Sendable {
     /// Nur eine Stimme bleibt geladen, jede braucht gut 100 MB Arbeitsspeicher
     private var geladen: (id: String, tts: SherpaOnnxOfflineTtsWrapper)?
     #endif
+    /// Zählt jede Benutzung. Wird die Stimme eine Weile nicht gebraucht, gibt sie den Speicher frei.
+    private var nutzung = 0
+    static let ruhezeit: Double = 120
 
     /// Erzeugt die Tonspur. nil, wenn die Stimme fehlt oder nichts herauskam.
     func erzeuge(_ text: String, paket: GeraetePaket, sprecher: Int, tempo: Float,
@@ -47,6 +50,7 @@ nonisolated final class GeraeteStimmeMotor: @unchecked Sendable {
             schlange.async {
                 fertig.resume(returning: self.rechne(text, paket: paket, sprecher: sprecher,
                                                      tempo: tempo, wurzel: wurzel))
+                self.spaeterFreigeben()
             }
         }
     }
@@ -57,12 +61,25 @@ nonisolated final class GeraeteStimmeMotor: @unchecked Sendable {
             #if canImport(SherpaOnnxShared) || canImport(SherpaOnnx)
             _ = self.motor(paket, wurzel: wurzel)
             #endif
+            self.spaeterFreigeben()
         }
     }
 
     /// Gibt den Speicher frei, zum Beispiel wenn iOS knapp wird.
     func freigeben() {
         schlange.async {
+            #if canImport(SherpaOnnxShared) || canImport(SherpaOnnx)
+            self.geladen = nil
+            #endif
+        }
+    }
+
+    /// Läuft in der Warteschlange. Kommt in der Ruhezeit kein neuer Satz, wird die Stimme entladen.
+    private func spaeterFreigeben() {
+        nutzung += 1
+        let meine = nutzung
+        schlange.asyncAfter(deadline: .now() + Self.ruhezeit) {
+            guard self.nutzung == meine else { return }
             #if canImport(SherpaOnnxShared) || canImport(SherpaOnnx)
             self.geladen = nil
             #endif

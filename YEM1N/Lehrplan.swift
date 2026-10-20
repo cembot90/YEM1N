@@ -114,6 +114,112 @@ struct LernThema: Identifiable {
     func klasse(in land: Bundesland) -> Int { abweichend[land] ?? klasse }
 }
 
+// MARK: - Schuljahr: wann ein Thema meistens dran ist
+
+/// Mathe und Deutsch in der Reihenfolge, in der die meisten Schulbücher sie bringen.
+/// Das Schuljahr hat vier Abschnitte. 0 heißt: das ganze Jahr über, etwa Lesen.
+/// Schulen und Bücher weichen ab. Es ist eine Orientierung, kein Muss.
+enum Schuljahr {
+    static func titel(_ abschnitt: Int) -> String {
+        switch abschnitt {
+        case 1: return "Nach den Sommerferien"
+        case 2: return "Bis Weihnachten"
+        case 3: return "Bis Ostern"
+        case 4: return "Bis zu den Sommerferien"
+        default: return "Das ganze Jahr"
+        }
+    }
+
+    static func monate(_ abschnitt: Int) -> String {
+        switch abschnitt {
+        case 1: return "August bis Oktober"
+        case 2: return "November und Dezember"
+        case 3: return "Januar bis März"
+        case 4: return "April bis Juli"
+        default: return ""
+        }
+    }
+
+    static let plan: [String: Int] = [
+        // Mathe Klasse 1
+        "m1-vergleich": 1, "m1-nachbar": 1, "m1-strich": 1,
+        "m1-zerlegen": 2, "m1-plus10": 2, "m1-minus10": 2,
+        "m1-verdoppeln": 3, "m1-zwanzig": 3, "m1-sach": 3,
+        "m1-geld": 4,
+        // Mathe Klasse 2
+        "m2-stellen": 1, "m2-vergleich": 1, "m2-hundert": 1,
+        "m2-ergaenzen": 2, "m2-mauer": 2, "m2-verdoppeln": 2, "m2-geld": 2,
+        "m2-kern": 3, "m2-einmaleins": 3, "m2-geteilt": 3, "m2-meter": 3, "m2-sach": 3,
+        "m2-uhr": 4, "m2-uhrlesen": 4, "m2-koerper": 4, "m2-kombi": 4, "m2-zufall": 4,
+        // Mathe Klasse 3
+        "m3-tausend": 1, "m3-nachbarn": 1, "m3-mauer": 1,
+        "m3-ueberschlag": 2, "m3-geldkomma": 2, "m3-laengen": 2, "m3-sach": 2,
+        "m3-halbschriftlich": 3, "m3-rest": 3, "m3-schriftplus": 3, "m3-kaestchen": 3,
+        "m3-schriftminus": 4, "m3-gewicht": 4, "m3-tabelle": 4,
+        // Mathe Klasse 4
+        "m4-million": 1, "m4-vergleich": 1, "m4-runden": 1,
+        "m4-schriftmal": 2, "m4-groessen": 2, "m4-sach": 2,
+        "m4-schriftgeteilt": 3, "m4-flaeche": 3, "m4-zeit": 3,
+        "m4-brueche": 4, "m4-kombi": 4, "m4-zufall": 4,
+        // Deutsch Klasse 1
+        "d1-anlaut": 1, "d1-silben": 1, "d1-reime": 1,
+        "d1-buchstaben": 2, "d1-luecke": 2,
+        "d1-lesen": 3,
+        // Deutsch Klasse 2
+        "d2-abc": 1, "d2-gross": 1,
+        "d2-artikel": 2, "d2-mehrzahl": 2, "d2-satzzeichen": 2,
+        "d2-gegenteil": 3, "d2-zusammen": 3,
+        "d2-doppelt": 4,
+        // Deutsch Klasse 3
+        "d3-wortarten": 1, "d3-verlaengern": 1, "d3-satzarten": 1,
+        "d3-ie": 2, "d3-wortfamilie": 2, "d3-vergangen": 2,
+        "d3-ableiten": 3, "d3-wortfeld": 3, "d3-steigern": 3,
+        "d3-sss": 4,
+        // Deutsch Klasse 4
+        "d4-wortarten": 1, "d4-satzglieder": 1,
+        "d4-zeitformen": 2, "d4-pronomen": 2,
+        "d4-faelle": 3, "d4-trennen": 3,
+        "d4-dass": 4,
+        // Lesen übt man das ganze Jahr
+        "l1-lesen": 0, "l2-lesen": 0, "l3-lesen": 0, "l4-lesen": 0
+    ]
+
+    /// In NRW kommt das Einmaleins erst in Klasse 3, dort gleich am Anfang zum Festigen
+    static let planNRW: [String: Int] = ["m2-einmaleins": 1, "m2-geteilt": 1]
+
+    static func abschnitt(_ id: String, land: Bundesland = .hessen) -> Int? {
+        if land == .nrw, let a = planNRW[id] { return a }
+        return plan[id]
+    }
+
+    /// Welcher Abschnitt gerade läuft. In den Sommerferien gilt schon der Anfang.
+    static func jetzt(_ datum: Date = Date.now) -> Int {
+        let monat = Calendar(identifier: .gregorian).component(.month, from: datum)
+        switch monat {
+        case 8, 9, 10: return 1
+        case 11, 12: return 2
+        case 1, 2, 3: return 3
+        default: return 4
+        }
+    }
+
+    /// Die Themen nach Abschnitten, in jedem Abschnitt in der alten Reihenfolge.
+    /// Hat kein Thema einen Abschnitt (Englisch, Musik, Kunst), kommt eine einzige Gruppe ohne Abschnitt.
+    static func gruppiert(_ liste: [LernThema], land: Bundesland) -> [(abschnitt: Int?, themen: [LernThema])] {
+        guard liste.contains(where: { abschnitt($0.id, land: land) != nil }) else {
+            return liste.isEmpty ? [] : [(nil, liste)]
+        }
+        var gruppen: [(abschnitt: Int?, themen: [LernThema])] = []
+        for a in [1, 2, 3, 4, 0] {
+            let teil = liste.filter { abschnitt($0.id, land: land) == a }
+            if !teil.isEmpty { gruppen.append((a, teil)) }
+        }
+        let ohne = liste.filter { abschnitt($0.id, land: land) == nil }
+        if !ohne.isEmpty { gruppen.append((nil, ohne)) }
+        return gruppen
+    }
+}
+
 // MARK: - Helfer zum Erzeugen
 
 enum Lern {
@@ -176,11 +282,11 @@ enum Lernwelt {
     static let spezial = "lernwelt"
     static let anzahl = 10
 
-    static var themen: [LernThema] {
+    /// Einmal zusammengestellt und dann behalten. Die Liste ändert sich zur Laufzeit nicht.
+    static let themen: [LernThema] =
         LehrplanMathe.themen + LehrplanMatheMehr.themen
             + LehrplanDeutsch.themen + LehrplanDeutschMehr.themen + LehrplanLesen.themen
             + LehrplanEnglisch.themen + LehrplanMusik.themen + LehrplanKunst.themen
-    }
 
     static func themenFuer(_ fach: LehrFach, klasse: Int, land: Bundesland) -> [LernThema] {
         themen.filter { $0.fach == fach && $0.klasse(in: land) == klasse }
@@ -289,7 +395,7 @@ struct LernweltView: View {
                             andereKnopf
                         }
                     }
-                    Text("Die Aufgaben folgen dem \(land.lehrplan) und den Bildungsstandards der Kultusministerkonferenz. Schulbücher und Lehrkräfte setzen die Reihenfolge manchmal etwas anders.")
+                    Text("Die Aufgaben folgen dem \(land.lehrplan) und den Bildungsstandards der Kultusministerkonferenz. Mathe und Deutsch stehen in der Reihenfolge, in der die meisten Schulbücher sie im Schuljahr bringen. Schulbücher und Lehrkräfte setzen die Reihenfolge manchmal etwas anders.")
                         .font(.caption)
                         .foregroundStyle(Theme.textSanft)
                         .padding(.top, 6)
@@ -390,11 +496,42 @@ struct LernweltView: View {
                     .font(.footnote)
                     .foregroundStyle(Theme.textSanft)
             }
-            ForEach(liste) { t in
-                Button { oeffne(t) } label: { themaKarte(t) }
-                    .buttonStyle(TastenStil())
+            ForEach(Array(Schuljahr.gruppiert(liste, land: land).enumerated()), id: \.offset) { _, g in
+                if let ab = g.abschnitt {
+                    zeitKopf(ab, eigeneKlasse: k == eigene)
+                }
+                ForEach(g.themen) { t in
+                    Button { oeffne(t) } label: { themaKarte(t) }
+                        .buttonStyle(TastenStil())
+                }
             }
         }
+    }
+
+    /// Überschrift für einen Abschnitt des Schuljahres. In der eigenen Klasse ist markiert, was gerade dran ist.
+    private func zeitKopf(_ abschnitt: Int, eigeneKlasse: Bool) -> some View {
+        let jetzt = eigeneKlasse && abschnitt == Schuljahr.jetzt()
+        return HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Text(Schuljahr.titel(abschnitt))
+                .font(.system(.subheadline, design: .rounded).weight(.heavy))
+                .foregroundStyle(jetzt ? Theme.gelb : Color.white.opacity(0.85))
+            if !Schuljahr.monate(abschnitt).isEmpty {
+                Text(Schuljahr.monate(abschnitt))
+                    .font(.caption)
+                    .foregroundStyle(Theme.textSanft)
+            }
+            Spacer(minLength: 4)
+            if jetzt {
+                Text("gerade dran")
+                    .font(.system(.caption2, design: .rounded).weight(.heavy))
+                    .foregroundStyle(Theme.navy)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(Theme.gelb, in: Capsule())
+            }
+        }
+        .padding(.top, 6)
+        .accessibilityElement(children: .combine)
     }
 
     private func themaKarte(_ t: LernThema) -> some View {

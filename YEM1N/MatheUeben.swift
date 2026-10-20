@@ -293,6 +293,8 @@ struct UebungInhalt: View {
     @State private var mauerWerte: [[Int?]] = []
     @State private var mauerSchritt = 0
     @State private var kurzerHinweis: String?
+    /// Rechenweg in Schritten für die aktuelle Aufgabe
+    @State private var rechenWeg: RechenWeg?
     @State private var wackeln = 0
     /// Zählt richtige Antworten: Lichtring, Funken und Federn.
     @State private var erfolg = 0
@@ -374,6 +376,18 @@ struct UebungInhalt: View {
             }
         }
         .sheet(isPresented: $zeigeNotiz) { notizSheet }
+        .sheet(isPresented: Binding(get: { rechenWeg != nil }, set: { if !$0 { rechenWeg = nil } })) {
+            if let w = rechenWeg, let a = aktuell {
+                RechenwegSheet(aufgabe: a.rechnung, weg: w) { ergebnis, rest in
+                    guard bewertet == nil else { return }
+                    eingabe = ergebnis
+                    eingabe2 = rest
+                    aktivesFeld = 1
+                }
+                .preferredColorScheme(.dark)
+                .tint(Theme.gelb)
+            }
+        }
         .confirmationDialog("Lösung anzeigen?",
                             isPresented: $zeigeLoesungDialog,
                             titleVisibility: .visible) {
@@ -660,6 +674,10 @@ struct UebungInhalt: View {
         } else {
             eingabeBereich(a)
             if !istProbe {
+                if let weg = RechenWegPlan.weg(art: a.art, rechnung: a.rechnung,
+                                               antwort: a.antwort, antwort2: a.antwort2) {
+                    RechenwegKnopf { rechenWeg = weg }
+                }
                 HStack(spacing: 12) {
                     loesungKnopf
                     JokerKnopf(uebrig: JokerStand.shared.uebrigHeute) { starteJoker(a) }
