@@ -24,8 +24,9 @@
 </main>
 <script>
   // Apple hängt nach der Anmeldung ?ckWebAuthToken=... an diese Adresse. Wir geben ihn an die Android-App weiter.
-  var p = new URLSearchParams(location.search);
-  var t = p.get('ckWebAuthToken');
+  // Von Hand lesen: URLSearchParams würde ein "+" im Schlüssel in ein Leerzeichen verwandeln.
+  var m = /[?&]ckWebAuthToken=([^&#]*)/.exec(location.search);
+  var t = m ? decodeURIComponent(m[1]) : null;
   var k = document.getElementById('knopf');
   if (t) {
     var ziel = 'yem1n://cloudkit?ckWebAuthToken=' + encodeURIComponent(t);
