@@ -42,6 +42,10 @@ nonisolated final class GeraeteStimmeMotor: @unchecked Sendable {
     /// Zählt jede Benutzung. Wird die Stimme eine Weile nicht gebraucht, gibt sie den Speicher frei.
     private var nutzung = 0
     static let ruhezeit: Double = 120
+    /// Im Sparmodus schon nach 30 Sekunden
+    static var ruhezeitJetzt: Double {
+        (UserDefaults.standard.bool(forKey: "sparmodus") || ProcessInfo.processInfo.isLowPowerModeEnabled) ? 30 : ruhezeit
+    }
 
     /// Erzeugt die Tonspur. nil, wenn die Stimme fehlt oder nichts herauskam.
     func erzeuge(_ text: String, paket: GeraetePaket, sprecher: Int, tempo: Float,
@@ -78,7 +82,7 @@ nonisolated final class GeraeteStimmeMotor: @unchecked Sendable {
     private func spaeterFreigeben() {
         nutzung += 1
         let meine = nutzung
-        schlange.asyncAfter(deadline: .now() + Self.ruhezeit) {
+        schlange.asyncAfter(deadline: .now() + Self.ruhezeitJetzt) {
             guard self.nutzung == meine else { return }
             #if canImport(SherpaOnnxShared) || canImport(SherpaOnnx)
             self.geladen = nil

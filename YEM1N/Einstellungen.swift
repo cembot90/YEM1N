@@ -44,6 +44,7 @@ struct EinstellungenInhalt: View {
     @AppStorage("farbwelt") private var farbwelt = "blau"
     @AppStorage("spieleErlaubt") private var spieleErlaubt = true
     @AppStorage("lernzeitAn") private var lernzeitAn = false
+    @AppStorage(Sparmodus.key) private var sparmodus = false
     var alsReiter = false
 
     private var eltern: Bool { modus == "eltern" }
@@ -113,7 +114,7 @@ struct EinstellungenInhalt: View {
             AbschnittsTitel("Aussehen")
             ZeilenGruppe {
                 zeile(symbol: "paintpalette.fill", titel: "Farben und Darstellung",
-                      text: farbwelt == "rosa" ? "Rosa" : "Blau und Gelb") { AussehenEinstellungen() }
+                      text: (farbwelt == "rosa" ? "Rosa" : "Blau und Gelb") + (sparmodus ? ", Sparmodus" : "")) { AussehenEinstellungen() }
             }
             .einblenden(4)
 
@@ -547,10 +548,28 @@ struct AussehenEinstellungen: View {
     @AppStorage("modus") private var modus = ""
     @AppStorage("farbwelt") private var farbwelt = "blau"
     @AppStorage("glasEffekt") private var glas = false
+    @AppStorage(Sparmodus.key) private var spar = false
     @AppStorage(Handschrift.key) private var stift = Handschrift.standard
 
     var body: some View {
         EinstellungsSeite(titel: "Farben und Darstellung") {
+            Section {
+                Toggle("🔋 Sparmodus", isOn: $spar)
+                    .tint(Theme.gelb)
+                if Sparmodus.stromsparen && !spar {
+                    Text("Gerade ist der iOS-Stromsparmodus an. Solange gilt der Sparmodus von selbst.")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.gelb)
+                }
+            } header: {
+                Text("Leistung")
+            } footer: {
+                Text(Sparmodus.empfohlen
+                     ? "Für dieses Gerät empfohlen. Der Sparmodus macht die App auf älteren iPhones und iPads flüssiger und schont den Akku: keine schwebenden und wackelnden Bilder, kein Konfetti, kein Neigen, keine Glas-Effekte, das Haustier bewegt sich ruhiger und die Vorlesestimme gibt ihren Speicher schneller frei. Üben, Stimmen und Spiele bleiben gleich."
+                     : "Macht die App auf älteren iPhones und iPads flüssiger und schont den Akku: keine schwebenden und wackelnden Bilder, kein Konfetti, kein Neigen, keine Glas-Effekte, das Haustier bewegt sich ruhiger und die Vorlesestimme gibt ihren Speicher schneller frei. Üben, Stimmen und Spiele bleiben gleich.")
+            }
+            .listRowBackground(zeilenGrund)
+
             Section {
                 HStack(spacing: 12) {
                     farbKnopf(wert: "blau", name: "Blau und Gelb",

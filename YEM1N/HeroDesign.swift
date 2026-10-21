@@ -87,7 +87,10 @@ struct HeroKopf<Aktionen: View>: View {
 struct HeroBild: View {
     let bild: String
     private let neigung = Neigung.shared
-    @Environment(\.accessibilityReduceMotion) private var ruhig
+    @Environment(\.accessibilityReduceMotion) private var systemRuhig
+    @AppStorage(Sparmodus.key) private var spar = false
+    /// Ruhig bei "Bewegung reduzieren", im Sparmodus und im Stromsparmodus
+    private var ruhig: Bool { systemRuhig || spar || Sparmodus.stromsparen }
 
     var body: some View {
         let bildText = Text(bild)
@@ -117,7 +120,10 @@ struct HeroBild: View {
 /// Ein Etikett der Kopfkarte. Hervorgehobene Etiketten (zum Beispiel die Serie) pulsieren sanft.
 struct HeroChipAnsicht: View {
     let chip: HeroChip
-    @Environment(\.accessibilityReduceMotion) private var ruhig
+    @Environment(\.accessibilityReduceMotion) private var systemRuhig
+    @AppStorage(Sparmodus.key) private var spar = false
+    /// Ruhig bei "Bewegung reduzieren", im Sparmodus und im Stromsparmodus
+    private var ruhig: Bool { systemRuhig || spar || Sparmodus.stromsparen }
 
     var body: some View {
         let etikett = Text(chip.text)
@@ -158,7 +164,10 @@ extension HeroKopf where Aktionen == EmptyView {
 /// Bewusst ohne Weichzeichner, damit es auch auf älteren iPhones flüssig bleibt.
 struct HeroFlaeche: View {
     var radius: CGFloat = 30
-    @Environment(\.accessibilityReduceMotion) private var ruhig
+    @Environment(\.accessibilityReduceMotion) private var systemRuhig
+    @AppStorage(Sparmodus.key) private var spar = false
+    /// Ruhig bei "Bewegung reduzieren", im Sparmodus und im Stromsparmodus
+    private var ruhig: Bool { systemRuhig || spar || Sparmodus.stromsparen }
 
     var body: some View {
         let form = RoundedRectangle(cornerRadius: radius, style: .continuous)

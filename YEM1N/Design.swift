@@ -52,13 +52,29 @@ struct HintergrundView: View {
     }
 }
 
+/// Sparmodus für ältere oder langsame Geräte: keine Bewegung, die nur schön aussieht,
+/// kein Neigen, kein Glas, das Haustier ruhiger, die Stimme gibt ihren Speicher schneller frei.
+/// Der iOS-Stromsparmodus schaltet ihn ebenfalls ein.
+enum Sparmodus {
+    static let key = "sparmodus"
+
+    /// Für Geräte mit höchstens 4 GB Arbeitsspeicher (iPhone 11, 12, 13 und älter) empfohlen
+    static var empfohlen: Bool { ProcessInfo.processInfo.physicalMemory <= 4_500_000_000 }
+
+    static var stromsparen: Bool { ProcessInfo.processInfo.isLowPowerModeEnabled }
+
+    /// Für Stellen außerhalb einer Ansicht
+    static var an: Bool { UserDefaults.standard.bool(forKey: key) || stromsparen }
+}
+
 struct GlasKarteStil: ViewModifier {
     let radius: CGFloat
     @AppStorage("glasEffekt") private var glas = false
+    @AppStorage(Sparmodus.key) private var spar = false
 
     @ViewBuilder
     func body(content: Content) -> some View {
-        if !glas {
+        if !glas || spar {
             content.flachKarte(radius: radius)
         } else {
             // Liquid Glass ab iOS 26, sonst Material mit feiner Kante

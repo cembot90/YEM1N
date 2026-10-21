@@ -59,11 +59,12 @@ struct Haustier3DView: UIViewRepresentable {
         ansicht.isOpaque = false
         // Das Tier bewegt sich ruhig. 30 Bilder pro Sekunde und einfache Kantenglättung
         // sehen genauso aus, schonen aber Akku und ältere iPhones.
-        ansicht.antialiasingMode = .multisampling2X
+        ansicht.antialiasingMode = Sparmodus.an ? .none : .multisampling2X
         ansicht.allowsCameraControl = false
         ansicht.autoenablesDefaultLighting = false
         ansicht.isPlaying = true
-        ansicht.preferredFramesPerSecond = 30
+        // Im Sparmodus reichen 20 Bilder pro Sekunde
+        ansicht.preferredFramesPerSecond = Sparmodus.an ? 20 : 30
 
         let szene = SCNScene()
         szene.background.contents = UIColor.clear

@@ -263,7 +263,10 @@ struct SprechBlase: View {
     var ueberspringen: (() -> Void)? = nil
     var schliessen: (() -> Void)? = nil
 
-    @Environment(\.accessibilityReduceMotion) private var ruhig
+    @Environment(\.accessibilityReduceMotion) private var systemRuhig
+    @AppStorage(Sparmodus.key) private var spar = false
+    /// Ruhig bei "Bewegung reduzieren", im Sparmodus und im Stromsparmodus
+    private var ruhig: Bool { systemRuhig || spar || Sparmodus.stromsparen }
     @State private var sichtbar = 0
 
     var body: some View {

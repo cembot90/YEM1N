@@ -176,6 +176,7 @@ struct AnleitungView: View {
         ("Für Eltern", "Die Übersicht zeigt den Wochenbericht, die Abzeichen und den Schwächen-Radar mit den Übungen, die am schwersten fallen. Darunter stehen die Aufgaben, die haken, mit dem, was dein Kind geschrieben hat. Tippe auf eine Übung oder eine Runde, um jede einzelne Antwort zu sehen. Unter Kinder in der Familie steht, wann jedes Kind zuletzt geübt hat. Alte Konten lassen sich mit dem Papierkorb entfernen."),
         ("Eigene Aufgaben", "Fotos von Buchseiten kannst du selbst in Aufgaben verwandeln: Die Vorlage in der ausführlichen Anleitung (Abschnitt 11.4, Eigene Aufgaben aus Fotos) als erste Nachricht an eine KI wie Claude oder ChatGPT schicken, dann Fotos und einen Namen. Das JSON, das zurückkommt, fügst du im Tab Schule über Plus und Text einfügen ein (Eltern: Reiter Lernen, Schule). Prüfe ein paar Antworten, bevor dein Kind übt."),
         ("Neue Aufgaben", "Im Tab Schule nach unten ziehen oder Neue Aufgaben holen wählen. Dafür braucht das Gerät Internet."),
+        ("Sparmodus", "Ruckelt die App auf einem älteren Gerät, unter Einstellungen, Farben und Darstellung den Sparmodus einschalten. Er lässt Bewegungen, Konfetti und Glas-Effekte weg, Üben und Spiele bleiben gleich. Im Stromsparmodus von iOS ist er von selbst an."),
         ("Hilfe", "Die ausführliche Anleitung öffnet sich, sobald das Gerät online ist. Unter Info kannst du Feedback an den Admin schicken.")
     ]
 

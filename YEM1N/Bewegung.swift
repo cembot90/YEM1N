@@ -37,7 +37,10 @@ struct KonfettiRegen: View {
     /// true: explodiert aus der Mitte, false: fällt von oben herein.
     var ausDerMitte = false
 
-    @Environment(\.accessibilityReduceMotion) private var ruhig
+    @Environment(\.accessibilityReduceMotion) private var systemRuhig
+    @AppStorage(Sparmodus.key) private var spar = false
+    /// Ruhig bei "Bewegung reduzieren", im Sparmodus und im Stromsparmodus
+    private var ruhig: Bool { systemRuhig || spar || Sparmodus.stromsparen }
     @State private var start = Date.now
     @State private var fertig = false
     @State private var teile: [Teil] = []
@@ -176,7 +179,7 @@ extension View {
     /// Ab iOS 18: Diese Karte ist der Start für den Zoom-Übergang.
     @ViewBuilder
     func zoomQuelle<ID: Hashable>(_ id: ID, in raum: Namespace.ID) -> some View {
-        if #available(iOS 18.0, *) {
+        if #available(iOS 18.0, *), !Sparmodus.an {
             self.matchedTransitionSource(id: id, in: raum)
         } else {
             self
@@ -186,7 +189,7 @@ extension View {
     /// Ab iOS 18: Die neue Seite wächst aus der angetippten Karte heraus.
     @ViewBuilder
     func zoomZiel<ID: Hashable>(_ id: ID, in raum: Namespace.ID) -> some View {
-        if #available(iOS 18.0, *) {
+        if #available(iOS 18.0, *), !Sparmodus.an {
             self.navigationTransition(.zoom(sourceID: id, in: raum))
         } else {
             self
@@ -205,7 +208,10 @@ extension View {
 }
 
 struct Jubeln: ViewModifier {
-    @Environment(\.accessibilityReduceMotion) private var ruhig
+    @Environment(\.accessibilityReduceMotion) private var systemRuhig
+    @AppStorage(Sparmodus.key) private var spar = false
+    /// Ruhig bei "Bewegung reduzieren", im Sparmodus und im Stromsparmodus
+    private var ruhig: Bool { systemRuhig || spar || Sparmodus.stromsparen }
 
     @ViewBuilder
     func body(content: Content) -> some View {
@@ -226,7 +232,10 @@ struct Jubeln: ViewModifier {
 struct Einblenden: ViewModifier {
     let index: Int
     @State private var da = false
-    @Environment(\.accessibilityReduceMotion) private var ruhig
+    @Environment(\.accessibilityReduceMotion) private var systemRuhig
+    @AppStorage(Sparmodus.key) private var spar = false
+    /// Ruhig bei "Bewegung reduzieren", im Sparmodus und im Stromsparmodus
+    private var ruhig: Bool { systemRuhig || spar || Sparmodus.stromsparen }
 
     func body(content: Content) -> some View {
         let sichtbar = da || ruhig
@@ -282,16 +291,19 @@ final class Neigung {
     func anmelden() {
         nutzer += 1
         guard nutzer == 1, sensor.isDeviceMotionAvailable,
-              !UIAccessibility.isReduceMotionEnabled else { return }
-        sensor.deviceMotionUpdateInterval = 1.0 / 30.0
+              !UIAccessibility.isReduceMotionEnabled, !Sparmodus.an else { return }
+        sensor.deviceMotionUpdateInterval = 1.0 / 20.0
         // Muss .main bleiben, die Werte gehören dem Haupt-Thread
         sensor.startDeviceMotionUpdates(to: .main) { [weak self] daten, _ in
             guard let self, let daten else { return }
             let nx = max(-1, min(1, daten.gravity.x * 2))
             let ny = max(-1, min(1, (daten.gravity.y + 0.6) * 2))
             // Weich nachziehen, damit nichts zittert
-            self.x = self.x * 0.8 + nx * 0.2
-            self.y = self.y * 0.8 + ny * 0.2
+            let neuX = self.x * 0.8 + nx * 0.2
+            let neuY = self.y * 0.8 + ny * 0.2
+            // Jede Änderung zeichnet das Bild neu. Kleinste Bewegungen sieht man nicht.
+            if abs(neuX - self.x) > 0.01 { self.x = neuX }
+            if abs(neuY - self.y) > 0.01 { self.y = neuY }
         }
     }
 

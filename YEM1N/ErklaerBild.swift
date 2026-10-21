@@ -347,7 +347,10 @@ struct ErklaerBildKnopf: View {
 
 struct ErklaerBildView: View {
     let bild: ErklaerBild
-    @Environment(\.accessibilityReduceMotion) private var ruhig
+    @Environment(\.accessibilityReduceMotion) private var systemRuhig
+    @AppStorage(Sparmodus.key) private var spar = false
+    /// Ruhig bei "Bewegung reduzieren", im Sparmodus und im Stromsparmodus
+    private var ruhig: Bool { systemRuhig || spar || Sparmodus.stromsparen }
     @State private var schritt = 0
 
     private var fertig: Int { ErklaerBildPlan.schrittZahl(bild.art) }

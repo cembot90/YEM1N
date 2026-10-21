@@ -391,7 +391,10 @@ struct DuellGeraetSpiel: Identifiable {
 struct DuellGeraetView: View {
     let spieler: [DuellTeilnehmer]
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.accessibilityReduceMotion) private var ruhig
+    @Environment(\.accessibilityReduceMotion) private var systemRuhig
+    @AppStorage(Sparmodus.key) private var spar = false
+    /// Ruhig bei "Bewegung reduzieren", im Sparmodus und im Stromsparmodus
+    private var ruhig: Bool { systemRuhig || spar || Sparmodus.stromsparen }
 
     @State private var laeufe: [DuellLauf] = []
     @State private var enden: [Date?] = [nil, nil]
@@ -729,7 +732,10 @@ struct DuellSoloView: View {
     var gegner: (name: String, stand: DuellStand)? = nil
 
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.accessibilityReduceMotion) private var ruhig
+    @Environment(\.accessibilityReduceMotion) private var systemRuhig
+    @AppStorage(Sparmodus.key) private var spar = false
+    /// Ruhig bei "Bewegung reduzieren", im Sparmodus und im Stromsparmodus
+    private var ruhig: Bool { systemRuhig || spar || Sparmodus.stromsparen }
     @State private var lauf: DuellLauf
     @State private var start: Date?
     @State private var ende: Date?

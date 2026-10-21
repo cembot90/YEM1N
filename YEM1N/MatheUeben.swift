@@ -305,7 +305,10 @@ struct UebungInhalt: View {
     @State private var welle = false
     /// true nur direkt nach dem Abschluss, nicht beim späteren Wiederöffnen
     @State private var frischGeschafft = false
-    @Environment(\.accessibilityReduceMotion) private var ruhig
+    @Environment(\.accessibilityReduceMotion) private var systemRuhig
+    @AppStorage(Sparmodus.key) private var spar = false
+    /// Ruhig bei "Bewegung reduzieren", im Sparmodus und im Stromsparmodus
+    private var ruhig: Bool { systemRuhig || spar || Sparmodus.stromsparen }
     @State private var probeStart = Date.now
     @State private var zeigeNotiz = false
     @State private var notiz = PKDrawing()
