@@ -141,7 +141,7 @@ enum Mitteilungen {
 
 // MARK: Datenmodelle aus der Cloud
 
-struct CloudAntwort: Identifiable {
+struct CloudAntwort: Identifiable, Equatable {
     let id: String
     let anfrageID: String
     let absender: String
@@ -151,7 +151,7 @@ struct CloudAntwort: Identifiable {
     var daumen: Bool
 }
 
-struct CloudAnfrage: Identifiable {
+struct CloudAnfrage: Identifiable, Equatable {
     let id: String
     let kind: String
     let fach: String
@@ -614,22 +614,43 @@ final class JokerCloud {
     func aktualisieren() async {
         let code = UserDefaults.standard.string(forKey: "familienCode") ?? ""
         guard Familiencode.istGueltig(code) else {
-            fehler = "Noch kein Familiencode."
+            if fehler != "Noch kein Familiencode." { fehler = "Noch kein Familiencode." }
             return
         }
+        // Läuft schon ein Abruf, braucht es keinen zweiten gleichzeitig
+        guard !laedt else { return }
         laedt = true
+        defer { laedt = false }
+        // Nur ändern, was sich wirklich geändert hat. Jede Änderung zeichnet die Seite neu,
+        // und das ruckelt auf älteren iPhones, wenn es alle paar Sekunden passiert.
         do {
-            anfragen = try await CloudDienst.ladeJoker(code: code)
-            nachschub = (try? await CloudDienst.ladeNachschub(code: code)) ?? []
-            freigaben = (try? await CloudDienst.ladeFreigaben(code: code)) ?? []
+            let neu = try await CloudDienst.ladeJoker(code: code)
+            if neu != anfragen { anfragen = neu }
+            let n = (try? await CloudDienst.ladeNachschub(code: code)) ?? []
+            if n != nachschub { nachschub = n }
+            let f = (try? await CloudDienst.ladeFreigaben(code: code)) ?? []
+            if f != freigaben { freigaben = f }
             if UserDefaults.standard.string(forKey: "modus") == "kind" {
                 await CloudSync.holeFreigaben()
             }
-            fehler = ""
+            if !fehler.isEmpty { fehler = "" }
         } catch {
-            fehler = "Laden nicht möglich: \(CloudDienst.fehlertext(error))"
+            let t = "Laden nicht möglich: \(CloudDienst.fehlertext(error))"
+            if fehler != t { fehler = t }
         }
-        laedt = false
+    }
+
+    /// Wie oft offene Seiten nachsehen. Neue Joker kommen sonst sofort über die Mitteilung.
+    static let nachsehenAlle: Duration = .seconds(30)
+
+    /// Schaut regelmäßig nach, aber nur, solange die App im Vordergrund ist.
+    func nachsehenSolangeOffen() async {
+        while !Task.isCancelled {
+            if UIApplication.shared.applicationState == .active {
+                await aktualisieren()
+            }
+            try? await Task.sleep(for: Self.nachsehenAlle)
+        }
     }
 
     // Punkte aus der Cloud: erste Person +3, zweite +1, Daumen vom Kind +2
@@ -734,12 +755,7 @@ struct JokerPostfachView: View {
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
         .glasKarte(radius: 26)
-        .task {
-            while !Task.isCancelled {
-                await cloud.aktualisieren()
-                try? await Task.sleep(for: .seconds(10))
-            }
-        }
+        .task { await cloud.nachsehenSolangeOffen() }
         .onReceive(NotificationCenter.default.publisher(for: .cloudPush)) { _ in
             Task { await cloud.aktualisieren() }
         }
@@ -994,12 +1010,7 @@ struct KindJokerView: View {
                 karte(a)
             }
         }
-        .task {
-            while !Task.isCancelled {
-                await cloud.aktualisieren()
-                try? await Task.sleep(for: .seconds(8))
-            }
-        }
+        .task { await cloud.nachsehenSolangeOffen() }
         .onReceive(NotificationCenter.default.publisher(for: .cloudPush)) { _ in
             Task { await cloud.aktualisieren() }
         }

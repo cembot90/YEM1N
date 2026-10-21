@@ -528,7 +528,7 @@ struct PaketeView: View {
 // MARK: - Joker-Nachschub und Cloud-Diagnose
 // ============================================================
 
-struct CloudNachschub: Identifiable {
+struct CloudNachschub: Identifiable, Equatable {
     let id: String
     let kind: String
     let erstellt: Date

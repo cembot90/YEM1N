@@ -18,13 +18,14 @@ struct KindIchView: View {
     @State private var zeigeErfolge = false
     @State private var zeigeSpiele = false
     @State private var zeigeDuell = false
+    /// Die Serie wird nur neu gezählt, wenn eine Runde dazukommt, nicht bei jedem Zeichnen
+    @State private var serie = 0
     private let joker = JokerStand.shared
 
     private var tier: Haustier? { HaustierSpeicher.dekodiere(haustierDaten) }
 
     private var chips: [HeroChip] {
         var c: [HeroChip] = []
-        let serie = Erfolge.geschuetzteSerie(lokale).laenge
         if serie > 0 { c.append(HeroChip(text: "🔥 \(serie) \(serie == 1 ? "Tag" : "Tage")", hervorgehoben: true)) }
         c.append(HeroChip(text: "🪙 \(muenzen)"))
         c.append(HeroChip(text: "🃏 \(joker.uebrigHeute) übrig"))
@@ -83,6 +84,8 @@ struct KindIchView: View {
             }
             .refreshable { await JokerCloud.shared.aktualisieren() }
             .toolbar(.hidden, for: .navigationBar)
+            .onAppear { serie = Erfolge.geschuetzteSerie(lokale).laenge }
+            .onChange(of: lokale.count) { serie = Erfolge.geschuetzteSerie(lokale).laenge }
             .sheet(isPresented: $zeigeErfolge) {
                 ErfolgeView()
                     .preferredColorScheme(.dark)
