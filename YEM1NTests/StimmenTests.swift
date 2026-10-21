@@ -13,6 +13,10 @@ struct StimmenTests {
         #expect(VorleseText.gesprochen("🍎 Hallo  Welt! ❤️\n") == "Hallo Welt!")
         #expect(VorleseText.gesprochen("🦉 Super!") == "Super!")
         #expect(VorleseText.sprache("de-DE") == "de")
+        // Vorlesen gibt es für Rechnen, Vergleichen, Antippen, aber nicht für Rechtschreibung und Mauern
+        #expect(VorleseText.vorlesbar(art: "zahl") && VorleseText.vorlesbar(art: "rest"))
+        #expect(VorleseText.vorlesbar(art: "vergleich") && VorleseText.vorlesbar(art: "wahl"))
+        #expect(!VorleseText.vorlesbar(art: "text") && !VorleseText.vorlesbar(art: "mauer"))
         #expect(VorleseText.gesprochen("Es sind 7.") == "Es sind 7.")
     }
 

@@ -28,6 +28,7 @@ struct ProfilAssistent: View {
     @AppStorage("vorschulTab") private var vorschulTab = true
     @AppStorage(SprachAuswahl.anSchluessel) private var sprachenAn = false
     @AppStorage("jokerIch") private var jokerIch = ""
+    @AppStorage(VorleseText.automatischSchluessel) private var automatischVorlesen = false
     @AppStorage("profilFertig") private var profilFertig = false
     @State private var schritt = 0
     @State private var name = ""
@@ -111,7 +112,7 @@ struct ProfilAssistent: View {
                 }
             }
         } else {
-            frageKarte("Farben und Ziel", "Wähle die Farbwelt und wie viele Runden pro Tag das Ziel sind.") {
+            frageKarte("Farben, Ziel und Vorlesen", "Wähle die Farbwelt, wie viele Runden pro Tag das Ziel sind und ob Aufgaben von selbst vorgelesen werden. Alles lässt sich später in den Einstellungen ändern.") {
                 VStack(spacing: 14) {
                     HStack(spacing: 12) {
                         farbKarte("Blau und Gelb", "blau")
@@ -121,6 +122,14 @@ struct ProfilAssistent: View {
                             value: $tagesziel, in: 1...10)
                         .font(.system(.body, design: .rounded).weight(.semibold))
                         .foregroundStyle(Color.white)
+                    Toggle("Aufgaben automatisch vorlesen", isOn: $automatischVorlesen)
+                        .tint(Theme.gelb)
+                        .font(.system(.body, design: .rounded).weight(.semibold))
+                        .foregroundStyle(Color.white)
+                    Text("Sonst liest die App nur vor, wenn das Kind auf den gelben Lautsprecher tippt.")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.textSanft)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
         }

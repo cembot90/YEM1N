@@ -14,6 +14,15 @@ nonisolated enum SprechStimmung: Sendable {
 }
 
 enum VorleseText {
+    /// Einstellung: Jede neue Aufgabe wird von selbst vorgelesen, ohne auf den Lautsprecher zu tippen
+    nonisolated static let automatischSchluessel = "autoVorlesen"
+
+    /// Aufgaben mit Lautsprecher. Bei Rechtschreibung würde das Vorlesen die Lösung verraten,
+    /// und eine Zahlenmauer lässt sich nicht sinnvoll vorlesen.
+    nonisolated static func vorlesbar(art: String) -> Bool {
+        art != "text" && art != "mauer"
+    }
+
     /// Der Text so, wie er gesprochen wird: ohne Bilder und Emojis,
     /// ohne doppelte Leerzeichen und Zeilenumbrüche.
     nonisolated static func gesprochen(_ text: String) -> String {

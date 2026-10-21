@@ -126,10 +126,22 @@ struct StimmenView: View {
     @Environment(\.scenePhase) private var phase
     private let zeile = Color.white.opacity(0.08)
 
+    @AppStorage(VorleseText.automatischSchluessel) private var automatischVorlesen = false
+
     var body: some View {
         ZStack {
             HintergrundView()
             Form {
+                Section {
+                    Toggle("Aufgaben automatisch vorlesen", isOn: $automatischVorlesen)
+                        .tint(Theme.gelb)
+                } header: {
+                    Text("Vorlesen")
+                } footer: {
+                    Text("An: Jede neue Aufgabe in Schule und Lernwelt wird von selbst vorgelesen. Aus: Vorgelesen wird nur, wenn das Kind auf den gelben Lautsprecher tippt. Die Vorschule liest immer von selbst vor.")
+                }
+                .listRowBackground(zeile)
+
                 NatuerlicheStimmenAbschnitt(hintergrund: zeile)
 
                 Section {

@@ -295,6 +295,7 @@ struct UebungInhalt: View {
     @State private var kurzerHinweis: String?
     /// Rechenweg in Schritten für die aktuelle Aufgabe
     @State private var rechenWeg: RechenWeg?
+    @AppStorage(VorleseText.automatischSchluessel) private var automatischVorlesen = false
     @State private var wackeln = 0
     /// Zählt richtige Antworten: Lichtring, Funken und Federn.
     @State private var erfolg = 0
@@ -508,7 +509,7 @@ struct UebungInhalt: View {
 
     @ViewBuilder
     private func vorlesenKnopf(_ a: Aufgabe) -> some View {
-        if a.art != "text" && a.art != "mauer" {
+        if VorleseText.vorlesbar(art: a.art) {
             Button {
                 Sprecher.shared.sprich(sprechText(a), code: "de-DE")
             } label: {
@@ -872,6 +873,17 @@ struct UebungInhalt: View {
     }
 
     private func bereiteVor() {
+        // Neue Aufgabe von selbst vorlesen, wenn das eingeschaltet ist.
+        // Kurz warten, bis die Karte da ist, dann klingt es nicht abgehackt.
+        if automatischVorlesen, bewertet == nil, let a = aktuell, VorleseText.vorlesbar(art: a.art) {
+            let text = sprechText(a)
+            let id = a.persistentModelID
+            Task {
+                try? await Task.sleep(for: .milliseconds(350))
+                guard aktuell?.persistentModelID == id, bewertet == nil else { return }
+                Sprecher.shared.sprich(text, code: "de-DE")
+            }
+        }
         notiz = PKDrawing()
         schreibRunde += 1
         eingabe = ""
