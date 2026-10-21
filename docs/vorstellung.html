@@ -1,0 +1,1050 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>YEM1N vorgestellt</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap">
+<style>
+/* Layout: eine Vortragsseite in Abschnitten, jeder Abschnitt eine "Folie" mit Live-Demo.
+   Farbwelt der App: Navy und Gelb, dazu Mint, Koralle und Himmel wie in YEM1N. */
+:root {
+  --tief: #061230;
+  --navy: #0a1d48;
+  --karte: #10295f;
+  --karte-hoch: #163473;
+  --linie: rgba(214, 226, 255, 0.14);
+  --text: #f2f5ff;
+  --sanft: #a7b4d6;
+  --gelb: #ffe100;
+  --gelb-dunkel: #d9bf00;
+  --mint: #5fe0b5;
+  --koralle: #ff7d6e;
+  --himmel: #6cc4ff;
+  --papier: #f6f9ff;
+  --papier-linie: #d4e2fb;
+  --tinte: #0b1d46;
+  --schrift-anzeige: "Fredoka", "Arial Rounded MT Bold", "Trebuchet MS", system-ui, sans-serif;
+  --schrift-text: "Atkinson Hyperlegible", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --radius: 22px;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { animation: none !important; transition: none !important; } }
+body {
+  margin: 0;
+  background: var(--tief);
+  color: var(--text);
+  font-family: var(--schrift-text);
+  font-size: 17px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+body::before {
+  content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--tief);
+}
+h1, h2, h3 { font-family: var(--schrift-anzeige); font-weight: 600; line-height: 1.1; margin: 0; text-wrap: balance; letter-spacing: -0.01em; }
+h1 { font-size: clamp(2.6rem, 8vw, 5.2rem); font-weight: 700; }
+h2 { font-size: clamp(1.8rem, 4.6vw, 2.8rem); }
+h3 { font-size: 1.25rem; }
+p { margin: 0; max-width: 62ch; }
+a { color: var(--himmel); }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--himmel); outline-offset: 3px; border-radius: 10px; }
+
+/* Kopfleiste */
+.kopf {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20;
+  background: color-mix(in srgb, var(--tief) 88%, transparent);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--linie);
+}
+.kopf-innen {
+  max-width: 1120px; margin: 0 auto;
+  padding-block: 10px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; align-items: center; gap: 14px;
+}
+.marke { font-family: var(--schrift-anzeige); font-weight: 700; font-size: 1.25rem; letter-spacing: 0.02em; display: flex; align-items: center; gap: 8px; }
+.marke-kachel { background: var(--gelb); color: var(--navy); border-radius: 9px; padding: 1px 8px; font-size: 0.95rem; }
+.punkte { display: flex; gap: 6px; margin-left: auto; flex-wrap: wrap; justify-content: flex-end; }
+.punkt { width: 11px; height: 11px; border-radius: 50%; border: 2px solid var(--sanft); background: transparent; padding: 0; cursor: pointer; }
+.punkt[aria-current="true"] { background: var(--gelb); border-color: var(--gelb); }
+.vortrag-knopf { border: 1px solid var(--linie); background: var(--karte); border-radius: 999px; padding: 6px 14px; cursor: pointer; font-size: 0.85rem; white-space: nowrap; }
+.vortrag-knopf[aria-pressed="true"] { background: var(--gelb); color: var(--navy); border-color: var(--gelb); }
+
+/* Abschnitte */
+.folie {
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: clamp(56px, 9vw, 104px);
+  border-bottom: 1px solid var(--linie);
+  scroll-margin-top: 56px;
+}
+.folie:nth-of-type(even) { background: var(--navy); }
+.innen { max-width: 1120px; margin: 0 auto; display: grid; gap: 28px; }
+.innen > * { min-width: 0; }
+a { overflow-wrap: anywhere; }
+.oberzeile { font-family: var(--schrift-anzeige); font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; font-size: 0.82rem; color: var(--gelb); }
+.lead { font-size: 1.2rem; color: var(--sanft); }
+.zwei { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: start; }
+.zwei > * { min-width: 0; }
+@media (max-width: 860px) { .zwei { grid-template-columns: 1fr; } }
+
+/* Start */
+.start .innen { gap: 22px; }
+.start h1 span { color: var(--gelb); }
+.chips { display: flex; flex-wrap: wrap; gap: 10px; }
+.chip { border: 1px solid var(--linie); background: var(--karte); border-radius: 999px; padding: 7px 14px; font-size: 0.95rem; }
+.chip b { color: var(--gelb); font-variant-numeric: tabular-nums; }
+.kennzahlen { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 10px; }
+@media (max-width: 760px) { .kennzahlen { grid-template-columns: repeat(2, 1fr); } }
+.kennzahl { border-top: 3px solid var(--gelb); padding-top: 10px; }
+.kennzahl b { display: block; font-family: var(--schrift-anzeige); font-size: clamp(2rem, 5vw, 3rem); font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+.kennzahl span { color: var(--sanft); font-size: 0.95rem; }
+
+/* Drei Rollen */
+.rollen { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+@media (max-width: 860px) { .rollen { grid-template-columns: 1fr; } }
+.rolle { background: var(--karte); border: 1px solid var(--linie); border-radius: var(--radius); padding: 22px; display: grid; gap: 10px; align-content: start; }
+.rolle .wer { font-family: var(--schrift-anzeige); font-weight: 600; color: var(--himmel); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.1em; }
+.rolle ul { margin: 0; padding-left: 1.1em; color: var(--sanft); display: grid; gap: 4px; }
+.fluss { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; color: var(--sanft); font-size: 0.95rem; }
+.fluss b { color: var(--text); background: var(--karte-hoch); border-radius: 10px; padding: 4px 10px; font-weight: 700; }
+
+/* Rechenheft-Demo */
+.heft {
+  background-color: var(--papier);
+  background-image: linear-gradient(var(--papier-linie) 1px, transparent 1px), linear-gradient(90deg, var(--papier-linie) 1px, transparent 1px);
+  background-size: 22px 22px;
+  color: var(--tinte);
+  border-radius: var(--radius);
+  padding: 22px;
+  display: grid; gap: 16px;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+}
+.heft-kopf { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-family: var(--schrift-anzeige); font-weight: 600; }
+.heft-kopf small { font-family: var(--schrift-text); font-weight: 700; font-size: 0.85rem; color: #4c6396; }
+.serie { background: var(--tinte); color: var(--gelb); border-radius: 999px; padding: 3px 12px; font-size: 0.85rem; font-variant-numeric: tabular-nums; }
+.rechnung { font-family: var(--schrift-anzeige); font-size: clamp(2.6rem, 9vw, 3.6rem); font-weight: 700; text-align: center; font-variant-numeric: tabular-nums; }
+.rechnung .eingabe { display: inline-block; min-width: 2.2ch; border-bottom: 4px solid var(--tinte); color: #1f4fb8; }
+.tasten { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.taste {
+  background: #ffffff; border: 2px solid #c3d4f5; border-radius: 14px; padding: 12px 0;
+  font-family: var(--schrift-anzeige); font-weight: 600; font-size: 1.35rem; color: var(--tinte); cursor: pointer;
+}
+.taste:active { transform: translateY(1px); }
+.taste.pruefen { grid-column: span 2; background: var(--gelb); border-color: var(--gelb-dunkel); }
+.rueck { border-radius: 16px; padding: 14px 16px; display: grid; gap: 10px; min-height: 64px; align-content: center; }
+.rueck.richtig { background: #d9f7ea; }
+.rueck.falsch { background: #ffe1dc; }
+.rueck.leer { background: rgba(11, 29, 70, 0.06); color: #4c6396; }
+.rueck b { font-family: var(--schrift-anzeige); font-size: 1.3rem; font-weight: 600; }
+.punktefeld { display: grid; gap: 5px; justify-content: start; }
+.punktefeld .reihe { display: flex; gap: 5px; }
+.punktefeld i { width: 13px; height: 13px; border-radius: 50%; background: #1f4fb8; display: block; }
+.punktefeld .reihe:nth-child(odd) i { background: #3d73e0; }
+.klein { font-size: 0.9rem; color: var(--sanft); }
+.heft .klein { color: #4c6396; }
+.weiter { justify-self: start; background: var(--tinte); color: #fff; border: 0; border-radius: 12px; padding: 8px 16px; cursor: pointer; font-weight: 700; }
+.liste-haken { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
+.liste-haken li { display: grid; grid-template-columns: 28px 1fr; gap: 10px; align-items: start; }
+.liste-haken li::before { content: ""; width: 22px; height: 22px; margin-top: 3px; border-radius: 7px; background: var(--gelb); mask: radial-gradient(circle, #000 0 4px, transparent 5px); -webkit-mask: radial-gradient(circle, #000 0 4px, transparent 5px); }
+.liste-haken b { color: var(--text); }
+.liste-haken span { color: var(--sanft); }
+
+/* Lernwelt */
+.umschalter { display: inline-flex; background: var(--karte); border: 1px solid var(--linie); border-radius: 999px; padding: 4px; gap: 4px; flex-wrap: wrap; }
+.umschalter button { border: 0; background: transparent; border-radius: 999px; padding: 6px 14px; cursor: pointer; color: var(--sanft); font-weight: 700; }
+.umschalter button[aria-pressed="true"] { background: var(--gelb); color: var(--navy); }
+.tabelle-huelle { overflow-x: auto; }
+table.netz { border-collapse: separate; border-spacing: 6px; min-width: 520px; width: 100%; font-variant-numeric: tabular-nums; }
+.netz th { text-align: left; font-family: var(--schrift-anzeige); font-weight: 600; color: var(--sanft); font-size: 0.95rem; padding: 4px 6px; }
+.netz th.zahl { text-align: center; }
+.netz td { text-align: center; border-radius: 12px; padding: 12px 6px; font-family: var(--schrift-anzeige); font-weight: 700; font-size: 1.25rem; color: var(--navy); }
+.netz td.summe { background: transparent; color: var(--text); font-size: 1rem; }
+.netz tfoot td { background: transparent; color: var(--sanft); font-size: 1rem; }
+.beispiele { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+@media (max-width: 960px) { .beispiele { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 600px) { .beispiele { grid-template-columns: 1fr; } }
+.aufgabe { background: var(--karte); border: 1px solid var(--linie); border-radius: var(--radius); padding: 18px; display: grid; gap: 10px; align-content: start; }
+.aufgabe .fach { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--himmel); }
+.aufgabe .frage { font-weight: 700; }
+.aufgabe .vorlage { white-space: pre-line; color: var(--sanft); font-size: 0.95rem; background: var(--navy); border-radius: 12px; padding: 10px 12px; }
+.wahl { display: flex; flex-wrap: wrap; gap: 8px; }
+.wahl button { border: 1px solid var(--linie); background: var(--karte-hoch); border-radius: 12px; padding: 8px 14px; cursor: pointer; font-weight: 700; }
+.wahl button.ok { background: var(--mint); color: var(--navy); border-color: var(--mint); }
+.wahl button.nein { background: var(--koralle); color: var(--navy); border-color: var(--koralle); }
+.aufgabe .antwort-info { font-size: 0.9rem; color: var(--sanft); min-height: 1.4em; }
+
+/* Vorschule */
+.vorschul-karte { background: var(--karte); border: 1px solid var(--linie); border-radius: var(--radius); padding: 22px; display: grid; gap: 18px; }
+.vorschul-frage { display: flex; gap: 12px; align-items: center; font-family: var(--schrift-anzeige); font-size: 1.5rem; font-weight: 600; }
+.vorlesen { border: 0; background: var(--gelb); color: var(--navy); width: 44px; height: 44px; border-radius: 50%; cursor: pointer; flex: none; display: grid; place-items: center; }
+.vorlesen svg { width: 22px; height: 22px; }
+.dinge { display: flex; flex-wrap: wrap; gap: 8px; font-size: 2.6rem; line-height: 1; min-height: 3rem; }
+.zahlknoepfe { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.zahlknoepfe button { border: 2px solid var(--linie); background: var(--karte-hoch); border-radius: 20px; padding: 16px 0; font-family: var(--schrift-anzeige); font-size: 2rem; font-weight: 700; cursor: pointer; }
+.zahlknoepfe button.ok { background: var(--mint); color: var(--navy); border-color: var(--mint); }
+.zahlknoepfe button.nein { background: var(--koralle); color: var(--navy); border-color: var(--koralle); animation: wackeln 0.35s; }
+@keyframes wackeln { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+.vorschul-lob { min-height: 1.6em; font-family: var(--schrift-anzeige); font-size: 1.25rem; color: var(--gelb); }
+.bereiche { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+@media (max-width: 760px) { .bereiche { grid-template-columns: 1fr; } }
+.bereich { border-left: 3px solid var(--himmel); padding-left: 14px; display: grid; gap: 6px; }
+.bereich h3 { font-size: 1.1rem; }
+.bereich p { color: var(--sanft); font-size: 0.95rem; }
+
+/* Motivation */
+.motiv { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+@media (max-width: 760px) { .motiv { grid-template-columns: 1fr; } }
+.motiv-karte { background: var(--karte); border: 1px solid var(--linie); border-radius: var(--radius); padding: 22px; display: grid; gap: 12px; align-content: start; }
+.motiv-karte p { color: var(--sanft); }
+.stufen { display: flex; gap: 6px; flex-wrap: wrap; }
+.stufe { border: 1px solid var(--linie); border-radius: 999px; padding: 4px 10px; font-size: 0.85rem; cursor: pointer; background: transparent; }
+.stufe[aria-pressed="true"] { background: var(--mint); color: var(--navy); border-color: var(--mint); }
+.tier { font-size: 3.4rem; line-height: 1; transition: transform 0.3s; }
+.balken { height: 10px; background: var(--karte-hoch); border-radius: 999px; overflow: hidden; }
+.balken > div { height: 100%; background: var(--mint); border-radius: 999px; transition: width 0.4s; }
+
+/* Eltern und Lehrkräfte */
+.ansicht { background: var(--karte); border: 1px solid var(--linie); border-radius: var(--radius); padding: 20px; display: grid; gap: 12px; }
+.zeile { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--linie); }
+.zeile:last-child { border-bottom: 0; }
+.zeile .was { display: grid; }
+.zeile .was small { color: var(--sanft); }
+.marke-stand { border-radius: 999px; padding: 3px 10px; font-size: 0.85rem; font-weight: 700; color: var(--navy); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.gut { background: var(--mint); } .mittel { background: var(--gelb); } .schwach { background: var(--koralle); }
+.antwort-zeile { font-family: var(--schrift-anzeige); font-size: 1.05rem; }
+.antwort-zeile s { color: var(--koralle); }
+.antwort-zeile em { color: var(--mint); font-style: normal; }
+.paket-fluss { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+@media (max-width: 760px) { .paket-fluss { grid-template-columns: 1fr; } }
+.schritt { background: var(--karte); border: 1px solid var(--linie); border-radius: var(--radius); padding: 18px; display: grid; gap: 8px; align-content: start; }
+.schritt .nr { font-family: var(--schrift-anzeige); font-weight: 700; color: var(--navy); background: var(--gelb); width: 32px; height: 32px; border-radius: 10px; display: grid; place-items: center; }
+.schritt p { color: var(--sanft); font-size: 0.95rem; }
+pre.json { margin: 0; overflow-x: auto; background: var(--tief); border: 1px solid var(--linie); border-radius: 14px; padding: 14px; font-size: 0.85rem; line-height: 1.5; color: var(--sanft); }
+pre.json .k { color: var(--himmel); } pre.json .w { color: var(--gelb); }
+
+/* Datenschutz */
+.schutz { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+@media (max-width: 860px) { .schutz { grid-template-columns: 1fr; } }
+.schutz div { border-top: 3px solid var(--mint); padding-top: 12px; display: grid; gap: 6px; }
+.schutz p { color: var(--sanft); font-size: 0.95rem; }
+
+/* Start in der App */
+.los { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+@media (max-width: 860px) { .los { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 520px) { .los { grid-template-columns: 1fr; } }
+.ehrlich { background: var(--karte); border: 1px dashed var(--linie); border-radius: var(--radius); padding: 18px 20px; color: var(--sanft); }
+.ehrlich b { color: var(--text); }
+.fuss { padding-block: 28px; text-align: center; color: var(--sanft); font-size: 0.9rem; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.tastenhilfe { color: var(--sanft); font-size: 0.85rem; }
+kbd { border: 1px solid var(--linie); border-bottom-width: 2px; border-radius: 6px; padding: 0 6px; font-family: var(--schrift-text); background: var(--karte); }
+/* Ohne JavaScript (zum Beispiel in der Dateivorschau auf dem iPhone) */
+.ohne-js { background: var(--gelb); color: var(--navy); border-radius: 14px; padding: 12px 16px; font-weight: 700; }
+.js .ohne-js { display: none; }
+.vorschul-spalte { display: grid; gap: 16px; align-content: start; }
+.en-bild { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.en-bild button { border: 2px solid var(--linie); background: var(--karte-hoch); border-radius: 20px; padding: 14px 0; font-size: 2.6rem; line-height: 1.1; cursor: pointer; }
+.en-bild button.ok { background: var(--mint); border-color: var(--mint); }
+.en-bild button.nein { background: var(--koralle); border-color: var(--koralle); animation: wackeln 0.35s; }
+.en-wort { font-family: var(--schrift-anzeige); font-size: 1.5rem; font-weight: 600; }
+.schritte { display: grid; gap: 8px; }
+.schritte:empty { display: none; }
+.schritt-zeile { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-family: var(--schrift-anzeige); font-size: 1.25rem; font-weight: 600; }
+.schritt-zeile.fertig { color: #1a7f5a; }
+.schritt-zeile input { width: 4.2em; font: inherit; text-align: center; border: 2px solid var(--tinte); border-radius: 10px; padding: 2px 4px; background: #fff; color: var(--tinte); }
+.schritt-hinweis { font-size: 0.9rem; color: #4c6396; }
+#schritte-knopf[hidden] { display: none; }
+</style>
+</head>
+<body>
+
+<header class="kopf">
+  <div class="kopf-innen">
+    <div class="marke"><span class="marke-kachel">YEM1N</span></div>
+    <nav class="punkte" id="punkte" aria-label="Abschnitte"></nav>
+    <button class="vortrag-knopf" id="vortrag" aria-pressed="false" title="Mit den Pfeiltasten von Abschnitt zu Abschnitt">Vortrag</button>
+  </div>
+</header>
+
+<main>
+  <section class="folie start" id="start" data-titel="Start">
+    <div class="innen">
+      <p class="ohne-js">Diese Vorschau zeigt nur den Text. Die Beispiele zum Ausprobieren laufen im Browser: oben auf Teilen tippen und mit Safari öffnen.</p>
+      <div class="oberzeile">Die Übungs-App für Grundschule und Vorschule</div>
+      <h1>Üben, das Kinder <span>gern</span> aufmachen.</h1>
+      <p class="lead">YEM1N verbindet echte Schulaufgaben, fertige Übungen nach dem Lehrplan und kleine Belohnungen. Eltern sehen, wo es hakt. Lehrkräfte können Aufgaben an eine ganze Klasse schicken.</p>
+      <div class="chips">
+        <span class="chip">iPhone und iPad</span>
+        <span class="chip">Vorschule bis <b>Klasse 4</b></span>
+        <span class="chip">kostenlos, ohne Werbung</span>
+        <span class="chip">Vorschule auch auf Englisch</span>
+        <span class="chip">Aufgaben aus Fotos mit KI</span>
+        <span class="chip">Sparmodus für ältere iPhones</span>
+        <span class="chip">Beta über TestFlight</span>
+      </div>
+      <div class="kennzahlen">
+        <div class="kennzahl"><b>130</b><span>Lernwelt-Themen für Klasse 1 bis 4</span></div>
+        <div class="kennzahl"><b>24</b><span>Vorschulspiele in drei Bereichen</span></div>
+        <div class="kennzahl"><b>5</b><span>Fächer: Mathe, Deutsch, Englisch, Musik, Kunst</span></div>
+        <div class="kennzahl"><b>3</b><span>Lehrpläne: Hessen, Bayern, NRW</span></div>
+      </div>
+      <p class="tastenhilfe">Zum Vorstellen: oben auf <b>Vortrag</b> tippen, dann mit <kbd>→</kbd> und <kbd>←</kbd> oder der Leertaste weiterblättern. Alle Beispiele auf dieser Seite lassen sich ausprobieren.</p>
+    </div>
+  </section>
+
+  <section class="folie" id="idee" data-titel="Die Idee">
+    <div class="innen">
+      <div class="oberzeile">Die Idee</div>
+      <h2>Drei Rollen, eine App</h2>
+      <p class="lead">Jedes Gerät läuft entweder als Kind-Gerät oder als Eltern-Gerät. Verbunden sind sie über einen Familiencode, den die Eltern selbst erzeugen.</p>
+      <div class="rollen">
+        <div class="rolle">
+          <div class="wer">Kind</div>
+          <h3>übt und sammelt</h3>
+          <ul>
+            <li>Klassenarbeiten zum Nachüben</li>
+            <li>Lernwelt mit fertigen Themen</li>
+            <li>Haustier, Münzen und Mini-Spiele</li>
+            <li>Joker: Hilfe von der Familie holen</li>
+          </ul>
+        </div>
+        <div class="rolle">
+          <div class="wer">Eltern</div>
+          <h3>sehen und helfen</h3>
+          <ul>
+            <li>Ergebnisse jeder Runde</li>
+            <li>jede einzelne Antwort des Kindes</li>
+            <li>Wochenbericht in Worten</li>
+            <li>Joker beantworten, Haustier mitpflegen</li>
+          </ul>
+        </div>
+        <div class="rolle">
+          <div class="wer">Lehrkraft</div>
+          <h3>verteilt Aufgaben</h3>
+          <ul>
+            <li>Klassencode für die ganze Klasse</li>
+            <li>Aufgabenpakete aus eigenen Arbeitsblättern</li>
+            <li>sieht keine Ergebnisse der Kinder</li>
+            <li>Pakete sind digital unterschrieben</li>
+          </ul>
+        </div>
+      </div>
+      <div class="fluss"><b>Foto vom Arbeitsblatt</b> → <b>Aufgabenpaket</b> → <b>Kind übt</b> → <b>Eltern sehen das Ergebnis</b></div>
+    </div>
+  </section>
+
+  <section class="folie" id="mathe" data-titel="Üben">
+    <div class="innen zwei">
+      <div style="display:grid; gap:18px">
+        <div class="oberzeile">Üben wie im Heft</div>
+        <h2>Rechnen, Rückmeldung, Erklärung</h2>
+        <p class="lead">Probieren Sie es aus: Rechnen Sie ein paar Aufgaben. Mal richtig, mal absichtlich falsch.</p>
+        <ul class="liste-haken">
+          <li><div><b>Jedes Mal ein anderes Lob.</b> <span>Mal mit dem Namen des Kindes, nach drei, fünf und zehn richtigen Antworten mit Serien-Lob. Derselbe Satz kommt nie kurz hintereinander.</span></div></li>
+          <li><div><b>Fehler werden erklärt.</b> <span>Bei Malaufgaben zeigt die Eule Olli ein Punktefeld, bei Plus und Minus die Sprünge am Zahlenstrahl.</span></div></li>
+          <li><div><b>Stift statt Tasten.</b> <span>Auf dem iPad schreibt das Kind die Zahl mit dem Stift auf Karopapier. Die Schrift wird auf dem Gerät gelesen.</span></div></li>
+          <li><div><b>Vorlesen.</b> <span>Natürliche Stimmen für Deutsch, Englisch und Türkisch lesen Aufgaben vor, auch ohne Internet.</span></div></li>
+          <li><div><b>In Schritten rechnen.</b> <span>Das Kind rechnet eine Aufgabe in kleinen Schritten wie im Heft: erst die Zehner, dann bis zum Zehner, beim Einmaleins über die Kernaufgabe. So entsteht der Rechenweg.</span></div></li>
+          <li><div><b>Fehlerheft, Training und Probearbeit</b> <span>mit Zeit und Note für die Woche vor der Klassenarbeit.</span></div></li>
+        </ul>
+        <label class="klein" for="kindname">Name des Kindes für das Lob (nur ein Beispiel):
+          <input id="kindname" value="Mia" maxlength="20" style="margin-left:6px; padding:4px 8px; border-radius:8px; border:1px solid var(--linie); background:var(--karte); color:var(--text); width:9em">
+        </label>
+      </div>
+      <div class="heft" aria-live="polite">
+        <div class="heft-kopf">
+          <span>Einmaleins <small id="mathe-zaehler">Aufgabe 1 von 8</small></span>
+          <span class="serie" id="serie">Serie 0</span>
+        </div>
+        <div class="rechnung" id="rechnung">7 · 8 = <span class="eingabe" id="eingabe">&nbsp;</span></div>
+        <div class="tasten" id="tasten"></div>
+        <div class="rueck leer" id="rueck">Tippe die Lösung ein und drücke Prüfen.</div>
+        <button class="weiter" type="button" id="schritte-knopf">In Schritten</button>
+        <div id="schritte" class="schritte"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="folie" id="lernwelt" data-titel="Lernwelt">
+    <div class="innen">
+      <div class="oberzeile">Lernwelt</div>
+      <h2>130 Themen, ohne dass Eltern etwas laden müssen</h2>
+      <p class="lead">Fertige Übungen nach den Lehrplänen von Hessen, Bayern und NRW. Die eigene Klasse steht vorne, die anderen Klassen sind zum Wiederholen oder Vorgreifen offen. Mathe und Deutsch stehen in der Reihenfolge des Schuljahres, was gerade dran ist, ist markiert. Jede Runde erzeugt neue Aufgaben.</p>
+      <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap">
+        <span class="klein">Bundesland:</span>
+        <div class="umschalter" id="land" role="group" aria-label="Bundesland">
+          <button aria-pressed="true" data-land="hessen">Hessen</button>
+          <button aria-pressed="false" data-land="bayern">Bayern</button>
+          <button aria-pressed="false" data-land="nrw">NRW</button>
+        </div>
+      </div>
+      <div class="tabelle-huelle">
+        <table class="netz" id="netz" aria-label="Themen je Fach und Klasse"><thead><tr><th>Fach</th><th class="zahl">Klasse 1</th><th class="zahl">Klasse 2</th><th class="zahl">Klasse 3</th><th class="zahl">Klasse 4</th><th class="zahl">Summe</th></tr></thead><tbody><tr><th>Mathe</th><td style="background:#a6e3ff;color:#0a1d48">10</td><td style="background:#ffe100;color:#0a1d48">17</td><td style="background:#ffe100;color:#0a1d48">14</td><td style="background:#a6e3ff;color:#0a1d48">12</td><td class="summe">53</td></tr><tr><th>Deutsch</th><td style="background:#6cc4ff;color:#0a1d48">7</td><td style="background:#a6e3ff;color:#0a1d48">9</td><td style="background:#a6e3ff;color:#0a1d48">11</td><td style="background:#6cc4ff;color:#0a1d48">8</td><td class="summe">35</td></tr><tr><th>Englisch</th><td style="background:#2a4a8a;color:#f2f5ff">2</td><td style="background:#2a4a8a;color:#f2f5ff">2</td><td style="background:#6cc4ff;color:#0a1d48">8</td><td style="background:#a6e3ff;color:#0a1d48">10</td><td class="summe">22</td></tr><tr><th>Musik</th><td style="background:#3f6fb8;color:#f2f5ff">3</td><td style="background:#2a4a8a;color:#f2f5ff">1</td><td style="background:#3f6fb8;color:#f2f5ff">3</td><td style="background:#3f6fb8;color:#f2f5ff">4</td><td class="summe">11</td></tr><tr><th>Kunst</th><td style="background:#3f6fb8;color:#f2f5ff">3</td><td style="background:#2a4a8a;color:#f2f5ff">2</td><td style="background:#2a4a8a;color:#f2f5ff">2</td><td style="background:#2a4a8a;color:#f2f5ff">2</td><td class="summe">9</td></tr></tbody><tfoot><tr><th>Zusammen</th><td>25</td><td>31</td><td>38</td><td>36</td><td>130</td></tr></tfoot></table>
+      </div>
+      <p class="klein">Themen je Fach und Klasse. Englisch in Klasse 1 und 2 sind Extras, im Lehrplan steht Englisch ab Klasse 3. In NRW liegen zwei Mathe-Themen eine Klasse später.</p>
+      <h3>Echte Beispielaufgaben aus der Lernwelt</h3>
+      <div class="beispiele" id="beispiele"></div>
+    </div>
+  </section>
+
+  <section class="folie" id="vorschule" data-titel="Vorschule">
+    <div class="innen zwei">
+      <div style="display:grid; gap:18px">
+        <div class="oberzeile">Vorschule</div>
+        <h2>Spielerisch fit für die Schule</h2>
+        <p class="lead">Große Bilder zum Antippen, alles wird vorgelesen. Kein Lesen nötig. Die Vorschule spricht Deutsch. Auf Wunsch der Eltern kommt Englisch für Kleine dazu.</p>
+        <div class="bereiche">
+          <div class="bereich"><h3>Zahlen und Rechnen</h3><p>Zählen, Würfelbilder, Zahl und Menge, Plus, Wegnehmen, Gerecht teilen</p></div>
+          <div class="bereich"><h3>Sprache und Laute</h3><p>Anfangsbuchstaben, Buchstaben finden, Reime, Silben klatschen</p></div>
+          <div class="bereich"><h3>Spielen und Entdecken</h3><p>Formen, Links und rechts, Muster, Gefühle, Tiere, Sicher unterwegs, Memory</p></div>
+          <div class="bereich"><h3>Englisch für Kleine</h3><p>Farben, Zahlen, Tiere, Essen, Körper, Kleidung: erst hören und nachsprechen, dann das Bild zum Wort antippen</p></div>
+        </div>
+        <p class="klein">Für jedes geschaffte Spiel gibt es einen Stempel im Schulstart-Pass. Ausgewählt nach den Bildungsplänen für die Zeit vor der Schule. Englisch für Kleine schalten die Eltern unter Einstellungen, Bereiche ein. Auf Wunsch lesen auch die übrigen Spiele auf Englisch oder Türkisch vor.</p>
+      </div>
+      <div class="vorschul-spalte">
+      <div class="vorschul-karte">
+        <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; align-items:center">
+          <span class="klein">Zählen, Beispiel</span>
+          <div class="umschalter" id="vs-sprache" role="group" aria-label="Sprache">
+            <button aria-pressed="true" data-sp="de">Deutsch</button>
+            <button aria-pressed="false" data-sp="en">English</button>
+            <button aria-pressed="false" data-sp="tr">Türkçe</button>
+          </div>
+        </div>
+        <div class="vorschul-frage">
+          <button class="vorlesen" id="vs-vorlesen" aria-label="Vorlesen">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7"/><path d="M18.8 6a8.5 8.5 0 0 1 0 12"/></svg>
+          </button>
+          <span id="vs-frage">Wie viele siehst du?</span>
+        </div>
+        <div class="dinge" id="vs-dinge" aria-hidden="true"></div>
+        <div class="zahlknoepfe" id="vs-knoepfe"></div>
+        <div class="vorschul-lob" id="vs-lob" aria-live="polite"></div>
+      </div>
+      <div class="vorschul-karte">
+        <span class="klein">Englisch für Kleine, Beispiel</span>
+        <div class="vorschul-frage">
+          <button class="vorlesen" id="en-vorlesen" aria-label="Vorlesen">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7"/><path d="M18.8 6a8.5 8.5 0 0 1 0 12"/></svg>
+          </button>
+          <div><div class="en-wort" id="en-frage">Tap the dog!</div><div class="klein" id="en-bedeutung">dog: der Hund</div></div>
+        </div>
+        <div class="en-bild" id="en-bild"></div>
+        <div class="vorschul-lob" id="en-lob" aria-live="polite"></div>
+      </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="folie" id="motivation" data-titel="Motivation">
+    <div class="innen">
+      <div class="oberzeile">Dranbleiben</div>
+      <h2>Warum Kinder die App von selbst öffnen</h2>
+      <div class="motiv">
+        <div class="motiv-karte">
+          <h3>Ein Haustier, das vom Üben lebt</h3>
+          <p>Jede geschaffte Runde macht das Tier satt und froh. Es wächst vom Ei bis zum Meister. Übt das Kind länger nicht, bekommt es Hunger, läuft aber nie weg. Die Eltern können vom eigenen Handy aus mitfüttern.</p>
+          <div style="display:flex; gap:16px; align-items:center">
+            <div class="tier" id="tier" aria-hidden="true">🥚</div>
+            <div style="flex:1; display:grid; gap:8px; min-width:0">
+              <div class="stufen" id="stufen" role="group" aria-label="Stufe"></div>
+              <div class="balken"><div id="wachstum" style="width:10%"></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="motiv-karte">
+          <h3>Münzen und fünf Mini-Spiele</h3>
+          <p>Wer richtig übt, verdient Münzen und kann sie in kleinen Spielen ausgeben: Elfmeterschießen, Einhorn-Flug, Zahlenlauf, Münzjagd und Münz-Hockey. Eltern legen fest, ob und wie oft am Tag gespielt werden darf.</p>
+        </div>
+        <div class="motiv-karte">
+          <h3>Duell in der Familie</h3>
+          <p>Zwei rechnen gegeneinander, auf einem Gerät mit geteiltem Bildschirm oder über zwei Geräte. Jeder auf seiner Stufe, damit auch Papa gegen die Tochter eine faire Chance hat. Wer schneller und richtiger ist, gewinnt.</p>
+        </div>
+        <div class="motiv-karte">
+          <h3>Erfolge, Serien und Tagesziel</h3>
+          <p>Abzeichen, eine Tages-Serie mit Schutz für einen verpassten Tag und ein Tagesziel, das Eltern einstellen. Ein Widget auf dem Sperrbildschirm zeigt das Haustier.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="folie" id="eltern" data-titel="Eltern">
+    <div class="innen zwei">
+      <div style="display:grid; gap:18px">
+        <div class="oberzeile">Für Eltern</div>
+        <h2>Sehen, wo es wirklich hakt</h2>
+        <p class="lead">Nicht nur „70 Prozent richtig“, sondern welche Aufgabe, welche Antwort, welcher Denkfehler.</p>
+        <ul class="liste-haken">
+          <li><div><b>Übersicht und Schwächen-Radar.</b> <span>Welche Bereiche sitzen, welche nicht.</span></div></li>
+          <li><div><b>Jede Antwort einzeln.</b> <span>Was das Kind eingegeben hat und was richtig gewesen wäre.</span></div></li>
+          <li><div><b>Läuft auch auf älteren Geräten.</b> <span>Ein Sparmodus lässt Bewegungen und Effekte weg, damit es auf älteren iPhones und iPads flüssig bleibt.</span></div></li>
+          <li><div><b>Wochenbericht in Worten.</b> <span>Auf iPhones mit Apple Intelligence formuliert, komplett auf dem Gerät.</span></div></li>
+          <li><div><b>Joker.</b> <span>Das Kind schickt eine Aufgabe an die Familie, wer zuerst einen Tipp gibt, bekommt Punkte.</span></div></li>
+          <li><div><b>Eigene Aufgaben.</b> <span>Aus Fotos von Arbeitsblättern mit Claude oder ChatGPT, oder von Hand im Editor. Wie das geht, zeigt der nächste Abschnitt.</span></div></li>
+        </ul>
+      </div>
+      <div class="ansicht" aria-label="Beispiel einer Eltern-Übersicht">
+        <div class="klein">Beispiel, so sieht es auf dem Eltern-Gerät aus</div>
+        <div class="zeile"><div class="was"><b>Einmaleins</b><small>Klassenarbeit Nr. 2</small></div><span class="marke-stand gut">11 von 12</span></div>
+        <div class="zeile"><div class="was"><b>Teilen mit Rest</b><small>Klassenarbeit Nr. 2</small></div><span class="marke-stand schwach">5 von 10</span></div>
+        <div class="zeile"><div class="was"><b>Wörter mit ie</b><small>Lernwelt, Deutsch Klasse 3</small></div><span class="marke-stand mittel">7 von 10</span></div>
+        <div class="klein" style="margin-top:6px">Antworten bei „Teilen mit Rest“</div>
+        <div class="antwort-zeile">58 : 4 = <s>10 R 18</s> <em>14 R 2</em></div>
+        <div class="antwort-zeile">47 : 5 = <s>8 R 7</s> <em>9 R 2</em></div>
+        <div class="klein">Muster: hört beim Teilen zu früh auf, der Rest ist größer als der Teiler.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="folie" id="fotos" data-titel="Aus Fotos">
+    <div class="innen">
+      <div class="oberzeile">Eigene Aufgaben</div>
+      <h2>Vom Arbeitsblatt zur Übung in fünf Minuten</h2>
+      <p class="lead">Was gerade in der Schule dran ist, wird zur Übung in der App. Dafür reicht eine KI, die Fotos lesen kann, zum Beispiel Claude oder ChatGPT. YEM1N schickt dabei selbst nichts an die KI.</p>
+      <div class="los">
+        <div class="schritt"><div class="nr">1</div><h3>Vorlage kopieren</h3><p>In der Anleitung, Abschnitt 11.4, auf „Vorlage kopieren“ tippen und als erste Nachricht in ein neues KI-Gespräch einfügen.</p></div>
+        <div class="schritt"><div class="nr">2</div><h3>Fotos schicken</h3><p>Seiten gerade fotografieren und mit einem Namen schicken, etwa „Mathe Seite 42“. Wünsche gehen auch: „nur Plus und Minus“.</p></div>
+        <div class="schritt"><div class="nr">3</div><h3>Einfügen</h3><p>Die KI antwortet mit einem Block Text. Kopieren und in der App unter Lernen, Schule, Plus, „Text einfügen“ einsetzen.</p></div>
+        <div class="schritt"><div class="nr">4</div><h3>Prüfen und verteilen</h3><p>Ein paar Aufgaben selbst nachrechnen, dann an die Kinder der Familie oder an die ganze Klasse schicken.</p></div>
+      </div>
+      <p class="klein">Tipp: Wer die Vorlage einmal in einem Claude-Projekt oder einem eigenen ChatGPT ablegt, schickt danach nur noch Fotos und Namen.</p>
+    </div>
+  </section>
+
+  <section class="folie" id="lehrer" data-titel="Lehrkräfte">
+    <div class="innen">
+      <div class="oberzeile">Für Lehrkräfte</div>
+      <h2>Ein Arbeitsblatt, die ganze Klasse übt</h2>
+      <p class="lead">Mit einem Klassencode bekommen alle Kinder der Klasse dieselben Aufgaben aufs Gerät. Ergebnisse, Joker und Namen bleiben in der jeweiligen Familie.</p>
+      <div class="paket-fluss">
+        <div class="schritt"><div class="nr">1</div><h3>Aufgaben erstellen</h3><p>Ein Foto vom Arbeitsblatt und die Vorlage aus der Anleitung an Claude oder ChatGPT geben. Heraus kommt ein Aufgabenpaket. Alternativ im Editor der App von Hand.</p></div>
+        <div class="schritt"><div class="nr">2</div><h3>An die Klasse senden</h3><p>Auf dem Eltern-Gerät „An Klassencode senden“. Das Paket wird digital unterschrieben, damit nur der echte Absender verteilen kann.</p></div>
+        <div class="schritt"><div class="nr">3</div><h3>Kinder üben</h3><p>Die Kind-Geräte holen das Paket von selbst ab. Jede Familie sieht nur die Ergebnisse ihres eigenen Kindes.</p></div>
+      </div>
+      <div class="zwei">
+        <pre class="json" aria-label="Ausschnitt aus einem Aufgabenpaket">{
+  <span class="k">"klasse"</span>: <span class="w">"Klasse 3"</span>,
+  <span class="k">"fach"</span>: <span class="w">"Mathe"</span>,
+  <span class="k">"arbeit"</span>: <span class="w">"Klassenarbeit Nr. 2"</span>,
+  <span class="k">"uebungen"</span>: [{
+    <span class="k">"titel"</span>: <span class="w">"Teilen mit Rest"</span>,
+    <span class="k">"aufgaben"</span>: [{
+      <span class="k">"art"</span>: <span class="w">"rest"</span>,
+      <span class="k">"rechnung"</span>: <span class="w">"58 : 4 ="</span>,
+      <span class="k">"antwort"</span>: <span class="w">"14"</span>, <span class="k">"antwort2"</span>: <span class="w">"2"</span>
+    }]
+  }]
+}</pre>
+        <ul class="liste-haken">
+          <li><div><b>Aufgabenarten:</b> <span>Zahl, Teilen mit Rest, größer oder kleiner, Zahlenmauer, Text und Auswahl.</span></div></li>
+          <li><div><b>Fächer frei wählbar:</b> <span>Mathe, Deutsch, Vorschule und eigene.</span></div></li>
+          <li><div><b>Kein Konto, keine Schülerliste.</b> <span>Der Klassencode ist eine zufällige Kennung, die die Lehrkraft weitergibt.</span></div></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="folie" id="datenschutz" data-titel="Datenschutz">
+    <div class="innen">
+      <div class="oberzeile">Datenschutz</div>
+      <h2>Kinderdaten bleiben in der Familie</h2>
+      <div class="schutz">
+        <div><h3>Keine Werbung, kein Tracking</h3><p>Keine Analyse- oder Werbedienste, kein Benutzerkonto. Die App ist kostenlos.</p></div>
+        <div><h3>Fast alles auf dem Gerät</h3><p>Aufgaben, Fortschritt, Handschrift, Vorlesestimme und die KI-Texte laufen auf dem Gerät.</p></div>
+        <div><h3>Familiencode über Apple iCloud</h3><p>Nur mit Familiencode gehen Ergebnisse an die Familie. Vorname freiwillig, Einträge werden nach 12 Monaten gelöscht und lassen sich jederzeit löschen.</p></div>
+      </div>
+      <p class="klein">Die Eltern bestätigen beim Einrichten eine Einwilligung und können sie jederzeit widerrufen. Datenschutzerklärung: <a href="https://cembot90.github.io/YEM1N/" target="_blank" rel="noopener">cembot90.github.io/YEM1N</a></p>
+    </div>
+  </section>
+
+  <section class="folie" id="los" data-titel="Mitmachen">
+    <div class="innen">
+      <div class="oberzeile">Mitmachen</div>
+      <h2>So geht es los</h2>
+      <div class="los">
+        <div class="schritt"><div class="nr">1</div><h3>Einladung</h3><p>Die App ist in der Beta. Sie kommt über Apples App TestFlight, die Einladung bekommen Sie von mir.</p></div>
+        <div class="schritt"><div class="nr">2</div><h3>Eltern-Gerät</h3><p>Beim ersten Start „Eltern“ wählen und einen Familiencode erzeugen.</p></div>
+        <div class="schritt"><div class="nr">3</div><h3>Kind-Gerät</h3><p>„Kind“ wählen, Familiencode per QR-Code übernehmen, Klasse und Bundesland eintragen.</p></div>
+        <div class="schritt"><div class="nr">4</div><h3>Üben</h3><p>Lernwelt öffnen oder eigene Klassenarbeiten verteilen. Die Anleitung liegt in der App.</p></div>
+      </div>
+      <div class="ehrlich"><b>Ehrlich gesagt:</b> YEM1N ist ein Projekt aus der Familie für die Familie und noch in der Beta. Fehler sind möglich, Rückmeldungen sind sehr willkommen, direkt in der App unter Info oder über TestFlight. Anleitung: <a href="https://cembot90.github.io/YEM1N/anleitung.html" target="_blank" rel="noopener">cembot90.github.io/YEM1N/anleitung.html</a></div>
+    </div>
+  </section>
+</main>
+<footer class="fuss">YEM1N · Übungs-App für Vorschule und Grundschule · Beta</footer>
+
+<script>
+document.documentElement.classList.add("js");
+(function () {
+  "use strict";
+
+  // ---------- Abwechslung wie in der App: nie einer der zuletzt gezogenen ----------
+  var zuletzt = {};
+  function ziehe(schluessel, anzahl) {
+    if (anzahl <= 1) return 0;
+    var sperre = Math.min(Math.floor(anzahl / 2), 6);
+    var gesperrt = zuletzt[schluessel] || [];
+    var frei = [];
+    for (var i = 0; i < anzahl; i++) if (gesperrt.indexOf(i) < 0) frei.push(i);
+    var wahl = frei[Math.floor(Math.random() * frei.length)];
+    gesperrt = gesperrt.concat([wahl]);
+    while (gesperrt.length > sperre) gesperrt.shift();
+    zuletzt[schluessel] = gesperrt;
+    return wahl;
+  }
+
+  // Sätze aus Lob.swift der App
+  var LOB = {
+    richtig: [
+      ["Super!", "Süper!", "Super!"], ["Toll gemacht!", "Aferin!", "Well done!"], ["Richtig!", "Doğru!", "Right!"], ["Prima!", "Harika!", "Great!"],
+      ["Klasse!", "Bravo!", "Brilliant!"], ["Spitze!", "Çok iyi!", "Excellent!"], ["Genau!", "Tam olarak!", "Exactly!"], ["Stark!", "Süpersin!", "Awesome!"],
+      ["Wunderbar!", "Muhteşem!", "Wonderful!"], ["Sehr gut!", "Çok güzel!", "Very good!"], ["Bravo!", "Tebrikler!", "Bravo!"], ["Das stimmt!", "Evet, doğru!", "That's right!"],
+      ["Perfekt!", "Mükemmel!", "Perfect!"], ["Ganz genau!", "Kesinlikle doğru!", "Spot on!"], ["Volltreffer!", "Tam isabet!", "Bullseye!"],
+      ["Du bist ein Profi!", "Sen bir ustasın!", "You're a pro!"], ["Wow, richtig!", "Vay, doğru!", "Wow, correct!"], ["Das hast du super gemacht!", "Çok güzel yaptın!", "You did that really well!"],
+      ["Treffer!", "İşte bu!", "Got it!"], ["Du hast es!", "Bildin!", "You've got it!"], ["Klasse gemacht!", "Harikasın!", "Nicely done!"], ["Richtig gut!", "Çok başarılı!", "Really good!"],
+      ["Juhu, richtig!", "Yaşasın, doğru!", "Hooray, correct!"], ["Gut aufgepasst!", "İyi dikkat ettin!", "Well spotted!"]
+    ],
+    mitName: [
+      ["Super, {name}!", "Süper, {name}!", "Super, {name}!"], ["Toll, {name}!", "Aferin {name}!", "Well done, {name}!"], ["Genau so, {name}!", "Tam böyle, {name}!", "That's it, {name}!"],
+      ["{name}, du bist spitze!", "{name}, harikasın!", "{name}, you're a star!"], ["Richtig, {name}!", "Doğru, {name}!", "Correct, {name}!"], ["Klasse gemacht, {name}!", "Bravo {name}!", "Nicely done, {name}!"],
+      ["Das kannst du, {name}!", "Bunu biliyorsun, {name}!", "You know this, {name}!"], ["Wow, {name}!", "Vay be, {name}!", "Wow, {name}!"]
+    ],
+    nachFehler: [
+      ["Jetzt hat es geklappt!", "İşte şimdi oldu!", "Now you've got it!"], ["Siehst du, du schaffst das!", "Gördün mü, yapabiliyorsun!", "See, you can do it!"],
+      ["Nicht aufgegeben. Stark!", "Pes etmedin. Aferin!", "You didn't give up. Great!"], ["Genau, jetzt stimmt es!", "Evet, şimdi doğru!", "Yes, now it's right!"],
+      ["Gut nachgedacht!", "İyi düşündün!", "Good thinking!"], ["Dranbleiben lohnt sich!", "Devam etmek işe yarıyor!", "Keeping at it pays off!"]
+    ],
+    nochmal: [
+      ["Fast! Probier es noch einmal.", "Neredeyse! Bir daha dene.", "Almost! Try again."], ["Knapp daneben. Du schaffst das!", "Az kaldı. Yapabilirsin!", "So close. You can do it!"],
+      ["Hmm, schau noch mal genau hin.", "Hmm, bir daha dikkatlice bak.", "Hmm, take another good look."], ["Noch nicht ganz. Versuch es noch mal!", "Tam değil. Tekrar dene!", "Not quite. Try again!"],
+      ["Oh, nicht ganz. Gleich hast du es!", "Ah, tam değil. Neredeyse buldun!", "Oh, not quite. You will get it soon!"], ["Kein Problem, noch ein Versuch!", "Sorun değil, bir deneme daha!", "No problem, one more try!"],
+      ["Hoppla! Noch einmal?", "Hoppala! Bir daha?", "Oops! Once more?"], ["Überleg noch mal in Ruhe.", "Bir daha sakince düşün.", "Take your time and think again."]
+    ],
+    daneben: ["Noch nicht richtig.", "Knapp daneben.", "Leider nicht.", "Fast.", "Das war es nicht.", "Hoppla, nicht ganz.", "Noch nicht ganz."]
+  };
+  function serienLob(n) {
+    if (n === 3) return ["Drei richtig hintereinander!", "Arka arkaya üç doğru!", "Three right in a row!"];
+    if (n === 5) return ["Fünf am Stück! Du bist in Fahrt!", "Arka arkaya beş! Çok iyi gidiyorsun!", "Five in a row! You're on a roll!"];
+    if (n === 8) return ["Acht hintereinander! Unglaublich!", "Arka arkaya sekiz! İnanılmaz!", "Eight in a row! Incredible!"];
+    if (n === 10) return ["Zehn richtig am Stück! Du bist ein Star!", "Arka arkaya on doğru! Sen bir yıldızsın!", "Ten right in a row! You're a star!"];
+    return null;
+  }
+  function vorname(t) {
+    var v = (t || "").trim().split(/\s+/)[0] || "";
+    if (v && (v === v.toLowerCase() || (v.length > 1 && v === v.toUpperCase()))) v = v.charAt(0).toUpperCase() + v.slice(1).toLowerCase();
+    return v;
+  }
+  function einsetzen(text, name) {
+    if (text.indexOf("{name}") < 0) return text;
+    if (name) return text.split("{name}").join(name);
+    var t = text.replace(", {name}", "").replace(" {name}", "").replace("{name}, ", "").replace("{name} ", "").replace("{name}", "");
+    return t.charAt(0).toUpperCase() + t.slice(1);
+  }
+  function lobFuerRichtig(serie, nachFehler, name, sp) {
+    var i = sp === "tr" ? 1 : (sp === "en" ? 2 : 0);
+    var s = serienLob(serie);
+    if (s) return s[i];
+    if (nachFehler) return einsetzen(LOB.nachFehler[ziehe("nf", LOB.nachFehler.length)][i], name);
+    if (name && Math.random() < 0.25) return einsetzen(LOB.mitName[ziehe("mn", LOB.mitName.length)][i], name);
+    return LOB.richtig[ziehe("r", LOB.richtig.length)][i];
+  }
+
+  // ---------- Vorlesen mit der Stimme des Browsers ----------
+  function sprich(text, lang) {
+    try {
+      if (!("speechSynthesis" in window)) return;
+      window.speechSynthesis.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      u.lang = lang; u.rate = 0.95;
+      window.speechSynthesis.speak(u);
+    } catch (e) { /* ohne Ton geht es auch */ }
+  }
+
+  // ---------- Mathe-Demo ----------
+  var AUFGABEN = [
+    { a: 7, b: 8, op: "·" }, { a: 6, b: 7, op: "·" }, { a: 9, b: 4, op: "·" }, { a: 47, b: 25, op: "+" },
+    { a: 8, b: 6, op: "·" }, { a: 63, b: 28, op: "-" }, { a: 5, b: 9, op: "·" }, { a: 72, b: 8, op: ":" }
+  ];
+  function ergebnis(t) {
+    if (t.op === "·") return t.a * t.b;
+    if (t.op === "+") return t.a + t.b;
+    if (t.op === "-") return t.a - t.b;
+    return t.a / t.b;
+  }
+  var nr = 0, eingabe = "", serie = 0, bewertet = false;
+  var elRechnung = document.getElementById("rechnung");
+  var elRueck = document.getElementById("rueck");
+  var elSerie = document.getElementById("serie");
+  var elZaehler = document.getElementById("mathe-zaehler");
+  var elName = document.getElementById("kindname");
+
+  // Rechenweg wie in der App, für die Aufgaben dieser Seite
+  var WEGE = {
+    "7·8": [["7 ist 5 und 2. Erst 5 mal.", "5 · 8 =", 40], ["Dann 2 mal.", "2 · 8 =", 16], ["Zusammenzählen.", "40 + 16 =", 56]],
+    "6·7": [["Die Kernaufgabe kennst du.", "5 · 7 =", 35], ["Eine Reihe mehr: noch einmal 7 dazu.", "35 + 7 =", 42]],
+    "9·4": [["Die Kernaufgabe kennst du.", "10 · 4 =", 40], ["Eine Reihe weniger: 4 weg.", "40 - 4 =", 36]],
+    "47+25": [["Erst die Zehner.", "47 + 20 =", 67], ["Bis zum nächsten Zehner.", "67 + 3 =", 70], ["Jetzt der Rest.", "70 + 2 =", 72]],
+    "8·6": [["8 ist 10 weniger 2. Erst 10 mal.", "10 · 6 =", 60], ["Dann 2 mal.", "2 · 6 =", 12], ["Abziehen.", "60 - 12 =", 48]],
+    "63-28": [["Erst die Zehner.", "63 - 20 =", 43], ["Bis zum nächsten Zehner.", "43 - 3 =", 40], ["Jetzt der Rest.", "40 - 5 =", 35]],
+    "72:8": [["Fang mit 5 mal an.", "5 · 8 =", 40], ["Wie viel ist noch übrig?", "72 - 40 =", 32], ["Den Rest auch teilen.", "32 : 8 =", 4], ["Zusammenzählen.", "5 + 4 =", 9]]
+  };
+  var elSchritte = document.getElementById("schritte"), elSchritteKnopf = document.getElementById("schritte-knopf");
+  function wegJetzt() { var t = AUFGABEN[nr % AUFGABEN.length]; return WEGE[t.a + t.op + t.b]; }
+  function zeigeSchritte(weg, n) {
+    elSchritte.innerHTML = "";
+    for (var i = 0; i <= n && i < weg.length; i++) {
+      var z = document.createElement("div");
+      if (i < n) {
+        z.className = "schritt-zeile fertig";
+        z.textContent = "✓ " + weg[i][1] + " " + weg[i][2];
+      } else {
+        z.innerHTML = "<div class=\"schritt-hinweis\"></div><div class=\"schritt-zeile\"><span></span><input inputmode=\"numeric\" aria-label=\"Ergebnis des Schritts\"><button class=\"weiter\" type=\"button\">Prüfen</button></div>";
+        z.querySelector(".schritt-hinweis").textContent = "Schritt " + (i + 1) + " von " + weg.length + ": " + weg[i][0];
+        z.querySelector("span").textContent = weg[i][1];
+        (function (soll) {
+          var feld = z.querySelector("input");
+          function pruefeSchritt() {
+            if (parseInt(feld.value, 10) === soll) { zeigeSchritte(weg, n + 1); }
+            else { feld.value = ""; feld.placeholder = "?"; feld.style.borderColor = "#ff7d6e"; }
+          }
+          z.querySelector("button").addEventListener("click", pruefeSchritt);
+          feld.addEventListener("keydown", function (e) { if (e.key === "Enter") pruefeSchritt(); });
+        })(weg[i][2]);
+      }
+      elSchritte.appendChild(z);
+    }
+    if (n >= weg.length) {
+      var ende = document.createElement("div");
+      ende.className = "schritt-hinweis";
+      ende.textContent = "Geschafft! Das Ergebnis ist " + weg[weg.length - 1][2] + ". In der App kommt es jetzt in die Aufgabe.";
+      elSchritte.appendChild(ende);
+    }
+  }
+  elSchritteKnopf.addEventListener("click", function () { var w = wegJetzt(); if (w) zeigeSchritte(w, 0); });
+
+  function zeigeAufgabe() {
+    elSchritteKnopf.hidden = !wegJetzt();
+    if (!eingabe) elSchritte.innerHTML = "";
+    var t = AUFGABEN[nr % AUFGABEN.length];
+    elRechnung.innerHTML = t.a + " " + t.op + " " + t.b + " = <span class=\"eingabe\">" + (eingabe || "&nbsp;") + "</span>";
+    elZaehler.textContent = "Aufgabe " + (nr % AUFGABEN.length + 1) + " von " + AUFGABEN.length;
+    elSerie.textContent = "Serie " + serie;
+  }
+  function punktefeld(r, s) {
+    var html = "<div class=\"punktefeld\" aria-hidden=\"true\">";
+    for (var i = 0; i < r; i++) {
+      html += "<div class=\"reihe\">";
+      for (var j = 0; j < s; j++) html += "<i></i>";
+      html += "</div>";
+    }
+    return html + "</div>";
+  }
+  function spruenge(a, b, plus) {
+    // Erst bis zum Zehner, dann die Zehner, dann den Rest, wie im Erklärbild der App
+    var teile = [], x = a, rest = b;
+    var zehner = Math.floor(rest / 10) * 10;
+    if (zehner > 0) { teile.push((plus ? "+" : "-") + zehner); x = plus ? x + zehner : x - zehner; rest -= zehner; }
+    if (rest > 0) {
+      var bisZehner = plus ? (10 - x % 10) % 10 : x % 10;
+      if (bisZehner > 0 && bisZehner < rest) { teile.push((plus ? "+" : "-") + bisZehner); x = plus ? x + bisZehner : x - bisZehner; rest -= bisZehner; }
+      teile.push((plus ? "+" : "-") + rest); x = plus ? x + rest : x - rest;
+    }
+    return a + " " + teile.join(" ") + " = " + x;
+  }
+  function erklaerung(t) {
+    var e = ergebnis(t);
+    if (t.op === "·") {
+      return "<div>" + t.a + " · " + t.b + " heißt: " + t.a + " Reihen mit je " + t.b + " Punkten. Zusammen sind es " + e + ".</div>" + punktefeld(t.a, t.b);
+    }
+    if (t.op === "+" || t.op === "-") return "<div>Sprünge am Zahlenstrahl: " + spruenge(t.a, t.b, t.op === "+") + "</div>";
+    return "<div>Denk an die Umkehraufgabe: " + e + " · " + t.b + " = " + t.a + "</div>";
+  }
+  function pruefe() {
+    if (bewertet || !eingabe) return;
+    var t = AUFGABEN[nr % AUFGABEN.length];
+    var ok = parseInt(eingabe, 10) === ergebnis(t);
+    bewertet = true;
+    if (ok) {
+      serie += 1;
+      var lob = lobFuerRichtig(serie, false, vorname(elName.value), "de");
+      elRueck.className = "rueck richtig";
+      elRueck.innerHTML = "<b></b><button class=\"weiter\" type=\"button\">Weiter</button>";
+      elRueck.querySelector("b").textContent = lob;
+      if (serienLob(serie)) sprich(lob, "de-DE");
+    } else {
+      serie = 0;
+      elRueck.className = "rueck falsch";
+      elRueck.innerHTML = "<b></b>" + "<div>Richtig ist " + ergebnis(t) + ".</div>" + erklaerung(t) + "<button class=\"weiter\" type=\"button\">Weiter</button>";
+      elRueck.querySelector("b").textContent = LOB.daneben[ziehe("d", LOB.daneben.length)];
+    }
+    elSerie.textContent = "Serie " + serie;
+    elRueck.querySelector(".weiter").addEventListener("click", weiter);
+  }
+  function weiter() {
+    nr += 1; eingabe = ""; bewertet = false;
+    elRueck.className = "rueck leer";
+    elRueck.textContent = "Tippe die Lösung ein und drücke Prüfen.";
+    zeigeAufgabe();
+  }
+  function taste(z) {
+    if (bewertet) return;
+    if (z === "⌫") eingabe = eingabe.slice(0, -1);
+    else if (eingabe.length < 3) eingabe += z;
+    zeigeAufgabe();
+  }
+  var tasten = document.getElementById("tasten");
+  ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "⌫"].forEach(function (z) {
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "taste"; b.textContent = z;
+    if (z === "⌫") b.setAttribute("aria-label", "Löschen");
+    b.addEventListener("click", function () { taste(z); });
+    tasten.appendChild(b);
+  });
+  var pb = document.createElement("button");
+  pb.type = "button"; pb.className = "taste pruefen"; pb.textContent = "Prüfen";
+  pb.addEventListener("click", pruefe);
+  tasten.appendChild(pb);
+  zeigeAufgabe();
+
+  // ---------- Lernwelt ----------
+  var THEMEN = {
+    hessen: { Mathe: [10, 17, 14, 12], Deutsch: [7, 9, 11, 8], Englisch: [2, 2, 8, 10], Musik: [3, 1, 3, 4], Kunst: [3, 2, 2, 2] },
+    bayern: { Mathe: [10, 17, 14, 12], Deutsch: [7, 9, 11, 8], Englisch: [2, 2, 8, 10], Musik: [3, 1, 3, 4], Kunst: [3, 2, 2, 2] },
+    nrw:    { Mathe: [10, 15, 14, 14], Deutsch: [7, 9, 11, 8], Englisch: [2, 2, 8, 10], Musik: [3, 1, 3, 4], Kunst: [3, 2, 2, 2] }
+  };
+  function farbe(n) {
+    // je mehr Themen, desto kräftiger: von Himmel zu Gelb
+    var stufen = ["#2a4a8a", "#3f6fb8", "#6cc4ff", "#a6e3ff", "#ffe100"];
+    var i = n <= 2 ? 0 : n <= 4 ? 1 : n <= 8 ? 2 : n <= 12 ? 3 : 4;
+    return stufen[i];
+  }
+  function zeichneNetz(land) {
+    var d = THEMEN[land];
+    var h = "<thead><tr><th>Fach</th><th class=\"zahl\">Klasse 1</th><th class=\"zahl\">Klasse 2</th><th class=\"zahl\">Klasse 3</th><th class=\"zahl\">Klasse 4</th><th class=\"zahl\">Summe</th></tr></thead><tbody>";
+    var spalten = [0, 0, 0, 0];
+    Object.keys(d).forEach(function (fach) {
+      var z = d[fach], summe = 0;
+      h += "<tr><th>" + fach + "</th>";
+      z.forEach(function (n, k) {
+        summe += n; spalten[k] += n;
+        var hell = n <= 4;
+        h += "<td style=\"background:" + farbe(n) + ";color:" + (hell ? "#f2f5ff" : "#0a1d48") + "\">" + n + "</td>";
+      });
+      h += "<td class=\"summe\">" + summe + "</td></tr>";
+    });
+    var gesamt = spalten.reduce(function (a, b) { return a + b; }, 0);
+    h += "</tbody><tfoot><tr><th>Zusammen</th>" + spalten.map(function (n) { return "<td>" + n + "</td>"; }).join("") + "<td>" + gesamt + "</td></tr></tfoot>";
+    document.getElementById("netz").innerHTML = h;
+  }
+  zeichneNetz("hessen");
+  document.querySelectorAll("#land button").forEach(function (b) {
+    b.addEventListener("click", function () {
+      document.querySelectorAll("#land button").forEach(function (x) { x.setAttribute("aria-pressed", x === b ? "true" : "false"); });
+      zeichneNetz(b.dataset.land);
+    });
+  });
+
+  // Echte Aufgaben, so wie die Lernwelt sie erzeugt
+  var BEISPIELE = [
+    { fach: "Deutsch, Klasse 1", titel: "Anlaute", frage: "Mit welchem Buchstaben fängt das Wort an?", vorlage: "🍅 Tomate", wahl: ["T", "K", "L"], richtig: "T" },
+    { fach: "Mathe, Klasse 3", titel: "Tabellen lesen", frage: "Wie viele Kinder sind es zusammen?", vorlage: "Lieblingstiere der Klasse 3c:\nHund: 6\nKatze: 5\nPferd: 6\nHase: 11", wahl: ["26", "28", "29"], richtig: "28" },
+    { fach: "Englisch, Klasse 4", titel: "Wild animals", frage: "Wie heißt das auf Englisch?", vorlage: "🐝 die Biene", wahl: ["bee", "monkey", "bear"], richtig: "bee" },
+    { fach: "Deutsch, Klasse 4", titel: "Lesen und verstehen", frage: "Was holt Luis aus dem Keller?", vorlage: "Als Luis morgens aus dem Fenster schaut, ist alles weiß. Schnell zieht er seine dicke Jacke an. Draußen holt er seinen Schlitten aus dem Keller.", wahl: ["sein Fahrrad", "seinen Schlitten", "seinen Ball"], richtig: "seinen Schlitten" },
+    { fach: "Musik, Klasse 4", titel: "Singstimmen", frage: "Welche Stimme singt am tiefsten?", vorlage: "", wahl: ["Bass", "Sopran", "Alt"], richtig: "Bass" },
+    { fach: "Mathe, Klasse 2", titel: "Sachaufgaben bis 100", frage: "Wie viele fehlen noch?", vorlage: "Jule möchte 80 Karten sammeln. Sie hat schon 15.", wahl: ["55", "65", "75"], richtig: "65" }
+  ];
+  var elBsp = document.getElementById("beispiele");
+  BEISPIELE.forEach(function (b) {
+    var k = document.createElement("div");
+    k.className = "aufgabe";
+    k.innerHTML = "<div class=\"fach\"></div><h3></h3><div class=\"frage\"></div>" + (b.vorlage ? "<div class=\"vorlage\"></div>" : "") + "<div class=\"wahl\"></div><div class=\"antwort-info\" aria-live=\"polite\"></div>";
+    k.querySelector(".fach").textContent = b.fach;
+    k.querySelector("h3").textContent = b.titel;
+    k.querySelector(".frage").textContent = b.frage;
+    if (b.vorlage) k.querySelector(".vorlage").textContent = b.vorlage;
+    var wahl = k.querySelector(".wahl"), info = k.querySelector(".antwort-info");
+    var falschVorher = false;
+    b.wahl.forEach(function (w) {
+      var knopf = document.createElement("button");
+      knopf.type = "button"; knopf.textContent = w;
+      knopf.addEventListener("click", function () {
+        if (w === b.richtig) {
+          knopf.className = "ok";
+          info.textContent = lobFuerRichtig(0, falschVorher, "", "de");
+        } else {
+          knopf.className = "nein"; falschVorher = true;
+          info.textContent = LOB.nochmal[ziehe("nm", LOB.nochmal.length)][0];
+        }
+      });
+      wahl.appendChild(knopf);
+    });
+    elBsp.appendChild(k);
+  });
+
+  // ---------- Vorschule ----------
+  var vsSprache = "de", vsZahl = 0, vsFalsch = false, vsSerie = 0;
+  var DINGE = ["🍎", "⭐", "🐶", "🎈", "🚗", "🐟", "🌸", "🍪", "🐱", "🍓"];
+  var FRAGE = { de: "Wie viele siehst du?", tr: "Kaç tane görüyorsun?", en: "How many can you see?" };
+  var LANG = { de: "de-DE", tr: "tr-TR", en: "en-GB" };
+  var elDinge = document.getElementById("vs-dinge"), elKn = document.getElementById("vs-knoepfe"), elLob = document.getElementById("vs-lob");
+  function neueVorschulFrage() {
+    vsZahl = 2 + Math.floor(Math.random() * 6);
+    vsFalsch = false;
+    var ding = DINGE[Math.floor(Math.random() * DINGE.length)];
+    elDinge.textContent = Array(vsZahl + 1).join(ding);
+    var optionen = [vsZahl];
+    while (optionen.length < 3) {
+      var o = Math.max(1, vsZahl + (Math.random() < 0.5 ? -1 : 1) * (1 + Math.floor(Math.random() * 2)));
+      if (optionen.indexOf(o) < 0) optionen.push(o);
+    }
+    optionen.sort(function () { return Math.random() - 0.5; });
+    elKn.innerHTML = "";
+    optionen.forEach(function (o) {
+      var b = document.createElement("button");
+      b.type = "button"; b.textContent = o;
+      b.addEventListener("click", function () { vorschulWahl(b, o); });
+      elKn.appendChild(b);
+    });
+    document.getElementById("vs-frage").textContent = FRAGE[vsSprache];
+  }
+  function vorschulWahl(b, o) {
+    var lang = LANG[vsSprache];
+    var i = vsSprache === "tr" ? 1 : (vsSprache === "en" ? 2 : 0);
+    if (o === vsZahl) {
+      b.className = "ok";
+      vsSerie = vsFalsch ? 0 : vsSerie + 1;
+      var lob = lobFuerRichtig(vsSerie, vsFalsch, vorname(elName.value), vsSprache);
+      elLob.textContent = lob;
+      sprich(lob, lang);
+      setTimeout(function () { elLob.textContent = ""; neueVorschulFrage(); }, 1600);
+    } else {
+      b.className = "nein"; vsFalsch = true; vsSerie = 0;
+      var t = LOB.nochmal[ziehe("vn", LOB.nochmal.length)][i];
+      elLob.textContent = t;
+      sprich(t, lang);
+    }
+  }
+  document.getElementById("vs-vorlesen").addEventListener("click", function () {
+    sprich(FRAGE[vsSprache], LANG[vsSprache]);
+  });
+  document.querySelectorAll("#vs-sprache button").forEach(function (b) {
+    b.addEventListener("click", function () {
+      vsSprache = b.dataset.sp;
+      document.querySelectorAll("#vs-sprache button").forEach(function (x) { x.setAttribute("aria-pressed", x === b ? "true" : "false"); });
+      document.getElementById("vs-frage").textContent = FRAGE[vsSprache];
+      elLob.textContent = "";
+    });
+  });
+  neueVorschulFrage();
+
+  // ---------- Englisch für Kleine ----------
+  var WOERTER = [
+    ["🐶", "dog", "der Hund"], ["🐱", "cat", "die Katze"], ["🐮", "cow", "die Kuh"], ["🐸", "frog", "der Frosch"],
+    ["🍎", "apple", "der Apfel"], ["🍌", "banana", "die Banane"], ["🧀", "cheese", "der Käse"], ["🥕", "carrot", "die Karotte"],
+    ["⚽", "ball", "der Ball"], ["🚗", "car", "das Auto"], ["☀️", "sun", "die Sonne"], ["🌳", "tree", "der Baum"]
+  ];
+  var FORMEN = ["Tap the X!", "Where is the X?", "Find the X!"];
+  var enZiel = null, enFalsch = false, enSerie = 0, enNr = 0;
+  var elEnBild = document.getElementById("en-bild"), elEnLob = document.getElementById("en-lob");
+  function neueEnglischFrage() {
+    var gruppe = Math.floor(Math.random() * 3) * 4;
+    var vier = WOERTER.slice(gruppe, gruppe + 4).sort(function () { return Math.random() - 0.5; });
+    var drei = vier.slice(0, 3);
+    enZiel = drei[Math.floor(Math.random() * 3)];
+    enFalsch = false;
+    var satz = FORMEN[enNr % 3].replace("X", enZiel[1]);
+    enNr += 1;
+    document.getElementById("en-frage").textContent = satz;
+    document.getElementById("en-bedeutung").textContent = enZiel[1] + ": " + enZiel[2];
+    elEnBild.innerHTML = "";
+    drei.forEach(function (w) {
+      var b = document.createElement("button");
+      b.type = "button"; b.textContent = w[0]; b.setAttribute("aria-label", w[2]);
+      b.addEventListener("click", function () {
+        if (w === enZiel) {
+          b.className = "ok";
+          enSerie = enFalsch ? 0 : enSerie + 1;
+          var lob = lobFuerRichtig(enSerie, enFalsch, vorname(elName.value), "en");
+          elEnLob.textContent = lob; sprich(lob, "en-GB");
+          setTimeout(function () { elEnLob.textContent = ""; neueEnglischFrage(); }, 1600);
+        } else {
+          b.className = "nein"; enFalsch = true; enSerie = 0;
+          var t = LOB.nochmal[ziehe("en", LOB.nochmal.length)][2];
+          elEnLob.textContent = t; sprich(t, "en-GB");
+        }
+      });
+      elEnBild.appendChild(b);
+    });
+  }
+  document.getElementById("en-vorlesen").addEventListener("click", function () {
+    sprich(document.getElementById("en-frage").textContent, "en-GB");
+  });
+  neueEnglischFrage();
+
+  // ---------- Haustier ----------
+  var STUFEN = [["Ei", "🥚", 10], ["Baby", "🐣", 30], ["Kind", "🐥", 55], ["Großes Tier", "🐔", 80], ["Meister", "🦚", 100]];
+  var elStufen = document.getElementById("stufen");
+  STUFEN.forEach(function (s, i) {
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "stufe"; b.textContent = s[0];
+    b.setAttribute("aria-pressed", i === 0 ? "true" : "false");
+    b.addEventListener("click", function () {
+      elStufen.querySelectorAll("button").forEach(function (x) { x.setAttribute("aria-pressed", x === b ? "true" : "false"); });
+      var tier = document.getElementById("tier");
+      tier.textContent = s[1];
+      tier.style.transform = "scale(1.15)";
+      setTimeout(function () { tier.style.transform = ""; }, 250);
+      document.getElementById("wachstum").style.width = s[2] + "%";
+    });
+    elStufen.appendChild(b);
+  });
+
+  // ---------- Vortragsmodus und Abschnittspunkte ----------
+  var folien = Array.prototype.slice.call(document.querySelectorAll(".folie"));
+  var elPunkte = document.getElementById("punkte");
+  folien.forEach(function (f, i) {
+    var p = document.createElement("button");
+    p.type = "button"; p.className = "punkt";
+    p.setAttribute("aria-label", f.dataset.titel);
+    p.title = f.dataset.titel;
+    p.addEventListener("click", function () { f.scrollIntoView({ behavior: "smooth", block: "start" }); });
+    elPunkte.appendChild(p);
+  });
+  function aktuelle() {
+    var y = window.scrollY + 90, i = 0;
+    folien.forEach(function (f, k) { if (f.offsetTop <= y) i = k; });
+    return i;
+  }
+  function markiere() {
+    var i = aktuelle();
+    elPunkte.querySelectorAll(".punkt").forEach(function (p, k) { p.setAttribute("aria-current", k === i ? "true" : "false"); });
+  }
+  window.addEventListener("scroll", markiere, { passive: true });
+  markiere();
+  var vortrag = false, knopf = document.getElementById("vortrag");
+  knopf.addEventListener("click", function () {
+    vortrag = !vortrag;
+    knopf.setAttribute("aria-pressed", vortrag ? "true" : "false");
+    if (vortrag) folien[aktuelle()].scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+  document.addEventListener("keydown", function (e) {
+    if (!vortrag) return;
+    var ziel = e.target && e.target.tagName;
+    if (ziel === "INPUT" || ziel === "TEXTAREA") return;
+    var i = aktuelle();
+    if (e.key === "ArrowRight" || e.key === "PageDown" || e.key === " ") { e.preventDefault(); folien[Math.min(i + 1, folien.length - 1)].scrollIntoView({ behavior: "smooth", block: "start" }); }
+    if (e.key === "ArrowLeft" || e.key === "PageUp") { e.preventDefault(); folien[Math.max(i - 1, 0)].scrollIntoView({ behavior: "smooth", block: "start" }); }
+    if (e.key === "Escape") { vortrag = false; knopf.setAttribute("aria-pressed", "false"); }
+  });
+})();
+</script>
+</body>
+</html>

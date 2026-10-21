@@ -52,6 +52,11 @@ Vorlage:
    in App Store Connect zusammenpassen.
 4. **CloudKit.** Neue Felder oder Record-Typen müssen in `cloudkit/schema.ckdb`
    stehen, und Cem muss sie in die Produktionsumgebung ausrollen.
+5. **Vorstellungsseite.** `docs/vorstellung.html` stellt YEM1N Eltern und
+   Lehrkräften vor (läuft ohne Internet, Beispiele zum Ausprobieren). Neue
+   Funktionen, die für sie zählen, kommen dort mit hinein. Danach die Seite als
+   Artefakt neu veröffentlichen und Cem die Datei schicken. Die Datei braucht
+   `<meta charset="utf-8">`, sonst sind auf dem iPhone die Umlaute kaputt.
 
 ## Stimmen
 
