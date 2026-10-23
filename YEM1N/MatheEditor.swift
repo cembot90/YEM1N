@@ -475,7 +475,7 @@ enum MatheGenerator {
             let a = z(20, 50), b = z(5, 20), c = z(3, 15)
             return MatheAufgabe(art: "zahl", frage: frage,
                                 rechnung: "\(na) hat \(a) Murmeln.\n\(nb) schenkt \(na) noch \(b) Murmeln.\nDann verliert \(na) \(c) Murmeln.\nWie viele Murmeln hat \(na) jetzt?",
-                                antwort: String(a + b - c), erklaerung: "\(a) + \(b) = \(a + b), dann \(a + b) - \(c) = \(a + b - c)")
+                                antwort: String(a + b - c), erklaerung: "\(a) + \(b) - \(c) = \(a + b - c)")
         }
         if f == 10 {
             let r = z(5, 12), p = z(2, 6)
