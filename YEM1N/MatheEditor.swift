@@ -452,7 +452,43 @@ enum MatheGenerator {
         let na = n[0]
         let nb = n[1]
         let frage = "Lies genau. Rechne und antworte."
-        let f = z(1, 5)
+        let f = z(1, 11)
+        if f == 6 {
+            let a = z(2, 9), b = z(1, 6)
+            return MatheAufgabe(art: "zahl", frage: frage,
+                                rechnung: "\(na) kauft ein Heft für \(a) Euro.\nDazu kauft \(na) einen Stift für \(b) Euro.\nWie viel Euro kostet das zusammen?",
+                                antwort: String(a + b), erklaerung: "\(a) + \(b) = \(a + b)")
+        }
+        if f == 7 {
+            let c = z(3, 15)
+            return MatheAufgabe(art: "zahl", frage: frage,
+                                rechnung: "\(na) bezahlt mit 20 Euro.\nDas Eis kostet \(c) Euro.\nWie viel Euro bekommt \(na) zurück?",
+                                antwort: String(20 - c), erklaerung: "20 - \(c) = \(20 - c)")
+        }
+        if f == 8 {
+            let a = z(20, 60), b = z(5, 19)
+            return MatheAufgabe(art: "zahl", frage: frage,
+                                rechnung: "Ein Seil ist \(a) m lang.\n\(na) schneidet \(b) m ab.\nWie viele Meter bleiben übrig?",
+                                antwort: String(a - b), erklaerung: "\(a) - \(b) = \(a - b)")
+        }
+        if f == 9 {
+            let a = z(20, 50), b = z(5, 20), c = z(3, 15)
+            return MatheAufgabe(art: "zahl", frage: frage,
+                                rechnung: "\(na) hat \(a) Murmeln.\n\(nb) schenkt \(na) noch \(b) Murmeln.\nDann verliert \(na) \(c) Murmeln.\nWie viele Murmeln hat \(na) jetzt?",
+                                antwort: String(a + b - c), erklaerung: "\(a) + \(b) = \(a + b), dann \(a + b) - \(c) = \(a + b - c)")
+        }
+        if f == 10 {
+            let r = z(5, 12), p = z(2, 6)
+            return MatheAufgabe(art: "zahl", frage: frage,
+                                rechnung: "Ein Bus hat \(r) Reihen.\nIn jeder Reihe sind \(p) Plätze.\nWie viele Plätze hat der Bus?",
+                                antwort: String(r * p), erklaerung: "\(r) · \(p) = \(r * p)")
+        }
+        if f == 11 {
+            let s = z(3, 6), gr = z(3, 8)
+            return MatheAufgabe(art: "zahl", frage: frage,
+                                rechnung: "\(s * gr) Kinder bilden Gruppen.\nIn jeder Gruppe sind \(s) Kinder.\nWie viele Gruppen gibt es?",
+                                antwort: String(gr), erklaerung: "\(s * gr) : \(s) = \(gr)")
+        }
         if f == 1 {
             let x = z(30, 80), d = z(8, 20)
             return MatheAufgabe(art: "zahl", frage: frage,

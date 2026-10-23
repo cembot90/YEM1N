@@ -210,4 +210,20 @@ struct MatheGeneratorTests {
         }
         #expect(treffer == [ziel], "Rätsel nicht eindeutig: \(a.rechnung) → \(treffer), angegeben \(ziel)")
     }
+
+    @Test func sachaufgabenHabenStimmendeLoesungen() {
+        var letzte = Set<String>()
+        for _ in 0..<400 {
+            let a = MatheGenerator.sach()
+            guard let antwort = Int(a.antwort) else {
+                Issue.record("Antwort ist keine Zahl: \(a.rechnung)")
+                continue
+            }
+            #expect((0...999).contains(antwort), "Zahlenraum: \(a.rechnung)")
+            #expect(!a.rechnung.contains("–") && !a.rechnung.contains("—"), "Gedankenstrich: \(a.rechnung)")
+            #expect(a.erklaerung.hasSuffix("= \(a.antwort)"), "Erklärung passt nicht: \(a.erklaerung)")
+            letzte.insert(String(a.rechnung.split(separator: "\n").last ?? ""))
+        }
+        #expect(letzte.count >= 10, "Zu wenig verschiedene Sachaufgaben")
+    }
 }
