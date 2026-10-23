@@ -194,6 +194,7 @@ struct ProfilEinstellungen: View {
     @AppStorage("kindName") private var kindName = ""
     @AppStorage("kindKlasse") private var kindKlasse = ""
     @AppStorage("tagesziel") private var tagesziel = 2
+    @AppStorage("familienBelohnung") private var familienBelohnung = ""
     @AppStorage("jokerIch") private var jokerIch = ""
     @AppStorage(Bundesland.key) private var bundesland = ""
     @State private var nameEntwurf = ""
@@ -234,6 +235,17 @@ struct ProfilEinstellungen: View {
                             value: $tagesziel, in: 1...10)
                 } footer: {
                     Text("Der Name erscheint bei den Eltern und in der App. Ein Vorname oder Spitzname reicht, bitte keinen Nachnamen. Mit einer Klasse lädt das Gerät nur passende Aufgabenpakete, bei Alle bekommt es alle. Klasse und Bundesland bestimmen auch, welche Themen die Lernwelt zuerst zeigt.")
+                }
+                .listRowBackground(zeilenGrund)
+                Section {
+                    TextField("Zum Beispiel: Eis essen gehen", text: $familienBelohnung)
+                        .onChange(of: familienBelohnung) {
+                            if familienBelohnung.count > 60 { familienBelohnung = String(familienBelohnung.prefix(60)) }
+                        }
+                } header: {
+                    Text("Belohnung zu Hause")
+                } footer: {
+                    Text("Wer das Wochenziel schafft, bekommt zusätzlich zu den Münzen diese Belohnung von euch. Das Kind sieht den Text bei den Erfolgen. Leer lassen, wenn es keine geben soll.")
                 }
                 .listRowBackground(zeilenGrund)
             }

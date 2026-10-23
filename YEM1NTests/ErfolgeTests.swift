@@ -129,4 +129,10 @@ struct ErfolgeTests {
             #expect(!pokal.erreicht, "\(pokal.titel) gilt ohne eine einzige Runde als geschafft")
         }
     }
+
+    @Test func familienBelohnungTextWirdGeglaettetUndGekuerzt() {
+        #expect(Erfolge.familienBelohnungText("  Eis   essen\n gehen ") == "Eis essen gehen")
+        #expect(Erfolge.familienBelohnungText("   ") == "")
+        #expect(Erfolge.familienBelohnungText(String(repeating: "x", count: 200)).count == 60)
+    }
 }

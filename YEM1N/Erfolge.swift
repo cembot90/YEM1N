@@ -99,6 +99,12 @@ enum Erfolge {
     /// Fünf Tage pro Woche mit dem Tagesziel, der Rest ist Zugabe.
     static func wochenziel(tagesziel: Int) -> Int { max(tagesziel, 1) * 5 }
     static let wochenBelohnung = 10
+
+    /// Belohnung zu Hause, die die Eltern festlegen: Leerzeichen glätten, höchstens 60 Zeichen.
+    static func familienBelohnungText(_ roh: String) -> String {
+        let teile = roh.split(whereSeparator: { $0.isWhitespace || $0.isNewline })
+        return String(teile.joined(separator: " ").prefix(60))
+    }
     static let wochenBelohnungKey = "wochenBelohnung"
 
     static func wochenRunden(_ liste: [RundenErgebnis], jetzt: Date = Date.now,
@@ -231,6 +237,7 @@ struct ErfolgeView: View {
     private var lokale: [RundenErgebnis]
     @AppStorage("tagesziel") private var ziel = 2
     @AppStorage("kindName") private var kindName = ""
+    @AppStorage("familienBelohnung") private var familienBelohnung = ""
     @State private var belohnungInfo: String?
 
     var body: some View {
@@ -332,6 +339,12 @@ struct ErfolgeView: View {
                 }
                 Spacer()
             }
+            let zuHause = Erfolge.familienBelohnungText(familienBelohnung)
+            if !zuHause.isEmpty {
+                Text("🎁 Zu Hause wartet: \(zuHause)")
+                    .font(.system(.subheadline, design: .rounded).weight(.bold))
+                    .foregroundStyle(Theme.gelb)
+            }
             if holbar {
                 Button {
                     let m = Erfolge.belohnungHolen(lokale, tagesziel: ziel)
@@ -349,7 +362,9 @@ struct ErfolgeView: View {
                 }
                 .buttonStyle(TastenStil())
             } else if let belohnungInfo {
-                Text("\(belohnungInfo) auf deinem Konto. Bis nächste Woche!")
+                Text("\(belohnungInfo) auf deinem Konto. "
+                     + (zuHause.isEmpty ? "" : "Sag es deinen Eltern: \(zuHause). ")
+                     + "Bis nächste Woche!")
                     .font(.system(.subheadline, design: .rounded).weight(.bold))
                     .foregroundStyle(Theme.mint)
             }
