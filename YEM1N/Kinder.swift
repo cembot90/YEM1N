@@ -52,6 +52,26 @@ enum Kinder {
             .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
     }
 
+    /// Wie `liste(aus:)`, dazu Kinder, die sich nur angemeldet haben (Ergebnis ohne Aufgaben,
+    /// kommt vom Android-Gerät beim Einrichten). Sie stehen mit 0 Runden in der Liste.
+    static func liste(aus eintraege: [(name: String, zeitpunkt: Date)],
+                      angemeldet: [(name: String, zeitpunkt: Date)]) -> [KindEintrag] {
+        var ergebnis = liste(aus: eintraege)
+        for a in angemeldet {
+            let sauber = a.name.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !sauber.isEmpty else { continue }
+            let k = schluessel(sauber)
+            if let i = ergebnis.firstIndex(where: { $0.id == k }) {
+                if ergebnis[i].runden == 0, a.zeitpunkt > ergebnis[i].zuletzt {
+                    ergebnis[i] = KindEintrag(name: sauber, runden: 0, zuletzt: a.zeitpunkt)
+                }
+            } else {
+                ergebnis.append(KindEintrag(name: sauber, runden: 0, zuletzt: a.zeitpunkt))
+            }
+        }
+        return ergebnis.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+    }
+
     // MARK: Entfernen
     // Die Cloud gehört dem Kind-Gerät, die Eltern können dort nichts löschen.
     // Beim Entfernen merkt sich das Eltern-Gerät deshalb den Zeitpunkt. Alles bis
@@ -95,4 +115,9 @@ enum Kinder {
 
     /// Wer lange nichts mehr gemacht hat, wird in der Liste markiert.
     static let langeInaktivTage = 30
+}
+
+extension RundenErgebnis {
+    /// Das Kind hat sich nur angemeldet (Android), es ist keine gespielte Runde.
+    var istAnmeldung: Bool { gesamt == 0 && uebung == "Angemeldet" }
 }

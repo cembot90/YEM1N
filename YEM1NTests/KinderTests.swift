@@ -96,4 +96,21 @@ struct KinderTests {
         #expect(Kinder.tageSeit(zukunft, jetzt: jetzt, kalender: kalender) == 0)
         #expect(Kinder.tageSeit(vor(tagen: 30), jetzt: jetzt, kalender: kalender) >= Kinder.langeInaktivTage)
     }
+
+    @Test func angemeldetesKindStehtMitNullRundenInDerListe() {
+        let runden: [(name: String, zeitpunkt: Date)] = [(name: "Yemin", zeitpunkt: vor(tagen: 1))]
+        let angemeldet: [(name: String, zeitpunkt: Date)] = [
+            (name: "Evin", zeitpunkt: vor(tagen: 0)),
+            (name: "yemin ", zeitpunkt: vor(tagen: 3))
+        ]
+        let liste = Kinder.liste(aus: runden, angemeldet: angemeldet)
+        #expect(liste.map { $0.name } == ["Evin", "Yemin"])
+        #expect(liste.first { $0.name == "Evin" }?.runden == 0)
+        #expect(liste.first { $0.name == "Yemin" }?.runden == 1, "Wer schon Runden hat, wird nicht doppelt gezählt")
+    }
+
+    @Test func anmeldungOhneNamenWirdUebersprungen() {
+        let liste = Kinder.liste(aus: [], angemeldet: [(name: "  ", zeitpunkt: vor(tagen: 0))])
+        #expect(liste.isEmpty)
+    }
 }

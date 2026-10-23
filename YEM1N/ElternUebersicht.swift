@@ -110,12 +110,17 @@ struct ElternDashboardView: View {
     @State private var gewaehlteUebung: UebungAuswahl?
     @State private var alleProbleme = false
 
+    /// Nur gespielte Runden. Anmeldungen ohne Aufgaben zählen hier nicht.
+    private var runden: [RundenErgebnis] { alleErgebnisse.filter { !$0.istAnmeldung } }
+
     private var ergebnisse: [RundenErgebnis] {
-        kindFilter.isEmpty ? alleErgebnisse : alleErgebnisse.filter { Kinder.gleich($0.kind, kindFilter) }
+        kindFilter.isEmpty ? runden : runden.filter { Kinder.gleich($0.kind, kindFilter) }
     }
 
     private var kinderListe: [KindEintrag] {
-        Kinder.liste(aus: alleErgebnisse.map { (name: $0.kind, zeitpunkt: $0.zeitpunkt) })
+        Kinder.liste(
+            aus: runden.map { (name: $0.kind, zeitpunkt: $0.zeitpunkt) },
+            angemeldet: alleErgebnisse.filter { $0.istAnmeldung }.map { (name: $0.kind, zeitpunkt: $0.zeitpunkt) })
     }
 
     private var kinder: [String] { kinderListe.map { $0.name } }
@@ -146,7 +151,9 @@ struct ElternDashboardView: View {
                         Text(kind.name)
                             .font(.system(.subheadline, design: .rounded).weight(.bold))
                             .foregroundStyle(Color.white)
-                        Text("\(kind.runden) \(kind.runden == 1 ? "Runde" : "Runden"), zuletzt \(Kinder.zuletztText(kind.zuletzt))")
+                        Text(kind.runden == 0
+                             ? "angemeldet \(Kinder.zuletztText(kind.zuletzt)), noch keine Runde"
+                             : "\(kind.runden) \(kind.runden == 1 ? "Runde" : "Runden"), zuletzt \(Kinder.zuletztText(kind.zuletzt))")
                             .font(.caption)
                             .foregroundStyle(alt ? Theme.koralle : Theme.textSanft)
                     }
@@ -160,7 +167,7 @@ struct ElternDashboardView: View {
                     .accessibilityLabel("\(kind.name) entfernen")
                 }
             }
-            Text("Hier stehen alle Kinder, von denen Ergebnisse angekommen sind. Entfernen löscht nur die Einträge auf diesem Gerät. Spielt das Kind später weiter, erscheint es wieder.")
+            Text("Hier stehen alle Kinder, die sich angemeldet haben oder von denen Ergebnisse angekommen sind. Entfernen löscht nur die Einträge auf diesem Gerät. Spielt das Kind später weiter, erscheint es wieder.")
                 .font(.caption)
                 .foregroundStyle(Theme.textSanft)
         }
@@ -180,12 +187,12 @@ struct ElternDashboardView: View {
     }
 
     private var berichte: [KindBericht] {
-        ElternBericht.berichte(runden: alleErgebnisse.map(\.berichtRunde), kinder: kinder)
+        ElternBericht.berichte(runden: runden.map(\.berichtRunde), kinder: kinder)
     }
 
     private var neuerBericht: Bool {
         ElternBericht.neuerBerichtDa(gelesen: berichtGelesen > 0 ? Date(timeIntervalSince1970: berichtGelesen) : nil,
-                                     hatRunden: alleErgebnisse.contains { $0.zeitpunkt >= ElternBericht.beginn() })
+                                     hatRunden: runden.contains { $0.zeitpunkt >= ElternBericht.beginn() })
     }
 
     private var wochenberichtKarte: some View {
@@ -338,7 +345,9 @@ struct ElternDashboardView: View {
             Button("\(kind.name) entfernen", role: .destructive) { entferne(kind) }
             Button("Abbrechen", role: .cancel) {}
         } message: { kind in
-            Text("Die \(kind.runden) Runden von \(kind.name) verschwinden von diesem Gerät. Beim Kind selbst bleibt alles erhalten.")
+            Text(kind.runden == 0
+                 ? "\(kind.name) verschwindet aus dieser Liste. Beim Kind selbst bleibt alles erhalten."
+                 : "Die \(kind.runden) Runden von \(kind.name) verschwinden von diesem Gerät. Beim Kind selbst bleibt alles erhalten.")
         }
     }
 
