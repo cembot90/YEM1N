@@ -12,6 +12,10 @@ on:
       - "pruefen/**"
   workflow_dispatch:
 
+# Der Lauf braucht nur Lesezugriff auf den Code.
+permissions:
+  contents: read
+
 jobs:
   tests:
     runs-on: ubuntu-24.04
