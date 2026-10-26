@@ -49,8 +49,8 @@ Vorlage:
    Pages geladen, Änderungen wirken also ohne neue App-Version.
 2. **Tests.** Neue Logik bekommt Tests in `YEM1NTests/`. Reine Oberfläche nicht.
 3. **Datenschutz.** Wenn neue Daten erhoben oder übertragen werden, müssen
-   `DatenschutzView` in `Datenschutz.swift`, `docs/index.html` und die Angaben
-   in App Store Connect zusammenpassen.
+   `DatenschutzView` in `Datenschutz.swift`, `docs/index.html`, `YEM1N/PrivacyInfo.xcprivacy`
+   und die Angaben in App Store Connect (Entwurf in `store/APPSTORE.md`) zusammenpassen.
 4. **Familien-Dienst und CloudKit.** Neue Einträge der Familie brauchen einen Typ im Worker
    (`server/src/v2/typen.js` im Repo `cembot90/yem1n-android`, Tabelle in `cloud/PROTOKOLL-V2.md`) und in
    `FamilienProtokoll.swift`. Cem muss den Worker danach mit `npx wrangler@latest deploy` neu veröffentlichen.
