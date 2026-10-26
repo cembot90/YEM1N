@@ -49,33 +49,33 @@ struct CodesTests {
     // MARK: QR-Code
 
     @Test func qrCodeHinUndZurueck() {
-        for art in ["familie", "klasse"] {
-            let code = Familiencode.neu()
-            let inhalt = QRPaket.inhalt(art: art, code: code)
-            let gelesen = QRPaket.lese(inhalt)
-            #expect(gelesen?.art == art, "Art ging verloren: \(inhalt)")
-            #expect(gelesen?.code == code, "Code ging verloren: \(inhalt)")
-        }
+        let code = Familiencode.neu()
+        let inhalt = QRPaket.inhalt(art: "klasse", code: code)
+        let gelesen = QRPaket.lese(inhalt)
+        #expect(gelesen?.art == "klasse", "Art ging verloren: \(inhalt)")
+        #expect(gelesen?.code == code, "Code ging verloren: \(inhalt)")
     }
 
     @Test func fremdeUndKaputteCodesWerdenAbgelehnt() {
         #expect(QRPaket.lese("") == nil)
         #expect(QRPaket.lese("Hallo") == nil)
         #expect(QRPaket.lese("https://example.com") == nil)
-        #expect(QRPaket.lese("yem1n://familie") == nil)
-        #expect(QRPaket.lese("yem1n://familie/ABC") == nil)
+        #expect(QRPaket.lese("yem1n://klasse") == nil)
+        #expect(QRPaket.lese("yem1n://klasse/ABC") == nil)
         #expect(QRPaket.lese("yem1n://unsinn/ABCDE-FGHJK") == nil)
-        #expect(QRPaket.lese("yem1n://familie/ABCDE-FGHJK/extra") == nil)
+        #expect(QRPaket.lese("yem1n://klasse/ABCDE-FGHJK/extra") == nil)
+        // Der alte Familiencode als QR-Code gilt nicht mehr
+        #expect(QRPaket.lese("yem1n://familie/ABCDE-FGHJK") == nil)
     }
 
     @Test func leerzeichenUndGrossschreibungStoerenNicht() {
-        let gelesen = QRPaket.lese("  YEM1N://FAMILIE/abcde-fghjk  ")
-        #expect(gelesen?.art == "familie")
+        let gelesen = QRPaket.lese("  YEM1N://KLASSE/abcde-fghjk  ")
+        #expect(gelesen?.art == "klasse")
         #expect(gelesen?.code == "ABCDE-FGHJK")
     }
 
     @Test func zuJedemCodeGibtEsEinBild() {
-        let inhalt = QRPaket.inhalt(art: "familie", code: Familiencode.neu())
+        let inhalt = QRPaket.inhalt(art: "klasse", code: Familiencode.neu())
         #expect(QRPaket.bild(inhalt) != nil, "QR-Bild konnte nicht erzeugt werden")
     }
 }

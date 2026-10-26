@@ -6,26 +6,28 @@ import Testing
 
 struct MitteilungsZielTests {
     @Test func wochenberichtFuehrtZumBericht() {
-        #expect(MitteilungsZiel.bereich(ziel: "bericht", kennung: "", abo: "") == "bericht")
-        #expect(MitteilungsZiel.bereich(ziel: nil, kennung: "wochenbericht", abo: "") == "bericht")
+        #expect(MitteilungsZiel.bereich(ziel: "bericht", kennung: "") == "bericht")
+        #expect(MitteilungsZiel.bereich(ziel: nil, kennung: "wochenbericht") == "bericht")
     }
 
     @Test func jokerMitteilungenFuehrenZumJoker() {
-        for abo in ["JokerAnfrage-ABCDE-12345", "JokerNachschub-ABCDE-12345",
-                    "JokerAntwort-ABCDE-12345", "JokerFreigabe-ABCDE-12345",
-                    "JokerDaumen-ABCDE-12345-Papa"] {
-            #expect(MitteilungsZiel.bereich(ziel: nil, kennung: "x", abo: abo) == "joker")
+        for typ in ["frage", "antwort", "daumen", "nachschub", "freigabe"] {
+            #expect(MitteilungsZiel.bereich(ziel: nil, kennung: "x", typ: typ) == "joker")
         }
     }
 
-    @Test func haustierUndLernpaket() {
-        #expect(MitteilungsZiel.bereich(ziel: nil, kennung: "x", abo: "HaustierPflege-ABCDE-12345") == "haustier")
-        #expect(MitteilungsZiel.bereich(ziel: nil, kennung: "x", abo: "Lernpaket-ABCDE-12345") == "schule")
+    @Test func haustierPaketDuellUndGeraete() {
+        #expect(MitteilungsZiel.bereich(ziel: nil, kennung: "x", typ: "pflege") == "haustier")
+        #expect(MitteilungsZiel.bereich(ziel: nil, kennung: "x", typ: "paket") == "schule")
+        #expect(MitteilungsZiel.bereich(ziel: nil, kennung: "x", typ: "duell") == "duell")
+        #expect(MitteilungsZiel.bereich(ziel: nil, kennung: "x", typ: "duellantwort") == "duell")
+        #expect(MitteilungsZiel.bereich(ziel: nil, kennung: "x", typ: "geraet") == "familie")
     }
 
     @Test func unbekanntBleibtWoEsIst() {
-        #expect(MitteilungsZiel.bereich(ziel: nil, kennung: "lernzeit", abo: "") == nil)
-        #expect(MitteilungsZiel.bereich(ziel: nil, kennung: "x", abo: "RundenErgebnis-ABCDE-12345") == nil)
+        #expect(MitteilungsZiel.bereich(ziel: nil, kennung: "lernzeit") == nil)
+        #expect(MitteilungsZiel.bereich(ziel: nil, kennung: "x", typ: "ergebnis") == nil)
+        #expect(MitteilungsZiel.bereich(ziel: nil, kennung: "x", typ: "unsinn") == nil)
     }
 }
 

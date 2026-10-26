@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import YEM1N
 
-// Einwilligung, Löschfrist und die Rechtstexte in der App.
+// Einwilligung und die Rechtstexte in der App.
 
 @MainActor
 struct RechtTests {
@@ -11,10 +11,6 @@ struct RechtTests {
 
     private var jetzt: Date {
         DateComponents(calendar: kalender, year: 2026, month: 10, day: 7, hour: 12).date ?? Date.now
-    }
-
-    private func vor(tagen: Int, von: Date? = nil) -> Date {
-        kalender.date(byAdding: .day, value: -tagen, to: von ?? jetzt) ?? jetzt
     }
 
     private func leererSpeicher(_ name: String) -> UserDefaults {
@@ -60,37 +56,6 @@ struct RechtTests {
         #expect(Einwilligung.datumText(jetzt, kalender: kalender).contains("2026"))
     }
 
-    // MARK: Löschfrist
-
-    @Test func nachZwoelfMonatenIstEinEintragAbgelaufen() {
-        #expect(!Loeschfrist.abgelaufen(erstellt: vor(tagen: 0), jetzt: jetzt, kalender: kalender))
-        #expect(!Loeschfrist.abgelaufen(erstellt: vor(tagen: 364), jetzt: jetzt, kalender: kalender))
-        #expect(Loeschfrist.abgelaufen(erstellt: vor(tagen: 366), jetzt: jetzt, kalender: kalender))
-        #expect(Loeschfrist.abgelaufen(erstellt: vor(tagen: 1000), jetzt: jetzt, kalender: kalender))
-    }
-
-    @Test func eineZukunftsZeitLoeschtNichts() {
-        #expect(!Loeschfrist.abgelaufen(erstellt: jetzt.addingTimeInterval(86_400 * 30), jetzt: jetzt, kalender: kalender))
-    }
-
-    @Test func dasAufraeumenLaeuftHoechstensEinmalAmTag() {
-        let speicher = leererSpeicher("yem1n.test.recht3")
-        #expect(Loeschfrist.faellig(speicher: speicher, jetzt: jetzt, kalender: kalender))
-        Loeschfrist.gelaufen(speicher: speicher, jetzt: jetzt)
-        #expect(!Loeschfrist.faellig(speicher: speicher, jetzt: jetzt.addingTimeInterval(3600), kalender: kalender))
-        let morgen = kalender.date(byAdding: .day, value: 1, to: jetzt) ?? jetzt
-        #expect(Loeschfrist.faellig(speicher: speicher, jetzt: morgen, kalender: kalender))
-    }
-
-    @Test func nurDieRichtigenTypenWerdenAufgeraeumt() {
-        #expect(Loeschfrist.typen.contains("RundenErgebnis"))
-        #expect(Loeschfrist.typen.contains("JokerAnfrage"))
-        #expect(Loeschfrist.typen.contains(DuellCloud.typDuell) && Loeschfrist.typen.contains(DuellCloud.typAntwort),
-                "Auch Duelle werden nach der Frist gelöscht")
-        #expect(!Loeschfrist.typen.contains("Lernpaket"), "Aufgabenpakete bleiben")
-        #expect(!Loeschfrist.typen.contains("KlassenSchluessel"), "Der Klassenschlüssel bleibt")
-    }
-
     // MARK: Texte
 
     @Test func impressumEnthaeltDieNoetigenAngaben() {
@@ -108,6 +73,12 @@ struct RechtTests {
             #expect(!t.contains("\u{2014}") && !t.contains("\u{2013}"), "Gedankenstrich in: \(t)")
             #expect(!t.isEmpty)
         }
+    }
+
+    @Test func dieEinwilligungKenntDenFamilienDienst() {
+        // Version 5: Familien-Dienst statt Familiencode. Ältere Zustimmungen gelten nicht mehr.
+        #expect(Einwilligung.aktuelleVersion >= 5)
+        #expect(Einwilligung.erforderlich(gespeicherteVersion: 4))
     }
 
     @Test func hinweiseSagenWasNichtHineingehoert() {

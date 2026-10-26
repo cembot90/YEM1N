@@ -87,10 +87,6 @@ final class UIDevice {
     enum Art { case phone, pad }
     var userInterfaceIdiom: Art { .phone }
 }
-final class CKNotification {
-    init?(fromRemoteNotificationDictionary: [AnyHashable: Any]) { return nil }
-    var subscriptionID: String? { nil }
-}
 """
 open(f"{a}/rest.swift", "w").write(s)
 PY

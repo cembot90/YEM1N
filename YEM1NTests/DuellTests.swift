@@ -156,7 +156,7 @@ struct DuellTests {
     }
 
     @Test func duellMitteilungenFuehrenZumDuell() {
-        #expect(MitteilungsZiel.bereich(ziel: nil, kennung: "x", abo: "Duell-ABCDE-12345") == "duell")
-        #expect(MitteilungsZiel.bereich(ziel: nil, kennung: "x", abo: "DuellAntwort-ABCDE-12345") == "duell")
+        #expect(MitteilungsZiel.bereich(ziel: nil, kennung: "x", typ: "duell") == "duell")
+        #expect(MitteilungsZiel.bereich(ziel: nil, kennung: "x", typ: "duellantwort") == "duell")
     }
 }

@@ -20,11 +20,11 @@ struct HaustierCloudTests {
 
     private func tag(_ versatz: Int) -> String {
         let d = kal.date(byAdding: .day, value: versatz, to: jetzt) ?? jetzt
-        return Haustier.tagKennung(d, kalender: kal)
+        return Haustier.pflegeTag(d, kalender: kal)
     }
 
     private func eintrag(_ art: String, _ versatz: Int) -> PflegeEintrag {
-        PflegeEintrag(name: HaustierPflege.eintragName(code: "ABC", art: art, tag: tag(versatz)),
+        PflegeEintrag(name: HaustierPflege.eintragName(art: art, tag: tag(versatz)),
                       art: art, tag: tag(versatz))
     }
 
@@ -37,8 +37,15 @@ struct HaustierCloudTests {
     }
 
     @Test func derEintragsnameEnthaeltTagUndArt() {
-        #expect(HaustierPflege.eintragName(code: "ABC", art: "leckerli", tag: "2026-10-8")
-                == "pflege-ABC-2026-10-8-leckerli")
+        #expect(HaustierPflege.eintragName(art: "leckerli", tag: "2026-10-08") == "2026-10-08:leckerli")
+    }
+
+    @Test func derTagHatFuehrendeNullen() {
+        let tagText = Haustier.pflegeTag(jetzt, kalender: kal)
+        #expect(tagText == "2026-10-08")
+        // Der Familien-Dienst verlangt genau diese Schreibweise: JJJJ-MM-TT
+        #expect(tagText.count == 10)
+        #expect(Array(tagText)[4] == "-" && Array(tagText)[7] == "-")
     }
 
     @Test func proTagUndArtGibtEsNurEinenEintrag() {
