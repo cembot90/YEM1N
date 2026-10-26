@@ -12,8 +12,11 @@ import WebKit
 import CoreImage.CIFilterBuiltins
 
 // ============================================================
-// MARK: - Cloud: Joker, Ergebnisse und Mitteilungen (CloudKit)
+// MARK: - Cloud: Joker, Ergebnisse und Mitteilungen
 // ============================================================
+//
+// Alles, was die Familie austauscht, geht über den Familien-Dienst (Protokoll 2, FamilienModell.swift).
+// CloudKit wird nur noch zum Lesen öffentlicher, unterschriebener Klassenpakete benutzt (CloudPakete.swift).
 
 extension Notification.Name {
     nonisolated static let cloudPush = Notification.Name("yem1nCloudPush")
@@ -25,7 +28,7 @@ extension Notification.Name {
     nonisolated static let oeffneBereich = Notification.Name("yem1nOeffneBereich")
 }
 
-// Registriert das Gerät für Mitteilungen und meldet eingehende CloudKit-Pushes an die App.
+// Registriert das Gerät für Mitteilungen und meldet eingehende Mitteilungen an die App.
 final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
@@ -43,7 +46,9 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
 
     nonisolated func application(_ application: UIApplication,
                                  didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        let kennung = deviceToken.map { String(format: "%02x", $0) }.joined()
         UserDefaults.standard.set("registriert", forKey: "pushStatus")
+        Task { @MainActor in FamilienModell.shared.pushTokenMerken(kennung) }
     }
 
     nonisolated func application(_ application: UIApplication,
@@ -80,8 +85,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         let inhalt = response.notification.request.content.userInfo
         let ziel = inhalt["ziel"] as? String
         let kennung = response.notification.request.identifier
-        let bereich = MitteilungsZiel.bereich(ziel: ziel, kennung: kennung,
-                                              abo: MitteilungsZiel.aboKennung(inhalt))
+        let bereich = MitteilungsZiel.bereich(ziel: ziel, kennung: kennung, typ: inhalt["typ"] as? String)
         DispatchQueue.main.async {
             MainActor.assumeIsolated {
                 if bereich == "bericht" {
@@ -110,22 +114,18 @@ enum MitteilungsZiel {
         return b
     }
 
-    /// Die Kennung des CloudKit-Abos, zum Beispiel "JokerAnfrage-ABCDE-12345".
-    nonisolated static func aboKennung(_ inhalt: [AnyHashable: Any]) -> String {
-        guard let n = CKNotification(fromRemoteNotificationDictionary: inhalt) else { return "" }
-        return n.subscriptionID ?? ""
-    }
-
-    /// "bericht", "joker", "haustier", "schule", "duell" oder nil (dann bleibt die App, wo sie ist).
-    nonisolated static func bereich(ziel: String?, kennung: String, abo: String) -> String? {
+    /// "bericht", "joker", "haustier", "schule", "duell", "familie" oder nil (dann bleibt die App, wo sie ist).
+    /// [typ] ist die Art des Eintrags, wie der Familien-Dienst sie in der Mitteilung mitschickt.
+    nonisolated static func bereich(ziel: String?, kennung: String, typ: String? = nil) -> String? {
         if ziel == "bericht" || kennung == "wochenbericht" { return "bericht" }
-        if abo.hasPrefix("JokerAnfrage") || abo.hasPrefix("JokerNachschub")
-            || abo.hasPrefix("JokerAntwort") || abo.hasPrefix("JokerFreigabe")
-            || abo.hasPrefix("JokerDaumen") { return "joker" }
-        if abo.hasPrefix("HaustierPflege") { return "haustier" }
-        if abo.hasPrefix("Lernpaket") { return "schule" }
-        if abo.hasPrefix("Duell") { return "duell" }
-        return nil
+        switch typ {
+        case "frage", "antwort", "daumen", "nachschub", "freigabe": return "joker"
+        case "pflege": return "haustier"
+        case "paket": return "schule"
+        case "duell", "duellantwort": return "duell"
+        case "geraet": return "familie"
+        default: return nil
+        }
     }
 }
 
@@ -136,6 +136,12 @@ enum Mitteilungen {
         let zentrum = UNUserNotificationCenter.current()
         zentrum.removeAllDeliveredNotifications()
         zentrum.setBadgeCount(0) { _ in }
+    }
+
+    /// Fragt nach der Erlaubnis für Mitteilungen. Sie sind neutral, ohne Namen und ohne Inhalt.
+    static func erlaubnisFragen() async {
+        _ = try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge])
+        await MainActor.run { UIApplication.shared.registerForRemoteNotifications() }
     }
 }
 
@@ -168,256 +174,109 @@ final class CloudStatus {
     var arbeitet = false
 }
 
-// MARK: CloudKit-Zugriff
+// MARK: Zugriff auf den Familien-Dienst
 
 enum CloudDienst {
+    /// Die öffentliche CloudKit-Datenbank. Nur noch für Pakete der Klasse (lesen, unterschrieben).
     static var db: CKDatabase { CKContainer.default().publicCloudDatabase }
 
-    // nil bedeutet: iCloud ist bereit, sonst steht hier der Grund
-    static func kontoProblem() async -> String? {
-        do {
-            let s = try await CKContainer.default().accountStatus()
-            if s == .available { return nil }
-            return "iCloud ist auf diesem Gerät nicht verfügbar. Bitte in den Einstellungen bei iCloud anmelden."
-        } catch {
-            return "iCloud-Fehler: \(error.localizedDescription)"
-        }
-    }
-
     static func fehlertext(_ error: Error) -> String {
+        if let f = error as? FamilienFehler { return f.text }
         let t = error.localizedDescription
         if t.contains("queryable") || t.contains("not marked") {
-            return "Im CloudKit Dashboard fehlt ein Index (Feld familienCode, Typ Queryable). \(t)"
+            return "Im CloudKit Dashboard fehlt ein Index. \(t)"
         }
         if t.contains("record type") {
-            return "Der Datensatztyp gibt es noch nicht. Bitte auf Cloud neu einrichten tippen. \(t)"
+            return "Den Datensatztyp gibt es in CloudKit noch nicht. \(t)"
         }
         return t
     }
 
-    // MARK: Lesen
+    static var familie: FamilienModell { FamilienModell.shared }
 
-    static func holeRecords(_ typ: String, code: String, limit: Int = 200) async throws -> [CKRecord] {
-        let q = CKQuery(recordType: typ, predicate: NSPredicate(format: "familienCode == %@", code))
-        let antwort = try await db.records(matching: q, resultsLimit: limit)
-        var liste: [CKRecord] = []
-        for (_, ergebnis) in antwort.matchResults {
-            if let r = try? ergebnis.get() { liste.append(r) }
-        }
+    /// Legt einen Eintrag beim Familien-Dienst ab. Wirft einen [FamilienFehler], wenn es nicht klappt.
+    @discardableResult
+    static func sende(_ body: [String: Any]) async throws -> FamilienAntwort {
+        let a = await familie.senden(body)
+        try a.pruefen()
+        return a
+    }
+
+    /// Liest alle Einträge einer Art. Wirft einen [FamilienFehler], wenn schon die erste Seite fehlt.
+    static func lies(_ typ: String) async throws -> [FamilienEintrag] {
+        guard familie.aktiv else { throw FamilienFehler(status: -3) }
+        guard let liste = await familie.lesen(typ) else { throw FamilienFehler(status: 0) }
         return liste
     }
 
-    static func ladeJoker(code: String) async throws -> [CloudAnfrage] {
-        let anfragen = try await holeRecords("JokerAnfrage", code: code)
-        let antworten = (try? await holeRecords("JokerAntwort", code: code)) ?? []
-        let daumen = (try? await holeRecords("JokerDaumen", code: code)) ?? []
+    // MARK: Joker lesen
 
-        var daumenIDs = Set<String>()
-        for d in daumen {
-            if let id = d["antwortID"] as? String { daumenIDs.insert(id) }
+    static func ladeJoker() async throws -> [CloudAnfrage] {
+        let fragen = try await lies(FamilienProtokoll.typFrage)
+        let antworten = (try? await lies(FamilienProtokoll.typAntwort)) ?? []
+        let daumen = (try? await lies(FamilienProtokoll.typDaumen)) ?? []
+
+        let daumenIDs = Set(daumen.map { $0.text("antwortId") })
+        let alle = antworten.map { e in
+            CloudAntwort(id: e.id,
+                         anfrageID: e.text("frageId"),
+                         absender: e.absender.isEmpty ? "?" : e.absender,
+                         emoji: e.text("emoji", ersatz: "🙂"),
+                         text: e.text("text"),
+                         erstellt: e.erstelltDatum,
+                         daumen: daumenIDs.contains(e.id))
         }
-        var alle: [CloudAntwort] = []
-        for r in antworten {
-            alle.append(CloudAntwort(id: r.recordID.recordName,
-                                     anfrageID: (r["anfrageID"] as? String) ?? "",
-                                     absender: (r["absender"] as? String) ?? "?",
-                                     emoji: (r["emoji"] as? String) ?? "🙂",
-                                     text: (r["text"] as? String) ?? "",
-                                     erstellt: r.creationDate ?? Date.distantPast,
-                                     daumen: daumenIDs.contains(r.recordID.recordName)))
-        }
-        var liste: [CloudAnfrage] = []
-        for r in anfragen {
-            let id = r.recordID.recordName
-            let meine = alle.filter { $0.anfrageID == id }.sorted { $0.erstellt < $1.erstellt }
-            liste.append(CloudAnfrage(id: id,
-                                      kind: (r["kind"] as? String) ?? "Kind",
-                                      fach: (r["fach"] as? String) ?? "",
-                                      uebung: (r["uebung"] as? String) ?? "",
-                                      text: (r["text"] as? String) ?? "",
-                                      erstellt: r.creationDate ?? Date.distantPast,
-                                      antworten: meine))
+        let liste = fragen.map { e in
+            CloudAnfrage(id: e.id,
+                         kind: e.text("kind", ersatz: "Kind"),
+                         fach: e.text("fach"),
+                         uebung: e.text("uebung"),
+                         text: e.text("text"),
+                         erstellt: e.erstelltDatum,
+                         antworten: alle.filter { $0.anfrageID == e.id }.sorted { $0.erstellt < $1.erstellt })
         }
         return liste.sorted { $0.erstellt > $1.erstellt }
     }
 
     // MARK: Schreiben
 
-    static func sendeJoker(code: String, kind: String, fach: String, uebung: String, text: String) async throws {
-        let r = CKRecord(recordType: "JokerAnfrage")
-        r["familienCode"] = code as CKRecordValue
-        r["kind"] = kind as CKRecordValue
-        r["fach"] = fach as CKRecordValue
-        r["uebung"] = uebung as CKRecordValue
-        r["text"] = text as CKRecordValue
-        r["status"] = "offen" as CKRecordValue
-        _ = try await db.save(r)
+    static func sendeJoker(kind: String, fach: String, uebung: String, text: String) async throws {
+        try await sende(FamilienProtokoll.frage(id: FamilienProtokoll.neueKennung("frage"),
+                                                kind: kind, fach: fach, uebung: uebung, text: text))
     }
 
-    static func sendeAntwort(code: String, anfrageID: String, absender: String, emoji: String, text: String) async throws {
-        let r = CKRecord(recordType: "JokerAntwort")
-        r["familienCode"] = code as CKRecordValue
-        r["anfrageID"] = anfrageID as CKRecordValue
-        r["absender"] = absender as CKRecordValue
-        r["emoji"] = emoji as CKRecordValue
-        r["text"] = text as CKRecordValue
-        _ = try await db.save(r)
+    /// Den Namen des Absenders setzt der Dienst aus dem Namen des Geräts.
+    static func sendeAntwort(anfrageID: String, emoji: String, text: String) async throws {
+        try await sende(FamilienProtokoll.antwort(id: FamilienProtokoll.neueKennung("antwort"),
+                                                  frageId: anfrageID, emoji: emoji, text: text))
     }
 
-    static func sendeDaumen(code: String, anfrageID: String, antwortID: String, absender: String) async throws {
-        let id = CKRecord.ID(recordName: "daumen-" + antwortID)
-        let r = CKRecord(recordType: "JokerDaumen", recordID: id)
-        r["familienCode"] = code as CKRecordValue
-        r["anfrageID"] = anfrageID as CKRecordValue
-        r["antwortID"] = antwortID as CKRecordValue
-        r["absender"] = absender as CKRecordValue
-        do {
-            _ = try await db.save(r)
-        } catch let fehler as CKError where fehler.code == .serverRecordChanged {
-            // Daumen war schon vergeben
-        }
+    static func sendeDaumen(anfrageID: String, antwortID: String) async throws {
+        try await sende(FamilienProtokoll.daumen(frageId: anfrageID, antwortId: antwortID))
     }
 
-    static func sendeErgebnis(code: String, e: RundenErgebnis) async throws {
-        let id = CKRecord.ID(recordName: "erg-" + e.eintragID)
-        let r = CKRecord(recordType: "RundenErgebnis", recordID: id)
-        r["familienCode"] = code as CKRecordValue
-        r["eintragID"] = e.eintragID as CKRecordValue
-        r["klasse"] = e.klasse as CKRecordValue
-        r["fach"] = e.fach as CKRecordValue
-        r["arbeit"] = e.arbeit as CKRecordValue
-        r["uebung"] = e.uebung as CKRecordValue
-        r["richtig"] = e.richtig as CKRecordValue
-        r["gesamt"] = e.gesamt as CKRecordValue
-        r["angesehen"] = e.angesehen as CKRecordValue
-        r["sterne"] = e.sterne as CKRecordValue
-        r["kind"] = e.kind as CKRecordValue
-        r["zeitpunkt"] = e.zeitpunkt as CKRecordValue
-        if !e.details.isEmpty { r["details"] = e.details as CKRecordValue }
-        do {
-            _ = try await db.save(r)
-        } catch let fehler as CKError where fehler.code == .serverRecordChanged {
-            // Ergebnis ist schon in der Cloud
-        } catch let fehler as CKError where r["details"] != nil && fehlerWegenNeuemFeld(fehler) {
-            // Das Feld "details" ist in der Cloud noch nicht eingerichtet.
-            // Dann geht das Ergebnis ohne die einzelnen Antworten hoch, damit nichts hängen bleibt.
-            r["details"] = nil
-            do {
-                _ = try await db.save(r)
-            } catch let zweiter as CKError where zweiter.code == .serverRecordChanged {
-                // Ergebnis ist schon in der Cloud
-            }
-        }
+    static func sendeErgebnis(_ e: RundenErgebnis) async throws {
+        let d = ErgebnisDaten(id: "erg-" + e.eintragID, klasse: e.klasse, fach: e.fach, arbeit: e.arbeit,
+                              uebung: e.uebung, richtig: e.richtig, gesamt: e.gesamt, angesehen: e.angesehen,
+                              sterne: e.sterne, kind: e.kind,
+                              zeitpunkt: Int64(e.zeitpunkt.timeIntervalSince1970 * 1000), details: e.details)
+        try await sende(FamilienProtokoll.ergebnis(d))
     }
 
-    /// true, wenn CloudKit ein unbekanntes Feld ablehnt (Schema in Production noch nicht ausgerollt).
-    static func fehlerWegenNeuemFeld(_ fehler: CKError) -> Bool {
-        if fehler.code == .invalidArguments || fehler.code == .serverRejectedRequest { return true }
-        let t = fehler.localizedDescription.lowercased()
-        return t.contains("field") || t.contains("schema")
+    static func sendeNachschub(kind: String) async throws {
+        try await sende(FamilienProtokoll.nachschub(id: FamilienProtokoll.neueKennung("nachschub"), kind: kind))
     }
 
-    // MARK: Einrichtung (Datensatztypen anlegen und Mitteilungen abonnieren)
-
-    private static func schemaBeispiel(_ typ: String, id name: String? = nil,
-                                       _ felder: [String: CKRecordValue]) async throws {
-        let id = CKRecord.ID(recordName: name ?? "schema-" + typ)
-        let r = CKRecord(recordType: typ, recordID: id)
-        for (k, v) in felder { r[k] = v }
-        do {
-            _ = try await db.save(r)
-        } catch let fehler as CKError where fehler.code == .serverRecordChanged {
-            // gibt es schon
-        }
-    }
-
-    static func schemaAnlegen() async throws {
-        let code = "SCHEMA" as CKRecordValue
-        try await schemaBeispiel("JokerAnfrage", ["familienCode": code, "kind": "Kind" as CKRecordValue,
-                                                  "fach": "Mathe" as CKRecordValue, "uebung": "Test" as CKRecordValue,
-                                                  "text": "Test" as CKRecordValue, "status": "offen" as CKRecordValue])
-        try await schemaBeispiel("JokerAntwort", ["familienCode": code, "anfrageID": "x" as CKRecordValue,
-                                                  "absender": "Test" as CKRecordValue, "emoji": "🙂" as CKRecordValue,
-                                                  "text": "Test" as CKRecordValue])
-        try await schemaBeispiel("JokerDaumen", ["familienCode": code, "anfrageID": "x" as CKRecordValue,
-                                                 "antwortID": "x" as CKRecordValue, "absender": "Test" as CKRecordValue])
-        try await schemaBeispiel("RundenErgebnis", ["familienCode": code, "eintragID": "schema" as CKRecordValue,
-                                                   "klasse": "Test" as CKRecordValue, "fach": "Test" as CKRecordValue,
-                                                   "arbeit": "Test" as CKRecordValue, "uebung": "Test" as CKRecordValue,
-                                                   "richtig": 1 as CKRecordValue, "gesamt": 1 as CKRecordValue,
-                                                   "angesehen": 0 as CKRecordValue, "sterne": 3 as CKRecordValue,
-                                                   "zeitpunkt": Date() as CKRecordValue])
-        // Eigener Beispiel-Eintrag für das Feld "details" (einzelne Antworten einer Runde).
-        // Legt das Feld in der Entwicklungsumgebung an. In Production schlägt das fehl, solange
-        // das Schema dort noch nicht ausgerollt ist. Das darf die Einrichtung nicht stoppen.
-        try? await schemaBeispiel("RundenErgebnis", id: "schema-RundenErgebnis-details",
-                                 ["familienCode": code, "eintragID": "schema-details" as CKRecordValue,
-                                  "details": "[]" as CKRecordValue])
-        try await schemaBeispiel("JokerNachschub", ["familienCode": code, "kind": "Test" as CKRecordValue])
-        try await schemaBeispiel("JokerFreigabe", ["familienCode": code, "anzahl": 3 as CKRecordValue])
-        try await schemaBeispiel("Haustier", ["familienCode": code, "json": "{}" as CKRecordValue])
-        try await schemaBeispiel("HaustierPflege", ["familienCode": code, "art": "leckerli" as CKRecordValue,
-                                                    "tag": "2026-1-1" as CKRecordValue, "absender": "Test" as CKRecordValue])
-        try await schemaBeispiel("Lernpaket", ["familienCode": code, "klasse": "Test" as CKRecordValue,
-                                               "fach": "Test" as CKRecordValue, "titel": "Test" as CKRecordValue,
-                                               "json": "{}" as CKRecordValue, "aufgaben": 0 as CKRecordValue])
-    }
-
-    static func abo(typ: String, code: String, text: String) async throws {
-        let predicate = NSPredicate(format: "familienCode == %@", code)
-        let abo = CKQuerySubscription(recordType: typ, predicate: predicate,
-                                      subscriptionID: "\(typ)-\(code)",
-                                      options: [.firesOnRecordCreation])
-        let info = CKSubscription.NotificationInfo()
-        info.alertBody = text
-        info.soundName = "default"
-        info.shouldBadge = true
-        info.shouldSendContentAvailable = true
-        abo.notificationInfo = info
-        _ = try await db.save(abo)
-    }
-
-    static func einrichten(code: String, rolle: String) async -> String {
-        if let problem = await kontoProblem() { return problem }
-        _ = try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge])
-        do {
-            try await schemaAnlegen()
-        } catch {
-            return "Datensatztypen anlegen nicht möglich: \(fehlertext(error))"
-        }
-        do {
-            if rolle == "eltern" {
-                try await abo(typ: "JokerAnfrage", code: code,
-                              text: "🃏 Joker-Alarm! Dein Kind braucht Hilfe. Tippe und hilf als Erste:r!")
-                try await abo(typ: "RundenErgebnis", code: code,
-                              text: "🏆 Dein Kind hat eine Runde geschafft!")
-                try await aboDaumen(code: code, name: ichName())
-                try await abo(typ: "JokerNachschub", code: code,
-                              text: "🃏 Dein Kind hat keine Joker mehr und fragt nach neuen. Tippe zum Freigeben!")
-            } else {
-                try await abo(typ: "JokerAntwort", code: code,
-                              text: "💡 Du hast einen Tipp bekommen! Schau im Tab Joker nach.")
-                try await abo(typ: "JokerFreigabe", code: code,
-                              text: "🎉 Neue Joker! Du hast wieder alle Joker für heute.")
-                try await abo(typ: "HaustierPflege", code: code,
-                              text: "🐾 Dein Haustier hat von deiner Familie etwas bekommen!")
-                try await abo(typ: "Lernpaket", code: code,
-                              text: "📚 Neue Aufgaben für dich sind da! Öffne YEM1N und leg los. 💪")
-            }
-        } catch {
-            return "Mitteilungen einrichten nicht möglich: \(fehlertext(error))"
-        }
-        // Das Duell kam später dazu und darf die Einrichtung nicht aufhalten
-        await DuellCloud.einrichten(code: code)
-        return "Cloud ist bereit. Mitteilungen sind eingerichtet."
+    static func sendeFreigabe() async throws {
+        try await sende(FamilienProtokoll.freigabe(id: FamilienProtokoll.neueKennung("freigabe"), anzahl: 3))
     }
 }
 
 // MARK: Ergebnisse senden und holen
 
 enum CloudSync {
-    private static var code: String { UserDefaults.standard.string(forKey: "familienCode") ?? "" }
     private static var modus: String { UserDefaults.standard.string(forKey: "modus") ?? "" }
+    private static var verbunden: Bool { FamilienModell.shared.aktiv }
 
     static func anstossen(_ context: ModelContext) {
         Task { await sendeOffene(context) }
@@ -425,13 +284,13 @@ enum CloudSync {
 
     // Kind-Gerät: alle noch nicht gesendeten Ergebnisse hochladen
     static func sendeOffene(_ context: ModelContext) async {
-        guard modus == "kind", Familiencode.istGueltig(code) else { return }
+        guard modus == "kind", verbunden else { return }
         let beschreibung = FetchDescriptor<RundenErgebnis>(
             predicate: #Predicate { $0.quelle == "lokal" && $0.gesendet == false })
         guard let offene = try? context.fetch(beschreibung), !offene.isEmpty else { return }
         for e in offene {
             do {
-                try await CloudDienst.sendeErgebnis(code: code, e: e)
+                try await CloudDienst.sendeErgebnis(e)
                 e.gesendet = true
             } catch {
                 CloudStatus.shared.meldung = "Senden nicht möglich: \(CloudDienst.fehlertext(error))"
@@ -443,29 +302,32 @@ enum CloudSync {
 
     // Eltern-Gerät: neue Ergebnisse der Kinder abholen
     static func holeErgebnisse(_ context: ModelContext) async {
-        guard modus == "eltern", Familiencode.istGueltig(code) else { return }
+        guard modus == "eltern", verbunden else { return }
         do {
-            let records = try await CloudDienst.holeRecords("RundenErgebnis", code: code, limit: 300)
+            let eintraege = try await CloudDienst.lies(FamilienProtokoll.typErgebnis)
             let vorhanden = (try? context.fetch(FetchDescriptor<RundenErgebnis>())) ?? []
             var ids = Set<String>()
             for v in vorhanden { ids.insert(v.eintragID) }
-            for r in records {
-                guard let id = r["eintragID"] as? String, !ids.contains(id) else { continue }
-                let kindName = ((r["kind"] as? String) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-                let zeit = (r["zeitpunkt"] as? Date) ?? (r.creationDate ?? Date.now)
+            for r in eintraege {
+                let id = r.id.hasPrefix("erg-") ? String(r.id.dropFirst(4)) : r.id
+                guard !ids.contains(id) else { continue }
+                let kindName = r.text("kind").trimmingCharacters(in: .whitespacesAndNewlines)
+                let zeit = r.zahl("zeitpunkt") > 0
+                    ? Date(timeIntervalSince1970: Double(r.zahl("zeitpunkt")) / 1000)
+                    : r.erstelltDatum
                 if Kinder.istEntfernt(kindName, zeitpunkt: zeit) { continue }
-                let e = RundenErgebnis(klasse: (r["klasse"] as? String) ?? "",
-                                       fach: (r["fach"] as? String) ?? "",
-                                       arbeit: (r["arbeit"] as? String) ?? "",
-                                       uebung: (r["uebung"] as? String) ?? "",
-                                       richtig: (r["richtig"] as? Int) ?? 0,
-                                       gesamt: (r["gesamt"] as? Int) ?? 0,
-                                       angesehen: (r["angesehen"] as? Int) ?? 0,
+                let e = RundenErgebnis(klasse: r.text("klasse"),
+                                       fach: r.text("fach"),
+                                       arbeit: r.text("arbeit"),
+                                       uebung: r.text("uebung"),
+                                       richtig: Int(r.zahl("richtig")),
+                                       gesamt: Int(r.zahl("gesamt")),
+                                       angesehen: Int(r.zahl("angesehen")),
                                        zeitpunkt: zeit,
                                        quelle: "cloud")
                 e.eintragID = id
                 e.kind = kindName
-                e.details = (r["details"] as? String) ?? ""
+                e.details = r.text("details")
                 context.insert(e)
                 ids.insert(id)
             }
@@ -477,12 +339,12 @@ enum CloudSync {
 
     // Kind-Gerät: Joker-Freigaben der Eltern anwenden (Joker wieder auf das Limit setzen)
     static func holeFreigaben() async {
-        guard modus == "kind", Familiencode.istGueltig(code) else { return }
-        guard let liste = try? await CloudDienst.holeRecords("JokerFreigabe", code: code, limit: 100) else { return }
+        guard modus == "kind", verbunden else { return }
+        guard let liste = try? await CloudDienst.lies(FamilienProtokoll.typFreigabe) else { return }
         var benutzt = Set(UserDefaults.standard.stringArray(forKey: "jokerFreigaben") ?? [])
         var neu = false
-        for r in liste where !benutzt.contains(r.recordID.recordName) {
-            benutzt.insert(r.recordID.recordName)
+        for e in liste where !benutzt.contains(e.id) {
+            benutzt.insert(e.id)
             neu = true
         }
         if neu {
@@ -492,69 +354,79 @@ enum CloudSync {
     }
 
     // Kind-Gerät: neue Klassenarbeiten und Übungssets laden. Vorhandene bleiben mit Fortschritt unberührt.
+    // Pakete der Familie kommen vom Familien-Dienst, Pakete der Klasse aus CloudKit (nur mit gültiger Unterschrift).
     // Ergebnis: Anzahl neuer Pakete, bei einem Fehler -1
     @discardableResult
     static func holePakete(_ context: ModelContext) async -> Int {
-        var codes: [String] = []
-        if Familiencode.istGueltig(code) { codes.append(code) }
-        if let k = CloudDienst.klassenCloudCode { codes.append(k) }
-        guard modus == "kind", !codes.isEmpty else { return 0 }
-        do {
-            var koepfe: [(paket: CloudPaket, herkunft: String)] = []
-            for c in codes {
-                for p in try await CloudDienst.ladePakete(code: c) { koepfe.append((p, c)) }
+        let klasse = CloudDienst.klassenCloudCode
+        guard modus == "kind", verbunden || klasse != nil else { return 0 }
+        let meineKlasse = (UserDefaults.standard.string(forKey: "kindKlasse") ?? "")
+            .trimmingCharacters(in: .whitespaces).lowercased()
+        var neu = 0
+        var fehlerText: String?
+
+        if verbunden {
+            do {
+                for kopf in try await CloudDienst.ladeFamilienPakete() {
+                    if !meineKlasse.isEmpty && kopf.klasse.lowercased() != meineKlasse { continue }
+                    if PaketImport.vorhanden(klasse: kopf.klasse, fach: kopf.fach, titel: kopf.titel, in: context) { continue }
+                    guard let paket = kopf.paket, !paket.uebungen.isEmpty else { continue }
+                    if PaketImport.vorhanden(klasse: paket.klasse, fach: paket.fach, titel: paket.arbeit, in: context) { continue }
+                    PaketImport.einfuegen(paket, in: context)
+                    neu += 1
+                }
+            } catch {
+                fehlerText = "Neue Aufgaben holen nicht möglich: \(CloudDienst.fehlertext(error))"
             }
-            var neu = 0
-            var ungueltig = 0
-            var gruende = Set<Klassensiegel.Ablehnung>()
-            let meineKlasse = (UserDefaults.standard.string(forKey: "kindKlasse") ?? "")
-                .trimmingCharacters(in: .whitespaces).lowercased()
-            for eintrag in koepfe {
-                let k = eintrag.paket
-                if !meineKlasse.isEmpty && k.klasse.lowercased() != meineKlasse { continue }
-                if PaketImport.vorhanden(klasse: k.klasse, fach: k.fach, titel: k.titel, in: context) { continue }
-                let text: String
-                if eintrag.herkunft.hasPrefix("K-") {
+        }
+
+        if let klasse {
+            do {
+                var ungueltig = 0
+                var gruende = Set<Klassensiegel.Ablehnung>()
+                for k in try await CloudDienst.ladePakete(code: klasse) {
+                    if !meineKlasse.isEmpty && k.klasse.lowercased() != meineKlasse { continue }
+                    if PaketImport.vorhanden(klasse: k.klasse, fach: k.fach, titel: k.titel, in: context) { continue }
                     // Pakete aus der Klasse müssen vom Admin unterschrieben sein
                     guard let signiert = try await CloudDienst.ladePaketSigniert(id: k.id) else {
                         ungueltig += 1
                         gruende.insert(.ohneUnterschrift)
                         continue
                     }
-                    let stand = await Klassensiegel.schluesselStand(eintrag.herkunft)
+                    let stand = await Klassensiegel.schluesselStand(klasse)
                     guard let oeffentlich = stand.schluessel else {
                         ungueltig += 1
                         gruende.insert(stand == .gewechselt ? .schluesselGewechselt : .keinSchluessel)
                         continue
                     }
-                    guard Klassensiegel.pruefe(code: eintrag.herkunft, json: signiert.json,
+                    guard Klassensiegel.pruefe(code: klasse, json: signiert.json,
                                                sig: signiert.sig, oeffentlich: oeffentlich) else {
                         ungueltig += 1
                         gruende.insert(.unterschriftFalsch)
                         continue
                     }
-                    text = signiert.json
-                } else {
-                    guard let t = try await CloudDienst.ladePaketText(id: k.id) else { continue }
-                    text = t
+                    guard let daten = signiert.json.data(using: .utf8),
+                          let paket = try? JSONDecoder().decode(ArbeitPaket.self, from: daten),
+                          !paket.uebungen.isEmpty else { continue }
+                    if PaketImport.vorhanden(klasse: paket.klasse, fach: paket.fach, titel: paket.arbeit, in: context) { continue }
+                    PaketImport.einfuegen(paket, in: context)
+                    neu += 1
                 }
-                guard let daten = text.data(using: .utf8),
-                      let paket = try? JSONDecoder().decode(ArbeitPaket.self, from: daten),
-                      !paket.uebungen.isEmpty else { continue }
-                if PaketImport.vorhanden(klasse: paket.klasse, fach: paket.fach, titel: paket.arbeit, in: context) { continue }
-                PaketImport.einfuegen(paket, in: context)
-                neu += 1
+                if ungueltig > 0 {
+                    let warum = gruende.map { $0.text }.joined(separator: "\n")
+                    CloudStatus.shared.meldung = "\(ungueltig) Paket(e) der Klasse ohne gültige Unterschrift wurden ignoriert.\n" + warum
+                }
+            } catch {
+                fehlerText = "Neue Aufgaben der Klasse holen nicht möglich: \(CloudDienst.fehlertext(error))"
             }
-            if neu > 0 { try? context.save() }
-            if ungueltig > 0 {
-                let warum = gruende.map { $0.text }.joined(separator: "\n")
-                CloudStatus.shared.meldung = "\(ungueltig) Paket(e) der Klasse ohne gültige Unterschrift wurden ignoriert.\n" + warum
-            }
-            return neu
-        } catch {
-            CloudStatus.shared.meldung = "Neue Aufgaben holen nicht möglich: \(CloudDienst.fehlertext(error))"
-            return -1
         }
+
+        if neu > 0 { try? context.save() }
+        if let fehlerText {
+            CloudStatus.shared.meldung = fehlerText
+            return neu > 0 ? neu : -1
+        }
+        return neu
     }
 
     private static let paketeSucheKey = "paketeLetzteSuche"
@@ -571,6 +443,15 @@ enum CloudSync {
     static func aktiv(_ context: ModelContext, erzwingen: Bool = false) async {
         if !erzwingen && Date().timeIntervalSince(letzterLauf) < 20 { return }
         letzterLauf = Date()
+        let familie = FamilienModell.shared
+        // Ein Gerät, das noch auf die Freigabe wartet, fragt nur nach seinem Stand.
+        if familie.zugang != nil && !familie.aktiv {
+            await familie.statusPruefen()
+        }
+        if familie.aktiv {
+            await familie.pushAnmelden()
+            if modus == "eltern" { await familie.geraeteLaden() }
+        }
         if modus == "kind" {
             await sendeOffene(context)
             await holeFreigaben()
@@ -612,9 +493,11 @@ final class JokerCloud {
     }
 
     func aktualisieren() async {
-        let code = UserDefaults.standard.string(forKey: "familienCode") ?? ""
-        guard Familiencode.istGueltig(code) else {
-            if fehler != "Noch kein Familiencode." { fehler = "Noch kein Familiencode." }
+        guard FamilienModell.shared.aktiv else {
+            let t = FamilienModell.shared.wartet
+                ? "Dieses Gerät wartet noch auf die Freigabe der Eltern."
+                : "Dieses Gerät gehört noch zu keiner Familie."
+            if fehler != t { fehler = t }
             return
         }
         // Läuft schon ein Abruf, braucht es keinen zweiten gleichzeitig
@@ -624,11 +507,11 @@ final class JokerCloud {
         // Nur ändern, was sich wirklich geändert hat. Jede Änderung zeichnet die Seite neu,
         // und das ruckelt auf älteren iPhones, wenn es alle paar Sekunden passiert.
         do {
-            let neu = try await CloudDienst.ladeJoker(code: code)
+            let neu = try await CloudDienst.ladeJoker()
             if neu != anfragen { anfragen = neu }
-            let n = (try? await CloudDienst.ladeNachschub(code: code)) ?? []
+            let n = (try? await CloudDienst.ladeNachschub()) ?? []
             if n != nachschub { nachschub = n }
-            let f = (try? await CloudDienst.ladeFreigaben(code: code)) ?? []
+            let f = (try? await CloudDienst.ladeFreigaben()) ?? []
             if f != freigaben { freigaben = f }
             if UserDefaults.standard.string(forKey: "modus") == "kind" {
                 await CloudSync.holeFreigaben()
@@ -682,12 +565,10 @@ final class JokerCloud {
 // Kind-Gerät: Joker über die Cloud schicken. Gibt false zurück, wenn es nicht geklappt hat.
 enum JokerSender {
     static func sende(text: String, fach: String, uebung: String) async -> Bool {
-        let code = UserDefaults.standard.string(forKey: "familienCode") ?? ""
-        guard Familiencode.istGueltig(code) else { return false }
-        if await CloudDienst.kontoProblem() != nil { return false }
+        guard FamilienModell.shared.aktiv else { return false }
         let name = UserDefaults.standard.string(forKey: "kindName") ?? ""
         do {
-            try await CloudDienst.sendeJoker(code: code, kind: name.isEmpty ? "Kind" : name,
+            try await CloudDienst.sendeJoker(kind: name.isEmpty ? "Kind" : name,
                                              fach: fach, uebung: uebung, text: text)
             await JokerCloud.shared.aktualisieren()
             return true
@@ -814,7 +695,6 @@ struct JokerPostfachView: View {
 struct JokerAntwortSheet: View {
     let anfrage: CloudAnfrage
     @Environment(\.dismiss) private var dismiss
-    @AppStorage("familienCode") private var familienCode = ""
     @AppStorage("jokerIch") private var jokerIch = ""
     @State private var text = ""
     @State private var sendet = false
@@ -922,8 +802,7 @@ struct JokerAntwortSheet: View {
         meldung = ""
         Task {
             do {
-                try await CloudDienst.sendeAntwort(code: familienCode, anfrageID: anfrage.id,
-                                                   absender: m.name, emoji: m.emoji, text: t)
+                try await CloudDienst.sendeAntwort(anfrageID: anfrage.id, emoji: m.emoji, text: t)
                 await JokerCloud.shared.aktualisieren()
                 Haptik.erfolg()
                 dismiss()
@@ -940,21 +819,21 @@ struct JokerAntwortSheet: View {
 struct KindJokerView: View {
     private let cloud = JokerCloud.shared
     private let joker = JokerStand.shared
+    private let familie = FamilienModell.shared
     @AppStorage("kindName") private var kindName = ""
-    @AppStorage("familienCode") private var familienCode = ""
     @State private var nachschubLaeuft = false
     @State private var nachschubInfo = ""
 
     private var meinName: String { kindName.isEmpty ? "Kind" : kindName }
 
     private func nachschubAnfragen() async {
-        guard Familiencode.istGueltig(familienCode) else {
-            nachschubInfo = "Es fehlt noch ein Familiencode. Frag deine Eltern."
+        guard familie.aktiv else {
+            nachschubInfo = "Dein Gerät ist noch nicht mit deiner Familie verbunden. Frag deine Eltern."
             return
         }
         nachschubLaeuft = true
         do {
-            try await CloudDienst.sendeNachschub(code: familienCode, kind: meinName)
+            try await CloudDienst.sendeNachschub(kind: meinName)
             Haptik.erfolg()
             nachschubInfo = "Anfrage ist raus. Deine Eltern bekommen eine Mitteilung."
         } catch {
@@ -988,10 +867,12 @@ struct KindJokerView: View {
 
     private var inhalt: some View {
         VStack(alignment: .leading, spacing: 16) {
-            if Familiencode.istGueltig(familienCode) {
+            if familie.aktiv {
                 nachschubBereich
             } else {
-                Text("Dieses Gerät gehört zu keiner Familie, nur zu einer Klasse. Darum gibt es hier keine Joker-Antworten von Eltern. Wenn du bei einer Aufgabe auf 🃏 Joker tippst, kannst du die Frage stattdessen per Nachricht an jemanden schicken. Einen Familiencode trägst du in den Einstellungen ein.")
+                Text(familie.wartet
+                     ? "Dein Gerät wartet noch auf das Okay deiner Eltern. Sobald sie es erlaubt haben, kommen hier die Tipps deiner Familie an."
+                     : "Dein Gerät ist noch nicht mit deiner Familie verbunden. Darum gibt es hier keine Tipps von deinen Eltern. Wenn du bei einer Aufgabe auf 🃏 Joker tippst, kannst du die Frage stattdessen per Nachricht an jemanden schicken. Bitte deine Eltern, dich in den Einstellungen bei Familie zu verbinden.")
                     .font(.subheadline)
                     .foregroundStyle(Theme.textSanft)
                     .padding(16)
@@ -1095,62 +976,59 @@ struct KindJokerView: View {
 
     private func daumen(_ a: CloudAnfrage, _ x: CloudAntwort) {
         Task {
-            try? await CloudDienst.sendeDaumen(code: familienCode, anfrageID: a.id,
-                                               antwortID: x.id, absender: x.absender)
+            try? await CloudDienst.sendeDaumen(anfrageID: a.id, antwortID: x.id)
             Haptik.erfolg()
             await cloud.aktualisieren()
         }
     }
 }
 
-// MARK: Status und Neu-Einrichtung der Cloud
+// MARK: Status der Cloud
 
 struct CloudStatusKarte: View {
     private let status = CloudStatus.shared
-    @AppStorage("modus") private var modus = ""
-    @AppStorage("familienCode") private var familienCode = ""
+    private let familie = FamilienModell.shared
     @Environment(\.modelContext) private var context
+
+    private var zustand: String {
+        guard let z = familie.zugang else {
+            return CloudDienst.klassenCloudCode != nil
+                ? "Dieses Gerät gehört zu keiner Familie. Aufgaben der Klasse kommen trotzdem an."
+                : "Dieses Gerät gehört zu keiner Familie."
+        }
+        if familie.abgelehnt { return "Die Eltern haben dieses Gerät nicht freigegeben." }
+        if familie.wartet { return "Wartet auf die Freigabe der Eltern." }
+        return "Verbunden als \(z.name) (\(z.istEltern ? "Eltern-Gerät" : "Kind-Gerät"))."
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Cloud-Status")
                 .font(.system(.headline, design: .rounded).weight(.heavy))
                 .foregroundStyle(Theme.gelb)
+            Text(zustand)
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(familie.aktiv ? Theme.mint : Theme.koralle)
             Text(status.meldung.isEmpty ? "Noch nicht geprüft." : status.meldung)
                 .font(.footnote)
                 .foregroundStyle(Theme.textSanft)
-            if !Familiencode.istGueltig(familienCode) {
-                if CloudDienst.klassenCloudCode != nil {
-                    Text("Nur Klassencode: Aufgaben der Klasse kommen an. Ergebnisse und Joker gibt es erst mit einem Familiencode.")
-                        .font(.footnote)
-                        .foregroundStyle(Theme.textSanft)
-                } else {
-                    Text("Es fehlt noch ein Familiencode (Einstellungen).")
-                        .font(.footnote.weight(.semibold))
-                        .foregroundStyle(Theme.koralle)
-                }
-            }
             Button {
                 Task {
                     status.arbeitet = true
-                    status.meldung = "Cloud wird eingerichtet ..."
-                    let ergebnis = await CloudDienst.einrichten(code: familienCode, rolle: modus)
-                    status.meldung = ergebnis
-                    if ergebnis.hasPrefix("Cloud ist bereit") {
-                        UserDefaults.standard.set(CloudDienst.marke(modus: modus, code: familienCode), forKey: "cloudEingerichtet")
-                    }
+                    status.meldung = "Verbindung wird geprüft ..."
+                    status.meldung = await familie.verbindungTesten()
                     await CloudSync.aktiv(context, erzwingen: true)
                     status.arbeitet = false
                 }
             } label: {
-                Text(status.arbeitet ? "Bitte warten ..." : "Cloud neu einrichten und prüfen")
+                Text(status.arbeitet ? "Bitte warten ..." : "Verbindung prüfen und abgleichen")
                     .font(.system(.subheadline, design: .rounded).weight(.heavy))
                     .foregroundStyle(Theme.navy)
                     .frame(maxWidth: .infinity, minHeight: 44)
                     .background(Theme.gelb, in: Capsule())
             }
             .buttonStyle(TastenStil())
-            .disabled(status.arbeitet || !Familiencode.istGueltig(familienCode))
+            .disabled(status.arbeitet || familie.zugang == nil)
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)

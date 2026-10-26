@@ -50,27 +50,27 @@ enum PaketAktion {
 
     // Eltern: in die Cloud stellen und auch hier importieren
     static func veroeffentliche(_ p: ArbeitPaket, text: String, context: ModelContext, klasse: Bool = false) async -> String {
-        let familie = UserDefaults.standard.string(forKey: "familienCode") ?? ""
-        let ziel: String
         if klasse {
-            guard let k = CloudDienst.klassenCloudCode else {
-                return "Bitte zuerst im Tab Einstellungen einen Klassencode eintragen oder erzeugen."
+            guard CloudDienst.klassenCloudCode != nil else {
+                return "Bitte zuerst in den Einstellungen einen Klassencode eintragen oder erzeugen."
             }
-            ziel = k
         } else {
-            guard Familiencode.istGueltig(familie) else {
-                return "Bitte zuerst im Tab Einstellungen einen Familiencode eintragen."
+            guard FamilienModell.shared.istEltern else {
+                return "Bitte zuerst in den Einstellungen bei Familie ein Eltern-Gerät einrichten."
             }
-            ziel = familie
         }
         do {
-            try await CloudDienst.hochladen(code: ziel, paket: p, json: text)
+            if klasse, let ziel = CloudDienst.klassenCloudCode {
+                try await CloudDienst.hochladen(code: ziel, paket: p, json: text)
+            } else {
+                try await CloudDienst.hochladenFamilie(paket: p, json: text)
+            }
             if !PaketImport.vorhanden(klasse: p.klasse, fach: p.fach, titel: p.arbeit, in: context) {
                 PaketImport.einfuegen(p, in: context)
                 try? context.save()
             }
             return klasse ? "\(p.arbeit) ist beim Klassencode. Alle Geräte mit diesem Code laden es automatisch."
-                          : "\(p.arbeit) ist in der Cloud. Die Kind-Geräte laden es automatisch."
+                          : "\(p.arbeit) ist in der Familie. Die Kind-Geräte laden es automatisch."
         } catch {
             return "Hochladen nicht möglich: \(CloudDienst.fehlertext(error))"
         }

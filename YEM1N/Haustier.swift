@@ -274,6 +274,12 @@ struct Haustier: Codable, Equatable {
         return "\(t.year ?? 0)-\(t.month ?? 0)-\(t.day ?? 0)"
     }
 
+    /// Der Tag mit führenden Nullen (JJJJ-MM-TT), so wie der Familien-Dienst ihn für die Fürsorge der Eltern verlangt.
+    static func pflegeTag(_ datum: Date, kalender: Calendar = .current) -> String {
+        let t = kalender.dateComponents([.year, .month, .day], from: datum)
+        return String(format: "%04d-%02d-%02d", t.year ?? 0, t.month ?? 0, t.day ?? 0)
+    }
+
     func geschenkOffen(jetzt: Date = Date.now, kalender: Calendar = .current) -> Bool {
         geschenkTag != Haustier.tagKennung(jetzt, kalender: kalender)
     }
@@ -513,7 +519,7 @@ struct HaustierView: View {
     @State private var tanz = 0
     @AppStorage(HaustierZeit.freudeKey) private var freude = false
     @State private var zeigeWechsel = false
-    @AppStorage("familienCode") private var familienCode = ""
+    private let familie = FamilienModell.shared
     // Die Eule Olli: Einführung beim ersten Besuch, danach Tipps
     @AppStorage(Eule.einfuehrungKey) private var einfuehrungGesehen = false
     @State private var einfuehrungSchritt = 0
@@ -808,7 +814,7 @@ struct HaustierView: View {
             sprichEule(schritte[min(einfuehrungSchritt, schritte.count - 1)])
             return
         }
-        let liste = Eule.tipps(fuer: h, muenzen: muenzen, familie: Familiencode.istGueltig(familienCode))
+        let liste = Eule.tipps(fuer: h, muenzen: muenzen, familie: familie.aktiv)
         guard !liste.isEmpty else { return }
         let satz = liste[tippNummer % liste.count]
         tippNummer += 1

@@ -1,6 +1,5 @@
 import SwiftUI
 import Foundation
-import CloudKit
 import Combine
 
 // ============================================================
@@ -8,10 +7,10 @@ import Combine
 // ============================================================
 //
 // Wer herausfordert, rechnet zuerst und schickt das Ergebnis mit den Aufgaben für die
-// anderen in die Familien-Cloud. Alle anderen Geräte der Familie sehen die Herausforderung,
+// anderen in das Familien-Fach. Alle anderen Geräte der Familie sehen die Herausforderung,
 // rechnen ihre eigenen Aufgaben und schicken ihr Ergebnis zurück. Danach sehen alle, wer
 // gewonnen hat. Gespeichert werden nur Vorname, Stufe, Aufgaben und Ergebnis.
-// Herausforderungen gelten 14 Tage. Danach räumt das Gerät, das sie geschickt hat, sie weg.
+// Herausforderungen gelten 14 Tage. Danach verschwinden sie im Familien-Dienst von selbst.
 
 struct DuellHerausforderung: Codable, Identifiable, Equatable {
     var id: String
@@ -113,83 +112,31 @@ enum DuellPost {
 }
 
 enum DuellCloud {
-    static let typDuell = "Duell"
-    static let typAntwort = "DuellAntwort"
+    /// Mehr nimmt der Familien-Dienst pro Duell nicht an.
+    static let maxZeichen = 20000
 
-    static func sende(_ d: DuellHerausforderung, code: String) async throws {
-        let r = CKRecord(recordType: typDuell, recordID: CKRecord.ID(recordName: "duell-" + d.id))
-        r["familienCode"] = code as CKRecordValue
-        r["json"] = (DuellPost.text(d) ?? "{}") as CKRecordValue
-        _ = try await CloudDienst.db.save(r)
+    static func sende(_ d: DuellHerausforderung) async throws {
+        guard let text = DuellPost.text(d), text.utf16.count <= maxZeichen else {
+            throw PaketFehler(text: "Die Herausforderung ist zu groß zum Verschicken.")
+        }
+        try await CloudDienst.sende(FamilienProtokoll.duell(id: d.id, json: text))
     }
 
-    static func sende(_ a: DuellAntwort, code: String) async throws {
-        let name = "duellantwort-\(a.duellID)-\(a.geraet)"
-        let r = CKRecord(recordType: typAntwort, recordID: CKRecord.ID(recordName: name))
-        r["familienCode"] = code as CKRecordValue
-        r["json"] = (DuellPost.text(a) ?? "{}") as CKRecordValue
-        do {
-            _ = try await CloudDienst.db.save(r)
-        } catch let fehler as CKError where fehler.code == .serverRecordChanged {
-            // Dieses Gerät hat schon geantwortet
+    /// Je Gerät und Duell zählt nur die erste Antwort, der Dienst hält sich daran.
+    static func sende(_ a: DuellAntwort) async throws {
+        guard let text = DuellPost.text(a), text.utf16.count <= maxZeichen else {
+            throw PaketFehler(text: "Das Ergebnis ist zu groß zum Verschicken.")
         }
+        try await CloudDienst.sende(FamilienProtokoll.duellAntwort(duellId: a.duellID, json: text))
     }
 
-    static func lade(code: String) async throws -> (duelle: [DuellHerausforderung], antworten: [DuellAntwort]) {
-        let dRecords = try await CloudDienst.holeRecords(typDuell, code: code, limit: 200)
-        let aRecords = try await CloudDienst.holeRecords(typAntwort, code: code, limit: 400)
-        let duelle = dRecords.compactMap { r -> DuellHerausforderung? in
-            guard let t = r["json"] as? String else { return nil }
-            return DuellPost.lies(t, als: DuellHerausforderung.self)
-        }
-        let antworten = aRecords.compactMap { r -> DuellAntwort? in
-            guard let t = r["json"] as? String else { return nil }
-            return DuellPost.lies(t, als: DuellAntwort.self)
-        }
-        aufraeumen(dRecords: dRecords, aRecords: aRecords, duelle: duelle)
+    static func lade() async throws -> (duelle: [DuellHerausforderung], antworten: [DuellAntwort]) {
+        let d = try await CloudDienst.lies(FamilienProtokoll.typDuell)
+        let a = try await CloudDienst.lies(FamilienProtokoll.typDuellAntwort)
+        // Herausforderungen verfallen im Dienst nach 14 Tagen von selbst. Da ist kein Aufräumen nötig.
+        let duelle = d.compactMap { DuellPost.lies($0.text("json"), als: DuellHerausforderung.self) }
+        let antworten = a.compactMap { DuellPost.lies($0.text("json"), als: DuellAntwort.self) }
         return (duelle, antworten)
-    }
-
-    /// Alte Herausforderungen, die dieses Gerät geschickt hat, und die Antworten darauf löschen.
-    /// Nur wer einen Eintrag geschrieben hat, darf ihn auch löschen. Fehler sind hier egal.
-    private static func aufraeumen(dRecords: [CKRecord], aRecords: [CKRecord],
-                                   duelle: [DuellHerausforderung]) {
-        let ich = DuellPost.geraet()
-        let jetzt = Date.now
-        let alteIDs = Set(duelle.filter { !DuellPost.frisch($0.zeitpunkt, jetzt: jetzt) }.map { $0.id })
-        guard !alteIDs.isEmpty else { return }
-        var weg: [CKRecord.ID] = []
-        for r in dRecords {
-            guard let t = r["json"] as? String,
-                  let d = DuellPost.lies(t, als: DuellHerausforderung.self),
-                  alteIDs.contains(d.id), d.vonGeraet == ich else { continue }
-            weg.append(r.recordID)
-        }
-        for r in aRecords {
-            guard let t = r["json"] as? String,
-                  let a = DuellPost.lies(t, als: DuellAntwort.self),
-                  alteIDs.contains(a.duellID), a.geraet == ich else { continue }
-            weg.append(r.recordID)
-        }
-        guard !weg.isEmpty else { return }
-        Task {
-            _ = try? await CloudDienst.db.modifyRecords(saving: [], deleting: weg)
-        }
-    }
-
-    /// Datensatztypen anlegen und Mitteilungen abonnieren. Das Duell kam später dazu.
-    /// Klappt hier etwas nicht, bleibt der Rest der Cloud trotzdem eingerichtet.
-    static func einrichten(code: String) async {
-        for typ in [typDuell, typAntwort] {
-            let r = CKRecord(recordType: typ, recordID: CKRecord.ID(recordName: "schema-" + typ))
-            r["familienCode"] = "SCHEMA" as CKRecordValue
-            r["json"] = "{}" as CKRecordValue
-            _ = try? await CloudDienst.db.save(r)
-        }
-        try? await CloudDienst.abo(typ: typDuell, code: code,
-                                   text: "⚔️ Neue Duell-Herausforderung aus deiner Familie! Nimmst du sie an?")
-        try? await CloudDienst.abo(typ: typAntwort, code: code,
-                                   text: "⚔️ Ein Duell ist entschieden. Schau nach, wer gewonnen hat!")
     }
 }
 
@@ -209,7 +156,7 @@ struct DuellSoloSpiel: Identifiable {
 }
 
 struct DuellFamilienBereich: View {
-    @AppStorage("familienCode") private var familienCode = ""
+    private let familie = FamilienModell.shared
     @AppStorage("kindName") private var kindName = ""
     @AppStorage("kindKlasse") private var kindKlasse = ""
     @AppStorage("modus") private var modus = ""
@@ -350,11 +297,11 @@ struct DuellFamilienBereich: View {
     }
 
     private func laden() async {
-        guard Familiencode.istGueltig(familienCode), !laedt else { return }
+        guard familie.aktiv, !laedt else { return }
         laedt = true
         defer { laedt = false }
         do {
-            let neu = try await DuellCloud.lade(code: familienCode)
+            let neu = try await DuellCloud.lade()
             // Was gerade erst geschickt wurde, steht vielleicht noch nicht in der Cloud
             let ids = Set(neu.duelle.map { $0.id })
             let antwortIDs = Set(neu.antworten.map { $0.id })
@@ -368,7 +315,7 @@ struct DuellFamilienBereich: View {
 
     private func schicke(_ d: DuellHerausforderung) async {
         do {
-            try await DuellCloud.sende(d, code: familienCode)
+            try await DuellCloud.sende(d)
             meldung = nil
         } catch {
             meldung = "Die Herausforderung ging nicht raus. Prüfe das Internet. \(CloudDienst.fehlertext(error))"
@@ -377,7 +324,7 @@ struct DuellFamilienBereich: View {
 
     private func schicke(_ a: DuellAntwort) async {
         do {
-            try await DuellCloud.sende(a, code: familienCode)
+            try await DuellCloud.sende(a)
             meldung = nil
         } catch {
             meldung = "Dein Ergebnis ging nicht raus. Prüfe das Internet. \(CloudDienst.fehlertext(error))"

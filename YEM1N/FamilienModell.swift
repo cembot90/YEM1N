@@ -145,6 +145,11 @@ final class FamilienModell {
         ablaufZaehler += 1
     }
 
+    /// Wer im Bereich der Eltern etwas tut (zum Beispiel den Reiter wechselt), hält ihn weitere fünf Minuten offen.
+    func verlaengern() {
+        if entsperrt { entsperren() }
+    }
+
     /// Prüft beim Zurückkehren in die App, ob die Zeit schon um ist.
     func ablaufPruefen() {
         if !entsperrt { ablaufZaehler += 1 }
@@ -338,6 +343,23 @@ final class FamilienModell {
     /// Nur auf diesem Gerät vergessen (zum Beispiel beim Widerruf der Einwilligung). Die Familie bleibt bestehen.
     func lokalVergessen() { vergessen("") }
 
+    /// Prüft die Verbindung und gibt einen Satz für die Oberfläche zurück.
+    func verbindungTesten() async -> String {
+        guard zugang != nil else { return "Dieses Gerät gehört zu keiner Familie." }
+        let a = await signiert(FamilienProtokoll.pfadStatus)
+        if a.keineVerbindung { return "Keine Verbindung zum Familien-Dienst. Bist du online?" }
+        if a.status == 401 || a.status == 404 {
+            await statusPruefen()
+            return meldung.isEmpty ? a.fehler : meldung
+        }
+        guard a.ok else { return a.fehler }
+        switch a.text("status") {
+        case "aktiv": return "Die Verbindung steht. Dieses Gerät ist freigegeben."
+        case "wartet": return "Die Verbindung steht. Dieses Gerät wartet noch auf die Freigabe der Eltern."
+        default: return "Die Verbindung steht. Die Eltern haben dieses Gerät nicht freigegeben."
+        }
+    }
+
     // MARK: Nachrichten
 
     /// Legt einen Eintrag ab. [body] kommt aus `FamilienProtokoll`.
@@ -369,6 +391,9 @@ final class FamilienModell {
         vorgaben.removeObject(forKey: Self.pushAngemeldetSchluessel)
         Task { await pushAnmelden() }
     }
+
+    /// Die Kennung dieses Geräts ist beim Dienst angemeldet.
+    var pushAngemeldet: Bool { !(vorgaben.string(forKey: Self.pushAngemeldetSchluessel) ?? "").isEmpty }
 
     static var pushUmgebung: String {
         #if DEBUG

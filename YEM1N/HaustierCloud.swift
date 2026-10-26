@@ -1,13 +1,11 @@
 import SwiftUI
-import CloudKit
 
 // ============================================================
 // MARK: - Das Haustier der Familie
 // Das Kind-Gerät besitzt das Tier und legt seinen Stand in die Cloud.
 // Das Eltern-Gerät zeigt dieses Tier an und kann es füttern oder mit ihm
-// spielen, gratis, je einmal am Tag. Weil in der Cloud nur das Gerät
-// schreiben darf, das einen Eintrag angelegt hat, schickt das Eltern-Gerät
-// seine Fürsorge als kleinen eigenen Eintrag. Das Kind-Gerät wendet ihn an.
+// spielen, gratis, je einmal am Tag. Das Tier gehört dem Kind-Gerät, also schickt das
+// Eltern-Gerät seine Fürsorge als kleinen eigenen Eintrag. Das Kind-Gerät wendet ihn an.
 // ============================================================
 
 /// Ein Eintrag der Eltern: "heute ein Leckerli".
@@ -26,8 +24,8 @@ enum HaustierPflege {
     static let hochgeladenKey = "haustierCloudStand"
 
     /// Der Name sorgt für das Tageslimit: Es gibt je Tag und Art nur einen Eintrag.
-    static func eintragName(code: String, art: String, tag: String) -> String {
-        "pflege-\(code)-\(tag)-\(art)"
+    static func eintragName(art: String, tag: String) -> String {
+        "\(tag):\(art)"
     }
 
     static func gegeben(_ art: String, heute: String, vorhandene: [PflegeEintrag]) -> Bool {
@@ -37,9 +35,9 @@ enum HaustierPflege {
     /// Noch nicht angewendete Einträge von heute und gestern. Ältere verfallen.
     static func neue(_ alle: [PflegeEintrag], angewandt: Set<String>, jetzt: Date,
                      kalender: Calendar = .current) -> [PflegeEintrag] {
-        let heute = Haustier.tagKennung(jetzt, kalender: kalender)
+        let heute = Haustier.pflegeTag(jetzt, kalender: kalender)
         let gestern = kalender.date(byAdding: .day, value: -1, to: jetzt)
-            .map { Haustier.tagKennung($0, kalender: kalender) } ?? heute
+            .map { Haustier.pflegeTag($0, kalender: kalender) } ?? heute
         return alle.filter { !angewandt.contains($0.name) && ($0.tag == heute || $0.tag == gestern) }
     }
 
@@ -74,55 +72,34 @@ enum HaustierPflege {
 // MARK: Cloud-Zugriff
 
 extension CloudDienst {
-    static func sendeHaustier(code: String, _ h: Haustier?) async throws {
-        let id = CKRecord.ID(recordName: "haustier-" + code)
-        guard let h else {
-            _ = try? await db.modifyRecords(saving: [], deleting: [id])
-            return
+    /// Legt den Stand des Tiers ab. Ohne Tier geht ein leerer Stand raus, denn Einträge lassen sich nicht löschen.
+    static func sendeHaustier(_ h: Haustier?) async throws {
+        let json = h.map { HaustierPflege.text($0) } ?? "{}"
+        guard json.utf16.count <= 8000 else {
+            throw PaketFehler(text: "Das Haustier ist zu groß zum Verschicken.")
         }
-        let r: CKRecord
-        if let alt = try? await db.record(for: id) {
-            r = alt
-        } else {
-            r = CKRecord(recordType: "Haustier", recordID: id)
-            r["familienCode"] = code as CKRecordValue
-        }
-        r["json"] = HaustierPflege.text(h) as CKRecordValue
-        let erg = try await db.modifyRecords(saving: [r], deleting: [], savePolicy: .changedKeys)
-        for (_, e) in erg.saveResults { _ = try e.get() }
+        try await sende(FamilienProtokoll.haustier(json: json))
     }
 
-    static func ladeHaustier(code: String) async throws -> (haustier: Haustier, stand: Date)? {
-        let records = try await holeRecords("Haustier", code: code, limit: 5)
-        guard let r = records.first(where: { $0.recordID.recordName == "haustier-" + code }) ?? records.first,
-              let text = r["json"] as? String,
-              let h = HaustierPflege.haustier(aus: text) else { return nil }
-        return (h, r.modificationDate ?? r.creationDate ?? Date.now)
+    static func ladeHaustier() async throws -> (haustier: Haustier, stand: Date)? {
+        let liste = try await lies(FamilienProtokoll.typHaustier)
+        guard let e = liste.first(where: { $0.id == "haustier" }) ?? liste.first,
+              let h = HaustierPflege.haustier(aus: e.text("json")) else { return nil }
+        return (h, e.erstelltDatum)
     }
 
-    static func holePflege(code: String) async throws -> [PflegeEintrag] {
-        let records = try await holeRecords("HaustierPflege", code: code, limit: 200)
-        return records.compactMap { r in
-            guard let art = r["art"] as? String, let tag = r["tag"] as? String else { return nil }
-            return PflegeEintrag(name: r.recordID.recordName, art: art, tag: tag)
+    static func holePflege() async throws -> [PflegeEintrag] {
+        try await lies(FamilienProtokoll.typPflege).compactMap { e in
+            let art = e.text("art"), tag = e.text("tag")
+            guard !art.isEmpty, !tag.isEmpty else { return nil }
+            return PflegeEintrag(name: e.id, art: art, tag: tag)
         }
     }
 
-    /// false, wenn es für heute schon einen Eintrag dieser Art gibt.
-    static func sendePflege(code: String, art: String, jetzt: Date = Date.now) async throws -> Bool {
-        let tag = Haustier.tagKennung(jetzt)
-        let id = CKRecord.ID(recordName: HaustierPflege.eintragName(code: code, art: art, tag: tag))
-        let r = CKRecord(recordType: "HaustierPflege", recordID: id)
-        r["familienCode"] = code as CKRecordValue
-        r["art"] = art as CKRecordValue
-        r["tag"] = tag as CKRecordValue
-        r["absender"] = ichName() as CKRecordValue
-        do {
-            _ = try await db.save(r)
-            return true
-        } catch let fehler as CKError where fehler.code == .serverRecordChanged {
-            return false
-        }
+    /// false, wenn es für heute schon einen Eintrag dieser Art gibt (der Dienst zählt nur den ersten).
+    static func sendePflege(art: String, jetzt: Date = Date.now) async throws -> Bool {
+        let a = try await sende(FamilienProtokoll.pflege(art: art, tag: Haustier.pflegeTag(jetzt)))
+        return (a.json?["neu"] as? Bool) ?? true
     }
 }
 
@@ -133,11 +110,10 @@ enum HaustierSync {
     nonisolated(unsafe) private static var laeuft = false
     nonisolated(unsafe) private static var nochmal = false
 
-    private static var code: String { UserDefaults.standard.string(forKey: "familienCode") ?? "" }
     private static var modus: String { UserDefaults.standard.string(forKey: "modus") ?? "" }
 
     private static var erlaubt: Bool {
-        modus == "kind" && Familiencode.istGueltig(code)
+        modus == "kind" && FamilienModell.shared.aktiv
             && !Einwilligung.erforderlich(
                 gespeicherteVersion: UserDefaults.standard.integer(forKey: Einwilligung.versionKey))
     }
@@ -169,7 +145,7 @@ enum HaustierSync {
     static func abgleich(speicher: UserDefaults = .standard, jetzt: Date = Date.now) async {
         guard erlaubt else { return }
         if var h = HaustierSpeicher.laden(speicher: speicher),
-           let alle = try? await CloudDienst.holePflege(code: code) {
+           let alle = try? await CloudDienst.holePflege() {
             var angewandt = Set(speicher.stringArray(forKey: HaustierPflege.angewandtKey) ?? [])
             let neue = HaustierPflege.neue(alle, angewandt: angewandt, jetzt: jetzt)
             if !neue.isEmpty {
@@ -191,7 +167,7 @@ enum HaustierSync {
         let text = lokal.map { HaustierPflege.text($0) } ?? ""
         if speicher.string(forKey: HaustierPflege.hochgeladenKey) == text { return }
         do {
-            try await CloudDienst.sendeHaustier(code: code, lokal)
+            try await CloudDienst.sendeHaustier(lokal)
             speicher.set(text, forKey: HaustierPflege.hochgeladenKey)
         } catch {
             CloudStatus.shared.meldung = "Haustier senden nicht möglich: \(CloudDienst.fehlertext(error))"
@@ -202,7 +178,7 @@ enum HaustierSync {
 // MARK: Ansicht auf dem Eltern-Gerät
 
 struct ElternHaustierView: View {
-    @AppStorage("familienCode") private var familienCode = ""
+    private let familie = FamilienModell.shared
     @State private var tier: Haustier?
     @State private var stand: Date?
     @State private var heutigePflege: [PflegeEintrag] = []
@@ -221,7 +197,7 @@ struct ElternHaustierView: View {
     @State private var antippNummer = 0
     @AppStorage(Eule.tonKey) private var laut = true
 
-    private var heute: String { Haustier.tagKennung(Date.now) }
+    private var heute: String { Haustier.pflegeTag(Date.now) }
 
     var body: some View {
         NavigationStack {
@@ -229,8 +205,8 @@ struct ElternHaustierView: View {
                 HintergrundView()
                 ScrollView {
                     VStack(spacing: 18) {
-                        if !Familiencode.istGueltig(familienCode) {
-                            hinweis("Trag in den Einstellungen den Familiencode ein, dann siehst du hier das Haustier deines Kindes.")
+                        if !familie.aktiv {
+                            hinweis("Sobald dieses Gerät in den Einstellungen bei Familie mit deinem Kind verbunden ist, siehst du hier sein Haustier.")
                         } else if let h = tier {
                             // Die Zeit läuft weiter, auch wenn der Stand schon etwas älter ist.
                             TimelineView(.periodic(from: .now, by: 60)) { zeit in
@@ -472,30 +448,29 @@ struct ElternHaustierView: View {
     }
 
     /// Das Laden läuft als eigener Vorgang. iOS bricht Aufgaben von Bildschirmen ab,
-    /// zum Beispiel beim Wischen nach unten oder beim Wechsel des Tabs. Das würde die Cloud-Anfrage treffen.
+    /// zum Beispiel beim Wischen nach unten oder beim Wechsel des Tabs. Das würde die Anfrage treffen.
     private func starteLaden() async {
         await Task { await laden() }.value
     }
 
     private func istAbbruch(_ fehler: Error) -> Bool {
         if fehler is CancellationError { return true }
-        if let ck = fehler as? CKError, ck.code == .operationCancelled { return true }
         return Task.isCancelled
     }
 
     private func laden() async {
-        guard Familiencode.istGueltig(familienCode) else { return }
+        guard familie.aktiv else { return }
         laedt = true
         defer { laedt = false }
         do {
-            if let gefunden = try await CloudDienst.ladeHaustier(code: familienCode) {
+            if let gefunden = try await CloudDienst.ladeHaustier() {
                 tier = gefunden.haustier
                 stand = gefunden.stand
             } else {
                 tier = nil
                 stand = nil
             }
-            heutigePflege = try await CloudDienst.holePflege(code: familienCode)
+            heutigePflege = try await CloudDienst.holePflege()
                 .filter { $0.tag == heute }
             meldung = ""
             WidgetBruecke.zeige(haustier: tier)
@@ -507,8 +482,8 @@ struct ElternHaustierView: View {
 
     private func geben(_ art: String) async {
         do {
-            _ = try await Task { try await CloudDienst.sendePflege(code: familienCode, art: art) }.value
-            heutigePflege = try await CloudDienst.holePflege(code: familienCode)
+            _ = try await Task { try await CloudDienst.sendePflege(art: art) }.value
+            heutigePflege = try await CloudDienst.holePflege()
                 .filter { $0.tag == heute }
             meldung = ""
             stups += 1

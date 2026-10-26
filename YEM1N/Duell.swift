@@ -213,7 +213,7 @@ struct DuellView: View {
     @AppStorage("kindName") private var kindName = ""
     @AppStorage("kindKlasse") private var kindKlasse = ""
     @AppStorage("modus") private var modus = ""
-    @AppStorage("familienCode") private var familienCode = ""
+    private let familie = FamilienModell.shared
 
     @State private var name1 = ""
     @State private var stufe1: DuellStufe = .klasse3
@@ -240,10 +240,10 @@ struct DuellView: View {
                         }
                     }
                     regeln
-                    if Familiencode.istGueltig(familienCode) {
+                    if familie.aktiv {
                         DuellFamilienBereich()
                     } else {
-                        Text("Mit einem Familiencode kannst du auch Herausforderungen an deine Familie schicken. Den Code findest du in den Einstellungen.")
+                        Text("Wenn dein Gerät mit der Familie verbunden ist, kannst du auch Herausforderungen an deine Familie schicken. Das stellen die Eltern in den Einstellungen bei Familie ein.")
                             .font(.footnote)
                             .foregroundStyle(Theme.textSanft)
                     }

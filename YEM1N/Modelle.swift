@@ -250,30 +250,3 @@ enum Haptik {
     static func fehler() { UINotificationFeedbackGenerator().notificationOccurred(.error) }
     static func leicht() { UIImpactFeedbackGenerator(style: .light).impactOccurred() }
 }
-
-// MARK: - CloudKit (Stufe 1: nur Verbindungstest)
-
-enum CloudKitDienst {
-    // Schreibt einen Test-Datensatz in die öffentliche CloudKit-Datenbank.
-    // Im Development-Umfeld legt CloudKit den Datensatztyp dabei automatisch an.
-    static func verbindungTesten() async -> String {
-        let container = CKContainer.default()
-        do {
-            let status = try await container.accountStatus()
-            guard status == .available else {
-                return "iCloud ist auf diesem Gerät nicht verfügbar (Status \(status.rawValue)). Bitte in den Einstellungen bei iCloud anmelden."
-            }
-            let datensatz = CKRecord(recordType: "RundenErgebnis")
-            datensatz["familienCode"] = "TEST" as CKRecordValue
-            datensatz["uebung"] = "Verbindungstest" as CKRecordValue
-            datensatz["richtig"] = 9 as CKRecordValue
-            datensatz["gesamt"] = 10 as CKRecordValue
-            datensatz["angesehen"] = 0 as CKRecordValue
-            datensatz["zeitpunkt"] = Date() as CKRecordValue
-            let gespeichert = try await container.publicCloudDatabase.save(datensatz)
-            return "Verbindung steht. Test-Datensatz gespeichert:\n\(gespeichert.recordID.recordName)"
-        } catch {
-            return "Fehler: \(error.localizedDescription)"
-        }
-    }
-}
