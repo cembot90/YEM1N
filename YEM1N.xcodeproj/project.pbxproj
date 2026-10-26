@@ -458,7 +458,7 @@
 				INFOPLIST_FILE = YEM1N/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = YEM1N;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
-				INFOPLIST_KEY_NSCameraUsageDescription = "Die Kamera wird nur zum Scannen von QR-Codes für den Familiencode oder den Klassencode genutzt. Es werden keine Bilder gespeichert.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Die Kamera wird nur zum Scannen von QR-Codes genutzt: um dieses Gerät mit der Familie zu verbinden oder einen Klassencode zu übernehmen. Es werden keine Bilder gespeichert.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -509,7 +509,7 @@
 				INFOPLIST_FILE = YEM1N/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = YEM1N;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
-				INFOPLIST_KEY_NSCameraUsageDescription = "Die Kamera wird nur zum Scannen von QR-Codes für den Familiencode oder den Klassencode genutzt. Es werden keine Bilder gespeichert.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Die Kamera wird nur zum Scannen von QR-Codes genutzt: um dieses Gerät mit der Familie zu verbinden oder einen Klassencode zu übernehmen. Es werden keine Bilder gespeichert.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
