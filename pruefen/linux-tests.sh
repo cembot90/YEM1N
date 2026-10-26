@@ -1,6 +1,6 @@
 #!/bin/bash
 # Prüft die Logik ohne Oberfläche unter Linux: Lernwelt, Vorschule, Stimmen,
-# Erklärbilder, Rechenweg, Duell und Handschrift.
+# Erklärbilder, Rechenweg, Duell, Handschrift, Familien-Protokoll und Eltern-PIN.
 # SwiftUI, SwiftData und AVFoundation gibt es dort nicht. Deshalb schneidet
 # pruefen/auszug.py nur die reinen Typen aus den App-Dateien aus.
 # Braucht Swift 6.1 oder neuer (SWIFTC=/pfad/zu/swiftc) und Python 3.
@@ -98,4 +98,10 @@ for f in ErklaerBildTests RechenwegTests DuellTests HandschriftTests; do ohneApp
 "$SWIFTC" -parse-as-library -O -o "$arbeit/rest" "$arbeit/rest.swift" $Y/Rechenweg.swift "$arbeit/helfer.swift" \
   "$arbeit/ErklaerBildTests.swift" "$arbeit/RechenwegTests.swift" "$arbeit/DuellTests.swift" "$arbeit/HandschriftTests.swift" "$arbeit/start.swift"
 laufen "$arbeit/rest"
+
+echo "== Familie (Protokoll 2) und Eltern-PIN"
+ohneApp $T/FamilieTests.swift > "$arbeit/FamilieTests.swift"
+"$SWIFTC" -parse-as-library -O -o "$arbeit/fam" $Y/Sha256.swift $Y/FamilienProtokoll.swift $Y/FamilienClient.swift \
+  $Y/ElternPin.swift "$arbeit/FamilieTests.swift" "$arbeit/start.swift"
+laufen "$arbeit/fam"
 exit $fehler
