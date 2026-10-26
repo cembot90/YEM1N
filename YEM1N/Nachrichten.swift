@@ -255,21 +255,4 @@ enum Nachricht {
         z.append("Dranbleiben, Champion! 💛💙")
         return z.joined(separator: "\n")
     }
-
-    // MARK: Familiencode
-
-    static func familiencode(_ code: String) -> String {
-        [
-            "🔐 \(logo) · Familiencode",
-            linie,
-            code,
-            linie,
-            "So verbindest du dein Gerät:",
-            "1️⃣ App YEM1N öffnen",
-            "2️⃣ „Kind“ oder „Eltern“ wählen",
-            "3️⃣ Code eingeben",
-            "",
-            "Bitte nicht weitergeben, der Code gehört nur eurer Familie. 💛💙"
-        ].joined(separator: "\n")
-    }
 }

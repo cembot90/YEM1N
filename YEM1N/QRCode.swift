@@ -20,7 +20,8 @@ enum QRPaket {
         "yem1n://\(art)/\(code)"
     }
 
-    // Liefert Art ("familie" oder "klasse") und bereinigten Code, sonst nil
+    // Liefert Art ("klasse") und bereinigten Code, sonst nil.
+    // Familien verbindet man nur noch mit dem Einladungs-QR-Code (`yem1n://koppeln?...`, siehe FamilienProtokoll).
     static func lese(_ text: String) -> (art: String, code: String)? {
         let t = text.trimmingCharacters(in: .whitespacesAndNewlines)
         let vorsatz = "yem1n://"
@@ -29,7 +30,7 @@ enum QRPaket {
         let teile = rest.split(separator: "/").map(String.init)
         guard teile.count == 2 else { return nil }
         let art = teile[0].lowercased()
-        guard art == "familie" || art == "klasse" else { return nil }
+        guard art == "klasse" else { return nil }
         let code = Familiencode.bereinigt(teile[1])
         guard Familiencode.istGueltig(code) else { return nil }
         return (art, code)
@@ -173,7 +174,17 @@ struct QRScanSheet: View {
                         dismiss()
                         return true
                     }
-                    fehler = "Das ist kein YEM1N-Code. Versuche es noch einmal."
+                    if FamilienProtokoll.qrLesen(text) != nil {
+                        // Der ganze Text geht weiter, der Familien-Dienst prüft ihn beim Verbinden.
+                        onErgebnis("koppeln", text)
+                        dismiss()
+                        return true
+                    }
+                    if text.lowercased().hasPrefix("yem1n://familie/") {
+                        fehler = "Das ist ein alter Familiencode. Er gilt nicht mehr. Lass dir einen neuen QR-Code zeigen."
+                    } else {
+                        fehler = "Das ist kein YEM1N-Code. Versuche es noch einmal."
+                    }
                     return false
                 }
                 .ignoresSafeArea()

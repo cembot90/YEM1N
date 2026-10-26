@@ -34,10 +34,14 @@ struct ProfilAssistent: View {
     @State private var name = ""
     @State private var klasse = ""
     @State private var geladen = false
+    @State private var elternName = ""
     private let joker = JokerStand.shared
+    private let familie = FamilienModell.shared
 
     private var istKind: Bool { modus == "kind" }
-    private var letzterSchritt: Int { istKind ? 3 : 0 }
+    /// Kind: Name, Klasse, Sprachen, Farben, Familie. Eltern: Wer bist du, Familie.
+    private var letzterSchritt: Int { istKind ? 4 : 1 }
+    private var familienSchrittNr: Int { letzterSchritt }
 
     var body: some View {
         ZStack {
@@ -49,11 +53,9 @@ struct ProfilAssistent: View {
                         .foregroundStyle(Theme.gelb)
                         .multilineTextAlignment(.center)
                         .padding(.top, 40)
-                    if istKind {
-                        Text("Schritt \(schritt + 1) von 4")
-                            .font(.system(.subheadline, design: .rounded).weight(.semibold))
-                            .foregroundStyle(Theme.textSanft)
-                    }
+                    Text("Schritt \(schritt + 1) von \(letzterSchritt + 1)")
+                        .font(.system(.subheadline, design: .rounded).weight(.semibold))
+                        .foregroundStyle(Theme.textSanft)
                     inhalt
                     knoepfe
                 }
@@ -68,11 +70,25 @@ struct ProfilAssistent: View {
             name = kindName
             klasse = kindKlasse
         }
+        .onChange(of: schritt) {
+            if !istKind && schritt == familienSchrittNr && elternName.isEmpty {
+                elternName = CloudDienst.ichName()
+            }
+        }
+        // Wartet dieses Gerät auf die Freigabe der Eltern, fragt der Assistent von selbst nach.
+        .task(id: familie.zugang?.status ?? "keine") {
+            while !Task.isCancelled && familie.wartet {
+                await familie.statusPruefen()
+                try? await Task.sleep(for: .seconds(4))
+            }
+        }
     }
 
     @ViewBuilder
     private var inhalt: some View {
-        if !istKind {
+        if schritt == familienSchrittNr {
+            familienSchritt
+        } else if !istKind {
             frageKarte("Wer bist du?", "Unter diesem Namen erscheinen deine Antworten auf Joker-Fragen.") {
                 let aktuell = jokerIch.isEmpty ? (joker.mitglieder.first?.id.uuidString ?? "") : jokerIch
                 VStack(spacing: 10) {
@@ -111,7 +127,7 @@ struct ProfilAssistent: View {
                     }
                 }
             }
-        } else {
+        } else {   // Kind, Schritt 3
             frageKarte("Farben, Ziel und Vorlesen", "Wähle die Farbwelt, wie viele Runden pro Tag das Ziel sind und ob Aufgaben von selbst vorgelesen werden. Alles lässt sich später in den Einstellungen ändern.") {
                 VStack(spacing: 14) {
                     HStack(spacing: 12) {
@@ -131,6 +147,44 @@ struct ProfilAssistent: View {
                         .foregroundStyle(Theme.textSanft)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var familienSchritt: some View {
+        frageKarte("Mit der Familie verbinden",
+                   istKind
+                   ? "Dann sehen deine Eltern deine Ergebnisse und können dir bei Jokern helfen. Das geht nur mit einem QR-Code von Mama oder Papa. Du kannst es auch später machen."
+                   : "Lege eine neue Familie an oder scanne den QR-Code von einem anderen Eltern-Gerät. Ohne Familie bleibt alles nur auf diesem Gerät. Du kannst es auch später machen.") {
+            if let z = familie.zugang {
+                VStack(alignment: .leading, spacing: 10) {
+                    if z.aktiv {
+                        Label("Verbunden. Das Gerät gehört zur Familie.", systemImage: "checkmark.seal.fill")
+                            .font(.system(.headline, design: .rounded).weight(.bold))
+                            .foregroundStyle(Theme.mint)
+                    } else if z.wartet {
+                        Text("Fast geschafft! Mama oder Papa muss dieses Gerät noch erlauben.")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(Color.white)
+                        Text("Prüfcode")
+                            .font(.caption)
+                            .foregroundStyle(Theme.textSanft)
+                        Text(z.pruefcode)
+                            .font(.system(size: 34, weight: .black, design: .monospaced))
+                            .foregroundStyle(Color.white)
+                        Text("Du kannst schon loslegen. Sobald die Eltern erlaubt haben, gehen Ergebnisse und Joker hin und her.")
+                            .font(.footnote)
+                            .foregroundStyle(Theme.textSanft)
+                    } else {
+                        Text(familie.meldung.isEmpty ? "Dieses Gerät wurde nicht erlaubt." : familie.meldung)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(Theme.koralle)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            } else {
+                FamilieVerbindenKarten(eltern: !istKind, name: istKind ? $name : $elternName)
             }
         }
     }

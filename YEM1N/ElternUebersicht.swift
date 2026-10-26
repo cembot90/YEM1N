@@ -20,22 +20,24 @@ struct ElternTabs: View {
     var body: some View {
         // Höchstens fünf Reiter, damit nichts im iOS-Menü "Mehr" verschwindet.
         // Schule, Sprachen und Vorschule liegen zusammen unter "Lernen".
-        TabView(selection: $tab) {
-            ElternDashboardView()
-                .tabItem { Label("Übersicht", systemImage: "chart.bar.fill") }
-                .tag("uebersicht")
-            JokerLigaView()
-                .tabItem { Label("Joker", systemImage: "suit.spade.fill") }
-                .tag("joker")
-            ElternLernenView()
-                .tabItem { Label("Lernen", systemImage: "books.vertical.fill") }
-                .tag("lernen")
-            ElternHaustierView()
-                .tabItem { Label("Haustier", systemImage: "pawprint.fill") }
-                .tag("haustier")
-            EinstellungenView(eingebettet: true)
-                .tabItem { Label("Einstellungen", systemImage: "gearshape.fill") }
-                .tag("einstellungen")
+        PinTor {
+            TabView(selection: $tab) {
+                ElternDashboardView()
+                    .tabItem { Label("Übersicht", systemImage: "chart.bar.fill") }
+                    .tag("uebersicht")
+                JokerLigaView()
+                    .tabItem { Label("Joker", systemImage: "suit.spade.fill") }
+                    .tag("joker")
+                ElternLernenView()
+                    .tabItem { Label("Lernen", systemImage: "books.vertical.fill") }
+                    .tag("lernen")
+                ElternHaustierView()
+                    .tabItem { Label("Haustier", systemImage: "pawprint.fill") }
+                    .tag("haustier")
+                EinstellungenView(eingebettet: true)
+                    .tabItem { Label("Einstellungen", systemImage: "gearshape.fill") }
+                    .tag("einstellungen")
+            }
         }
         .onOpenURL { url in
             if url.scheme == "yem1n", url.host == "haustier" { tab = "haustier" }
@@ -47,6 +49,7 @@ struct ElternTabs: View {
             springe(MitteilungsZiel.abholen())
         }
         .onAppear { springe(MitteilungsZiel.abholen()) }
+        .onChange(of: tab) { FamilienModell.shared.verlaengern() }
     }
 
     private func springe(_ bereich: String?) {
@@ -55,6 +58,7 @@ struct ElternTabs: View {
         case "haustier": tab = "haustier"
         case "schule": tab = "lernen"
         case "duell": tab = "lernen"
+        case "familie": tab = "einstellungen"
         default: break
         }
     }
@@ -96,7 +100,7 @@ struct StatKachel: View {
 
 struct ElternDashboardView: View {
     @Environment(\.modelContext) private var context
-    @AppStorage("familienCode") private var familienCode = ""
+    private let familie = FamilienModell.shared
     @Query(filter: #Predicate<RundenErgebnis> { $0.quelle != "lokal" },
            sort: \RundenErgebnis.zeitpunkt, order: .reverse)
     private var alleErgebnisse: [RundenErgebnis]
@@ -357,8 +361,8 @@ struct ElternDashboardView: View {
         HeroKopf(kicker: "YEM1N Eltern", titel: "Übersicht",
                  untertitel: "So lernt dein Kind diese Woche",
                  bild: "📊",
-                 chips: [HeroChip(text: familienCode.isEmpty ? "Noch kein Familiencode" : "👨‍👩‍👧 \(familienCode)",
-                                  hervorgehoben: !familienCode.isEmpty)])
+                 chips: [HeroChip(text: familie.istEltern ? "👨‍👩‍👧 Familie verbunden" : "Noch keine Familie",
+                                  hervorgehoben: familie.istEltern)])
     }
 
     private var leer: some View {

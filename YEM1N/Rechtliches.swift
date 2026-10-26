@@ -1,8 +1,7 @@
 import SwiftUI
-import CloudKit
 
 // ============================================================
-// MARK: - Einwilligung, Löschfrist, Impressum und Beta-Hinweise
+// MARK: - Einwilligung, Impressum und Beta-Hinweise
 // ============================================================
 
 /// Die Einwilligung der Eltern zur Datenschutzerklärung. Gespeichert wird nur auf
@@ -10,7 +9,9 @@ import CloudKit
 enum Einwilligung {
     /// Wird erhöht, wenn sich die Datenschutzerklärung inhaltlich ändert.
     /// Dann fragt die App auf allen Geräten noch einmal.
-    static let aktuelleVersion = 4
+    /// 5: Die Familie läuft über ein eigenes, abgetrenntes Fach bei Cloudflare in der EU (Protokoll 2),
+    /// nicht mehr über den Familiencode in CloudKit.
+    static let aktuelleVersion = 5
     static let versionKey = "einwilligungVersion"
     static let datumKey = "einwilligungDatum"
 
@@ -44,64 +45,10 @@ enum Einwilligung {
     }
 }
 
-/// Cloud-Einträge werden nach einer festen Frist gelöscht.
-enum Loeschfrist {
-    static let tage = 365
-    static let letzterLaufKey = "loeschfristLetzterLauf"
-    static let typen = ["RundenErgebnis", "JokerAnfrage", "JokerAntwort", "JokerDaumen",
-                        "Haustier", "HaustierPflege", "Duell", "DuellAntwort"]
-
-    static func abgelaufen(erstellt: Date, jetzt: Date = Date.now,
-                           kalender: Calendar = Calendar(identifier: .gregorian)) -> Bool {
-        guard let grenze = kalender.date(byAdding: .day, value: -tage, to: jetzt) else { return false }
-        return erstellt < grenze
-    }
-
-    /// Das Aufräumen läuft höchstens einmal am Tag.
-    static func faellig(speicher: UserDefaults = .standard, jetzt: Date = Date.now,
-                        kalender: Calendar = Calendar(identifier: .gregorian)) -> Bool {
-        let t = speicher.double(forKey: letzterLaufKey)
-        guard t > 0 else { return true }
-        return !kalender.isDate(Date(timeIntervalSince1970: t), inSameDayAs: jetzt)
-    }
-
-    static func gelaufen(speicher: UserDefaults = .standard, jetzt: Date = Date.now) {
-        speicher.set(jetzt.timeIntervalSince1970, forKey: letzterLaufKey)
-    }
-}
-
-extension CloudDienst {
-    /// Löscht Einträge dieses Familiencodes, die älter als die Löschfrist sind.
-    /// Die Cloud erlaubt nur dem Gerät das Löschen, das den Eintrag angelegt hat.
-    /// Jedes Gerät räumt also seine eigenen Einträge auf.
-    static func loescheAbgelaufene(code: String) async -> Int {
-        var geloescht = 0
-        for typ in Loeschfrist.typen {
-            guard let liste = try? await holeRecords(typ, code: code, limit: 400) else { continue }
-            let ids = liste.filter { r in
-                // Das Haustier ist ein langlebiger Eintrag. Für ihn zählt die letzte Änderung.
-                let stempel = typ == "Haustier" ? (r.modificationDate ?? r.creationDate) : r.creationDate
-                guard let erstellt = stempel else { return false }
-                return Loeschfrist.abgelaufen(erstellt: erstellt)
-            }.map { $0.recordID }
-            if ids.isEmpty { continue }
-            guard let erg = try? await db.modifyRecords(saving: [], deleting: ids) else { continue }
-            for (_, e) in erg.deleteResults where (try? e.get()) != nil { geloescht += 1 }
-        }
-        return geloescht
-    }
-
-    static func raeumeAufWennNoetig(code: String) async {
-        guard Familiencode.istGueltig(code), Loeschfrist.faellig() else { return }
-        _ = await loescheAbgelaufene(code: code)
-        Loeschfrist.gelaufen()
-    }
-}
-
 /// Kurze Sätze, die neben Eingabefeldern stehen.
 enum RechtHinweise {
     static let name = "Ein Vorname oder Spitzname reicht. Bitte keinen Nachnamen."
-    static let freitext = "Schreib hier keine Nachnamen, Adressen oder Telefonnummern. Alle, die den Familiencode kennen, können den Text lesen."
+    static let freitext = "Schreib hier keine Nachnamen, Adressen oder Telefonnummern. Alle Geräte deiner Familie können den Text lesen."
 }
 
 // ============================================================
@@ -118,9 +65,10 @@ struct EinwilligungView: View {
     private var punkte: [String] {
         [
             "Die App speichert Übungen, Ergebnisse und Einstellungen auf diesem Gerät.",
-            "Nur mit einem Familiencode gehen Ergebnisse, Name des Kindes (freiwillig), Joker-Nachrichten und das Haustier (Name, Art, Zustand) über iCloud an die Eltern. Eltern können das Haustier dann füttern. Für Namen reicht ein Vorname oder Spitzname.",
+            "Nur wenn dieses Gerät zu einer Familie gehört, gehen Ergebnisse, der Name des Kindes (freiwillig), Joker-Nachrichten, Duelle und das Haustier (Name, Art, Zustand) an die Familie. Jede Familie hat ein eigenes, abgetrenntes Fach bei Cloudflare in der EU. Neue Geräte kommen nur mit einem QR-Code dazu und müssen von den Eltern erlaubt werden. Für Namen reicht ein Vorname oder Spitzname.",
+            "Mitteilungen laufen über Apple. Sie enthalten keine Namen und keine Inhalte, nur einen kurzen festen Satz.",
             "Es gibt keine Werbung, keine Analysedienste und kein Benutzerkonto.",
-            "Cloud-Einträge löscht die App nach 12 Monaten selbst. Du kannst sie jederzeit in den Einstellungen löschen und die Einwilligung widerrufen."
+            "Der Familien-Dienst löscht Einträge nach spätestens 12 Monaten selbst. Du kannst die Familie jederzeit in den Einstellungen unter Familie löschen und die Einwilligung widerrufen."
         ]
     }
 

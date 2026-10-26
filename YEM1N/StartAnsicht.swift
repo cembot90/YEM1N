@@ -112,9 +112,8 @@ struct StartView: View {
     }
 
     private func neueAufgabenHolen() async {
-        let code = UserDefaults.standard.string(forKey: "familienCode") ?? ""
-        guard Familiencode.istGueltig(code) || CloudDienst.klassenCloudCode != nil else {
-            infoMeldung = "Es fehlt noch ein Familiencode oder Klassencode. Bitte im Tab Einstellungen eintragen."
+        guard FamilienModell.shared.aktiv || CloudDienst.klassenCloudCode != nil else {
+            infoMeldung = "Dieses Gerät ist noch mit keiner Familie und keiner Klasse verbunden. Das geht in den Einstellungen."
             return
         }
         let n = await CloudSync.holePakete(context)

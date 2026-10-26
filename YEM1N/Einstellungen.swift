@@ -37,7 +37,7 @@ struct EinstellungenView: View {
 /// So lässt sie sich auch aus einem anderen Bereich heraus öffnen, zum Beispiel aus "Ich".
 struct EinstellungenInhalt: View {
     @AppStorage("modus") private var modus = ""
-    @AppStorage("familienCode") private var familienCode = ""
+    private let familie = FamilienModell.shared
     @AppStorage("klassenCode") private var klassenCode = ""
     @AppStorage("kindName") private var kindName = ""
     @AppStorage("kindKlasse") private var kindKlasse = ""
@@ -56,10 +56,18 @@ struct EinstellungenInhalt: View {
 
     private var chips: [HeroChip] {
         var c: [HeroChip] = []
-        c.append(HeroChip(text: Familiencode.istGueltig(familienCode) ? "👨‍👩‍👧 Familie verbunden" : "Ohne Familie",
-                          hervorgehoben: Familiencode.istGueltig(familienCode)))
+        c.append(HeroChip(text: familie.aktiv ? "👨‍👩‍👧 Familie verbunden"
+                                 : (familie.wartet ? "⏳ Wartet auf Freigabe" : "Ohne Familie"),
+                          hervorgehoben: familie.aktiv))
         if !eltern && !kindKlasse.isEmpty { c.append(HeroChip(text: kindKlasse)) }
         return c
+    }
+
+    private var familienText: String {
+        guard let z = familie.zugang else { return "Mit QR-Code verbinden" }
+        if z.wartet { return "Wartet auf die Freigabe der Eltern" }
+        if familie.abgelehnt { return "Nicht erlaubt worden" }
+        return z.istEltern ? "Verbunden als Eltern-Gerät" : "Verbunden als Kind-Gerät"
     }
 
     var body: some View {
@@ -79,9 +87,8 @@ struct EinstellungenInhalt: View {
 
             AbschnittsTitel("Familie und Klasse")
             ZeilenGruppe {
-                zeile(symbol: "person.2.fill", titel: "Familiencode",
-                      text: Familiencode.istGueltig(familienCode) ? familienCode : "Noch nicht verbunden",
-                      farbe: Theme.mint) { FamilienEinstellungen() }
+                zeile(symbol: "person.2.fill", titel: "Familie",
+                      text: familienText, farbe: Theme.mint) { FamilieAnsicht() }
                 ZeilenTrenner()
                 zeile(symbol: "building.columns.fill", titel: "Klassencode",
                       text: klassenCode.isEmpty ? "Aufgaben von der Klasse bekommen" : klassenCode,
@@ -258,70 +265,6 @@ struct ProfilEinstellungen: View {
     private func sichereName() {
         guard modus != "eltern" else { return }
         kindName = nameEntwurf.trimmingCharacters(in: .whitespaces)
-    }
-}
-
-// MARK: Familiencode
-
-struct FamilienEinstellungen: View {
-    @AppStorage("modus") private var modus = ""
-    @AppStorage("familienCode") private var familienCode = ""
-    @State private var codeEingabe = ""
-    @State private var zeigeQR = false
-
-    var body: some View {
-        EinstellungsSeite(titel: "Familiencode") {
-            if modus == "eltern" {
-                Section {
-                    Text(familienCode.isEmpty ? "Noch keiner" : familienCode)
-                        .font(.system(.title2, design: .monospaced).weight(.bold))
-                        .foregroundStyle(Theme.gelb)
-                    if !familienCode.isEmpty {
-                        ShareLink(item: Nachricht.familiencode(familienCode)) {
-                            Label("Code teilen", systemImage: "square.and.arrow.up")
-                        }
-                        Button { zeigeQR = true } label: {
-                            Label("QR-Code für das Kind zeigen", systemImage: "qrcode")
-                        }
-                    }
-                    Button("Neuen Code erzeugen") { familienCode = Familiencode.neu() }
-                } header: {
-                    Text("Dein Code")
-                } footer: {
-                    Text("Mit diesem Code verbinden sich Kind-Geräte und das andere Elternteil mit deiner Familie.")
-                }
-                .listRowBackground(zeilenGrund)
-            }
-            Section {
-                TextField("XXXXX-XXXXX", text: $codeEingabe)
-                    .font(.system(.body, design: .monospaced))
-                    .textInputAutocapitalization(.characters)
-                    .autocorrectionDisabled()
-                    .onChange(of: codeEingabe) {
-                        let b = Familiencode.bereinigt(codeEingabe)
-                        if b != codeEingabe { codeEingabe = b }
-                    }
-                QRScanKnopf { art, code in
-                    if art == "familie" { codeEingabe = code }
-                }
-                Button("Code speichern") {
-                    familienCode = Familiencode.bereinigt(codeEingabe)
-                }
-                .disabled(!Familiencode.istGueltig(codeEingabe) || codeEingabe == familienCode)
-            } header: {
-                Text(modus == "eltern" ? "Vorhandenen Code übernehmen" : "Code eintragen")
-            } footer: {
-                Text(modus == "eltern"
-                     ? "Zum Beispiel den Code vom anderen Elternteil."
-                     : "Den Code bekommst du von deinen Eltern. Damit sehen sie deine Ergebnisse und können dir bei Jokern helfen.")
-            }
-            .listRowBackground(zeilenGrund)
-        }
-        .sheet(isPresented: $zeigeQR) {
-            QRAnzeigeSheet(titel: "Familiencode", art: "familie", code: familienCode,
-                           hinweis: "Nur dem Kind oder dem anderen Elternteil zeigen. Wer diesen Code scannt, sieht die Ergebnisse und Joker der Familie.")
-        }
-        .onAppear { codeEingabe = familienCode }
     }
 }
 
@@ -651,11 +594,14 @@ struct AussehenEinstellungen: View {
 // MARK: Datenschutz und Rechtliches
 
 struct RechtlichesEinstellungen: View {
-    @AppStorage("familienCode") private var familienCode = ""
+    private let familie = FamilienModell.shared
+    @AppStorage("modus") private var modus = ""
     @AppStorage(Einwilligung.versionKey) private var einwilligungVersion = 0
     @State private var zeigeLoeschen = false
     @State private var zeigeWiderruf = false
     @State private var info = ""
+
+    private var eltern: Bool { modus == "eltern" }
 
     var body: some View {
         EinstellungsSeite(titel: "Datenschutz") {
@@ -678,7 +624,12 @@ struct RechtlichesEinstellungen: View {
                 Text("Einwilligung: \(Einwilligung.datumText(Einwilligung.datum()))")
                     .font(.footnote)
                     .foregroundStyle(Theme.textSanft)
-                Button("Meine Cloud-Daten löschen", role: .destructive) { zeigeLoeschen = true }
+                if familie.zugang != nil {
+                    Button(eltern ? "Dieses Gerät aus der Familie nehmen"
+                                  : "Familie verlassen und meine Einträge löschen", role: .destructive) {
+                        zeigeLoeschen = true
+                    }
+                }
                 Button("Einwilligung widerrufen", role: .destructive) { zeigeWiderruf = true }
                 if !info.isEmpty {
                     Text(info).font(.footnote).foregroundStyle(Theme.textSanft)
@@ -686,43 +637,44 @@ struct RechtlichesEinstellungen: View {
             } header: {
                 Text("Deine Daten")
             } footer: {
-                Text("Löscht die Cloud-Einträge des Familiencodes, die dieses Gerät angelegt hat. Auf jedem Gerät der Familie einmal ausführen. Cloud-Einträge löscht die App nach 12 Monaten außerdem selbst.")
+                Text(eltern
+                     ? "Die ganze Familie mit allen Einträgen löschst du unter Einstellungen > Familie. Der Familien-Dienst löscht alte Einträge nach 12 Monaten außerdem selbst."
+                     : "Dann gehören dieses Gerät und seine Einträge nicht mehr zur Familie. Der Familien-Dienst löscht alte Einträge nach 12 Monaten außerdem selbst.")
             }
             .listRowBackground(zeilenGrund)
         }
-        .confirmationDialog("Cloud-Daten wirklich löschen?", isPresented: $zeigeLoeschen,
-                            titleVisibility: .visible) {
-            Button("Löschen", role: .destructive) {
-                guard Familiencode.istGueltig(familienCode) else {
-                    info = "Es ist kein Familiencode eingetragen."
-                    return
-                }
-                info = "Wird gelöscht ..."
+        .confirmationDialog(eltern ? "Gerät wirklich aus der Familie nehmen?" : "Wirklich verlassen und löschen?",
+                            isPresented: $zeigeLoeschen, titleVisibility: .visible) {
+            Button(eltern ? "Ja, Gerät entfernen" : "Verlassen und löschen", role: .destructive) {
+                info = "Wird erledigt ..."
                 Task {
-                    let n = await CloudDienst.loescheEigeneDaten(code: familienCode)
-                    info = "\(n) Einträge in der Cloud gelöscht."
+                    let fehler = await familie.verlassen(eintraegeLoeschen: !eltern)
+                    info = fehler ?? "Erledigt. Dieses Gerät gehört nicht mehr zur Familie."
                 }
             }
             Button("Abbrechen", role: .cancel) {}
         } message: {
-            Text("Entfernt die Cloud-Einträge dieses Familiencodes, die dieses Gerät angelegt hat. Ergebnisse auf dem Gerät bleiben.")
+            Text(eltern
+                 ? "Dieses Gerät verlässt die Familie. Die Einträge der Familie bleiben für die anderen Geräte erhalten. Ist es das letzte Eltern-Gerät, löschst du stattdessen die ganze Familie."
+                 : "Alle Ergebnisse, Fragen und Duelle, die dieses Gerät an die Familie geschickt hat, werden im Familien-Fach gelöscht. Auf dem Gerät bleibt alles.")
         }
         .confirmationDialog("Einwilligung widerrufen?", isPresented: $zeigeWiderruf,
                             titleVisibility: .visible) {
-            Button("Widerrufen und Cloud-Daten löschen", role: .destructive) {
-                let code = familienCode
+            Button("Widerrufen und Familie verlassen", role: .destructive) {
                 Task {
-                    if Familiencode.istGueltig(code) {
-                        _ = await CloudDienst.loescheEigeneDaten(code: code)
+                    if familie.zugang != nil {
+                        if await familie.verlassen(eintraegeLoeschen: !eltern) != nil {
+                            // Geht es nicht online (zum Beispiel ohne Netz), vergisst dieses Gerät die Familie trotzdem.
+                            familie.lokalVergessen()
+                        }
                     }
-                    familienCode = ""
                     Einwilligung.widerrufen()
                     einwilligungVersion = 0
                 }
             }
             Button("Abbrechen", role: .cancel) {}
         } message: {
-            Text("Die App löscht die Cloud-Einträge, die dieses Gerät angelegt hat, und trennt den Familiencode. Danach fragt sie neu nach der Einwilligung. Ergebnisse auf dem Gerät bleiben.")
+            Text("Dieses Gerät verlässt die Familie, und die App fragt danach neu nach der Einwilligung. Ohne Einwilligung geht nichts in die Cloud. Ergebnisse auf dem Gerät bleiben.")
         }
     }
 }
@@ -745,7 +697,7 @@ struct FortgeschrittenEinstellungen: View {
             } header: {
                 Text("Cloud")
             } footer: {
-                Text("Verbindung testen, Mitteilungen prüfen und die Cloud neu einrichten.")
+                Text("Verbindung zum Familien-Dienst testen und Mitteilungen prüfen.")
             }
             .listRowBackground(zeilenGrund)
 
@@ -755,7 +707,7 @@ struct FortgeschrittenEinstellungen: View {
                 } header: {
                     Text("Ergebnisse")
                 } footer: {
-                    Text("Ergebnisse werden automatisch an die Eltern gesendet, sobald das Gerät online ist und ein Familiencode eingetragen ist.")
+                    Text("Ergebnisse werden automatisch an die Eltern gesendet, sobald das Gerät online und mit der Familie verbunden ist.")
                 }
                 .listRowBackground(zeilenGrund)
             }
@@ -768,7 +720,7 @@ struct FortgeschrittenEinstellungen: View {
             } header: {
                 Text("Gerät")
             } footer: {
-                Text("Beim Gerätemodus erscheint wieder die Auswahl Kind oder Eltern. Familiencode, Klassenarbeiten und Fortschritt bleiben erhalten.")
+                Text("Beim Gerätemodus erscheint wieder die Auswahl Kind oder Eltern. Die Familie, die Klassenarbeiten und der Fortschritt bleiben erhalten.")
             }
             .listRowBackground(zeilenGrund)
 
