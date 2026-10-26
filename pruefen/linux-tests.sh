@@ -4,7 +4,7 @@
 # SwiftUI, SwiftData und AVFoundation gibt es dort nicht. Deshalb schneidet
 # pruefen/auszug.py nur die reinen Typen aus den App-Dateien aus.
 # Braucht Swift 6.1 oder neuer (SWIFTC=/pfad/zu/swiftc) und Python 3.
-# Aufruf aus dem Repo-Ordner: pruefen/linux-tests.sh
+# Aufruf aus dem Repo-Ordner: pruefen/linux-tests.sh (Fehler zeigt der Workflow auch als Hinweis)
 set -euo pipefail
 cd "$(dirname "$0")/.."
 SWIFTC="${SWIFTC:-swiftc}"

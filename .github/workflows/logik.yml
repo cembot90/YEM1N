@@ -36,4 +36,13 @@ jobs:
       - name: Tests
         run: |
           swiftc --version
-          pruefen/linux-tests.sh
+          set +e
+          pruefen/linux-tests.sh > ausgabe.txt 2>&1
+          rc=$?
+          cat ausgabe.txt
+          # Fehler zusätzlich als Hinweis ausgeben, damit sie auch ohne Log-Download lesbar sind
+          if [ $rc -ne 0 ]; then
+            fehler=$(grep -E "error:|✘|recorded an issue|Fatal error|Test run with" ausgabe.txt | head -40 | cut -c1-300 | sed ':a;N;$!ba;s/%/%25/g;s/\n/%0A/g')
+            echo "::error title=Logik-Prüfung::${fehler}"
+          fi
+          exit $rc
