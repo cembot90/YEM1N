@@ -144,7 +144,8 @@ struct FamilieKryptoTests {
         let text = FamilienKrypto.unterschriftText(methode: "POST", pfad: a.pfad, familie: Vektor.familie,
                                                    geraet: zugang.geraet, zeit: 1_800_000_000_000,
                                                    bodyHash: FamilienKrypto.sha256Hex(body))
-        let sig = try #require(FamilienKrypto.base64urlLesen(try #require(a.kopf["Y-Signatur"])))
+        let sigText = try #require(a.kopf["Y-Signatur"])
+        let sig = try #require(FamilienKrypto.base64urlLesen(sigText))
         #expect(unterschriftPasst(pub: pub, sig: sig, text: text))
         // Ein veränderter Körper würde auffallen
         let falsch = FamilienKrypto.unterschriftText(methode: "POST", pfad: a.pfad, familie: Vektor.familie,
