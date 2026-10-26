@@ -258,6 +258,29 @@ struct FamilieTests {
         #expect(FamilienProtokoll.pushAbmelden()["art"] as? String == "")
     }
 
+    @Test func textWirdSoGekuerztWieDerDienstZaehlt() {
+        // Der Dienst zählt UTF-16-Einheiten: ein Emoji sind zwei.
+        let emojis = String(repeating: "😀", count: 300)
+        let k = FamilienProtokoll.kuerze(emojis, 500)
+        #expect(k.utf16.count <= 500)
+        #expect(k.count == 250)
+        #expect(FamilienProtokoll.kuerze("Grüße aus Köln", 5) == "Grüße")
+        // Steuerzeichen lehnt der Dienst ab, Zeilenumbruch und Tabulator nicht
+        #expect(FamilienProtokoll.kuerze("a\u{0}b\u{7}c\nd\te", 20) == "abc\nd\te")
+        let o = daten(FamilienProtokoll.frage(id: "frage-0004", kind: "K", fach: "", uebung: "", text: emojis))
+        #expect((o["text"] as? String)?.utf16.count ?? 999 <= 500)
+    }
+
+    @Test func fehlerAusAntwortHatEinenFreundlichenText() throws {
+        let gut = FamilienAntwort(status: 200, json: nil)
+        try gut.pruefen()
+        let schlecht = FamilienAntwort(status: 0, json: nil)
+        #expect(throws: FamilienFehler.self) { try schlecht.pruefen() }
+        let f = FamilienFehler(status: 429)
+        #expect(f.text == FamilienProtokoll.fehlertext(429))
+        #expect(f.localizedDescription == f.text)
+    }
+
     @Test func kennungenSindFuerDenDienstGueltig() {
         for _ in 0..<20 { #expect(FamilienProtokoll.kennungOk(FamilienProtokoll.neueKennung("frage"))) }
         #expect(FamilienProtokoll.neueKennung(String(repeating: "x", count: 100)).count <= 64)

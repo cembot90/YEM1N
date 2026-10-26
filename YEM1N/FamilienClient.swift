@@ -21,6 +21,20 @@ nonisolated struct FamilienAntwort: @unchecked Sendable {
     var fehler: String { FamilienProtokoll.fehlertext(status) }
 }
 
+/// Ein Fehler vom Familien-Dienst, der als Text für Kinder und Eltern taugt.
+nonisolated struct FamilienFehler: Error, LocalizedError, Sendable {
+    let status: Int
+    var text: String { FamilienProtokoll.fehlertext(status) }
+    var errorDescription: String? { text }
+}
+
+extension FamilienAntwort {
+    /// Wirft einen [FamilienFehler], wenn die Antwort nicht gut war.
+    func pruefen() throws {
+        if !ok { throw FamilienFehler(status: status) }
+    }
+}
+
 /// Die Leitung zum Dienst. Liefert Status und Text der Antwort, Status 0 ohne Verbindung.
 nonisolated protocol FamilienLeitung: Sendable {
     func post(pfad: String, kopf: [String: String], body: String) async -> (status: Int, text: String)

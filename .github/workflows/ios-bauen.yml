@@ -47,9 +47,14 @@ jobs:
                       print(g['udid']); raise SystemExit
           ")
           echo "Simulator: $udid"
+          # Das Projekt nimmt das empfohlene Mindest-iOS des jeweiligen Xcode. Auf dem Runner ist das zu alt
+          # für die Neuerungen, die die App nutzt. Deshalb das iOS des installierten SDK erzwingen.
+          sdk=$(xcrun --sdk iphonesimulator --show-sdk-version)
+          echo "SDK: $sdk"
           xcodebuild test \
             -project YEM1N.xcodeproj -scheme YEM1N \
             -destination "id=$udid" \
+            IPHONEOS_DEPLOYMENT_TARGET="$sdk" \
             CODE_SIGNING_ALLOWED=NO CODE_SIGN_IDENTITY="" \
             > bau.txt 2>&1
           rc=$?

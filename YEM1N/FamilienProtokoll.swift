@@ -249,8 +249,28 @@ nonisolated enum FamilienProtokoll {
         ["typ": typ, "daten": daten]
     }
 
+    /// Der Dienst zählt in UTF-16-Einheiten (wie JavaScript) und lehnt Steuerzeichen ab. Hier wird passend gekürzt,
+    /// ohne ein Zeichen in der Mitte zu zerschneiden.
+    static func kuerze(_ text: String, _ max: Int) -> String {
+        var aus = ""
+        var einheiten = 0
+        for z in text {
+            let e = String(z).utf16.count
+            if einheiten + e > max { break }
+            if z.unicodeScalars.contains(where: { Self.verboten($0) }) { continue }
+            aus.append(z)
+            einheiten += e
+        }
+        return aus
+    }
+
+    private static func verboten(_ s: Unicode.Scalar) -> Bool {
+        let v = s.value
+        return v <= 8 || v == 0x0b || v == 0x0c || (0x0e...0x1f).contains(v)
+    }
+
     private static func kurz(_ text: String, _ max: Int) -> String {
-        String(text.trimmingCharacters(in: .whitespacesAndNewlines).prefix(max))
+        kuerze(text.trimmingCharacters(in: .whitespacesAndNewlines), max)
     }
 
     static func frage(id: String, kind: String, fach: String, uebung: String, text: String) -> [String: Any] {
@@ -258,8 +278,8 @@ nonisolated enum FamilienProtokoll {
         return senden(typFrage, [
             "id": id,
             "kind": name.isEmpty ? "Kind" : name,
-            "fach": String(fach.prefix(40)),
-            "uebung": String(uebung.prefix(80)),
+            "fach": kuerze(fach, 40),
+            "uebung": kuerze(uebung, 80),
             "text": kurz(text, 500),
         ])
     }
@@ -268,7 +288,7 @@ nonisolated enum FamilienProtokoll {
         senden(typAntwort, [
             "id": id,
             "frageId": frageId,
-            "emoji": String(emoji.prefix(16)),
+            "emoji": kuerze(emoji, 16),
             "text": kurz(text, 500),
         ])
     }
@@ -289,10 +309,10 @@ nonisolated enum FamilienProtokoll {
     static func ergebnis(_ e: ErgebnisDaten) -> [String: Any] {
         var d: [String: Any] = [
             "id": e.id,
-            "klasse": String(e.klasse.prefix(40)),
-            "fach": String(e.fach.prefix(40)),
-            "arbeit": String(e.arbeit.prefix(120)),
-            "uebung": String(e.uebung.prefix(120)),
+            "klasse": kuerze(e.klasse, 40),
+            "fach": kuerze(e.fach, 40),
+            "arbeit": kuerze(e.arbeit, 120),
+            "uebung": kuerze(e.uebung, 120),
             "richtig": min(max(e.richtig, 0), 1000),
             "gesamt": min(max(e.gesamt, 0), 1000),
             "angesehen": min(max(e.angesehen, 0), 1000),
@@ -300,7 +320,7 @@ nonisolated enum FamilienProtokoll {
             "kind": kurz(e.kind, 40),
             "zeitpunkt": e.zeitpunkt,
         ]
-        if !e.details.isEmpty && e.details.count <= 20000 { d["details"] = e.details }
+        if !e.details.isEmpty && e.details.utf16.count <= 20000 { d["details"] = e.details }
         return senden(typErgebnis, d)
     }
 
