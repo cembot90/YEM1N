@@ -56,7 +56,7 @@ nonisolated enum FamilienKrypto {
 
     /// Die ersten 24 Hex-Zeichen von SHA-256 über die 65 Bytes des öffentlichen Schlüssels.
     static func geraetId(pub: [UInt8]) -> String {
-        String(Sha256.hex(pub).prefix(24))
+        String(Sha256.hex(Sha256.hash(pub)).prefix(24))
     }
 
     /// Der Text, den das Gerät unterschreibt: sieben Zeilen, getrennt durch Zeilenumbrüche.

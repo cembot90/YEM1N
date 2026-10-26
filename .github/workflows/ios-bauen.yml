@@ -1,0 +1,62 @@
+name: iPhone-App bauen und testen
+
+# Baut die ganze App im Simulator und lässt alle Tests laufen. Ersetzt nicht Xcode Cloud (kein Archiv,
+# keine Verteilung), findet aber Fehler in der Oberfläche schon auf entwicklung, bevor Cem etwas baut.
+# Das Repo ist öffentlich, die macOS-Läufe kosten nichts.
+
+on:
+  push:
+    branches: [entwicklung]
+    paths:
+      - "YEM1N/**"
+      - "YEM1NTests/**"
+      - "YEM1NWidget/**"
+      - "YEM1N.xcodeproj/**"
+      - ".github/workflows/ios-bauen.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-bauen-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  bauen:
+    runs-on: macos-26
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Werkzeuge
+        run: |
+          xcodebuild -version
+          xcrun simctl list devices available | head -30
+
+      - name: Bauen und testen
+        run: |
+          set +e
+          udid=$(xcrun simctl list devices available -j | python3 -c "
+          import json, sys
+          d = json.load(sys.stdin)['devices']
+          for art, liste in sorted(d.items(), reverse=True):
+              if 'iOS' not in art: continue
+              for g in liste:
+                  if g['name'].startswith('iPhone') and 'Pro' not in g['name'] and 'Max' not in g['name']:
+                      print(g['udid']); raise SystemExit
+          ")
+          echo "Simulator: $udid"
+          xcodebuild test \
+            -project YEM1N.xcodeproj -scheme YEM1N \
+            -destination "id=$udid" \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGN_IDENTITY="" \
+            > bau.txt 2>&1
+          rc=$?
+          tail -n 60 bau.txt
+          # Fehler zusätzlich als Hinweis ausgeben, damit sie auch ohne Log-Download lesbar sind
+          if [ $rc -ne 0 ]; then
+            fehler=$(grep -E "error:|✘|recorded an issue|BUILD FAILED|TEST FAILED|Testing failed" bau.txt | awk '!gesehen[$0]++' | head -40 | cut -c1-400 | sed ':a;N;$!ba;s/%/%25/g;s/\n/%0A/g')
+            echo "::error title=iPhone-App::${fehler}"
+          fi
+          exit $rc

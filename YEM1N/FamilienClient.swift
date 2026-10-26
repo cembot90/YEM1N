@@ -53,6 +53,9 @@ actor FamilienClient {
         self.jetzt = jetzt
     }
 
+    /// Setzt den gemerkten Zeitunterschied, zum Beispiel aus dem letzten Start.
+    func versatzSetzen(_ wert: Int64) { versatz = wert }
+
     private func roh(_ pfad: String, _ kopf: [String: String], _ body: String) async -> FamilienAntwort {
         var k = kopf
         k["Content-Type"] = "application/json"
