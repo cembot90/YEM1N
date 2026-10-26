@@ -61,7 +61,7 @@ jobs:
           tail -n 60 bau.txt
           # Fehler zusätzlich als Hinweis ausgeben, damit sie auch ohne Log-Download lesbar sind
           if [ $rc -ne 0 ]; then
-            fehler=$(grep -E "error:|✘|recorded an issue|BUILD FAILED|TEST FAILED|Testing failed" bau.txt | awk '!gesehen[$0]++' | head -40 | cut -c1-400 | sed ':a;N;$!ba;s/%/%25/g;s/\n/%0A/g')
+            fehler=$(grep -E "error:|✘|recorded an issue|Expectation failed|Issue recorded|failed after|Test case .* failed|crashed|Early unexpected|BUILD FAILED|TEST FAILED|Testing failed" bau.txt | awk '!gesehen[$0]++' | head -40 | cut -c1-400 | sed ':a;N;$!ba;s/%/%25/g;s/\n/%0A/g')
             echo "::error title=iPhone-App::${fehler}"
           fi
           exit $rc

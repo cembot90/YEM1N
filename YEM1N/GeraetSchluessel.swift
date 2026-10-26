@@ -10,17 +10,55 @@ import Security
 // verlässt das Gerät nie. Der Familien-Dienst kennt nur den öffentlichen Teil und prüft damit jede Anfrage.
 // Auf dem Simulator gibt es keine Secure Enclave, dort liegt der Schlüssel als Software-Schlüssel im Schlüsselbund.
 
+/// Wo die Schlüsseldaten liegen. Im Alltag ist das der Schlüsselbund, Tests nehmen den Arbeitsspeicher.
+nonisolated protocol SchluesselSpeicher: Sendable {
+    func lese() -> Data?
+    func schreibe(_ daten: Data) -> Bool
+    func loesche()
+}
+
+/// Der Schlüsselbund des Geräts. Nur auf diesem Gerät, nie in Sicherungen oder auf neuen Geräten.
+nonisolated struct SchluesselbundSpeicher: SchluesselSpeicher {
+    static let dienst = "de.cemaras.yem1n.geraet"
+    let konto: String
+
+    private func basis() -> [String: Any] {
+        [kSecClass as String: kSecClassGenericPassword,
+         kSecAttrService as String: Self.dienst,
+         kSecAttrAccount as String: konto]
+    }
+
+    func schreibe(_ daten: Data) -> Bool {
+        SecItemDelete(basis() as CFDictionary)
+        var neu = basis()
+        neu[kSecValueData as String] = daten
+        // Nach dem ersten Entsperren nutzbar, aber nur auf diesem Gerät.
+        neu[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
+        return SecItemAdd(neu as CFDictionary, nil) == errSecSuccess
+    }
+
+    func lese() -> Data? {
+        var q = basis()
+        q[kSecReturnData as String] = true
+        q[kSecMatchLimit as String] = kSecMatchLimitOne
+        var ergebnis: AnyObject?
+        guard SecItemCopyMatching(q as CFDictionary, &ergebnis) == errSecSuccess else { return nil }
+        return ergebnis as? Data
+    }
+
+    func loesche() { SecItemDelete(basis() as CFDictionary) }
+}
+
 nonisolated final class GeraetSchluessel: GeraetSignierer, @unchecked Sendable {
-    /// Der Schlüssel der App. Tests nehmen ein eigenes Konto, damit sie den echten nicht anfassen.
+    /// Der Schlüssel der App. Tests nehmen einen eigenen Speicher, damit sie den echten nicht anfassen.
     static let shared = GeraetSchluessel(konto: "schluessel-v2")
 
-    private static let dienst = "de.cemaras.yem1n.geraet"
-
-    private let konto: String
+    private let speicher: SchluesselSpeicher
     private let schloss = NSLock()
     private var zwischenspeicher: Schluessel?
 
-    init(konto: String) { self.konto = konto }
+    init(konto: String) { speicher = SchluesselbundSpeicher(konto: konto) }
+    init(speicher: SchluesselSpeicher) { self.speicher = speicher }
 
     private enum Schluessel {
         case enclave(SecureEnclave.P256.Signing.PrivateKey)
@@ -45,35 +83,9 @@ nonisolated final class GeraetSchluessel: GeraetSignierer, @unchecked Sendable {
     private static let kennzeichenEnclave: UInt8 = 1
     private static let kennzeichenSoftware: UInt8 = 2
 
-    // MARK: Schlüsselbund
-
-    private func basis() -> [String: Any] {
-        [kSecClass as String: kSecClassGenericPassword,
-         kSecAttrService as String: Self.dienst,
-         kSecAttrAccount as String: konto]
-    }
-
-    private func speichere(_ daten: Data) -> Bool {
-        SecItemDelete(basis() as CFDictionary)
-        var neu = basis()
-        neu[kSecValueData as String] = daten
-        // Nur auf diesem Gerät, nie in Sicherungen oder auf neuen Geräten. Nach dem ersten Entsperren nutzbar.
-        neu[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
-        return SecItemAdd(neu as CFDictionary, nil) == errSecSuccess
-    }
-
-    private func lese() -> Data? {
-        var q = basis()
-        q[kSecReturnData as String] = true
-        q[kSecMatchLimit as String] = kSecMatchLimitOne
-        var ergebnis: AnyObject?
-        guard SecItemCopyMatching(q as CFDictionary, &ergebnis) == errSecSuccess else { return nil }
-        return ergebnis as? Data
-    }
-
     private func laden() -> Schluessel? {
         if let z = zwischenspeicher { return z }
-        guard let d = lese(), let erstes = d.first else { return nil }
+        guard let d = speicher.lese(), let erstes = d.first else { return nil }
         let rest = d.dropFirst()
         let k: Schluessel?
         switch erstes {
@@ -125,19 +137,19 @@ nonisolated final class GeraetSchluessel: GeraetSignierer, @unchecked Sendable {
     func neuErzeugen() -> Bool {
         schloss.lock(); defer { schloss.unlock() }
         zwischenspeicher = nil
-        SecItemDelete(basis() as CFDictionary)
+        speicher.loesche()
         if SecureEnclave.isAvailable {
             var fehler: Unmanaged<CFError>?
             if let zugriff = SecAccessControlCreateWithFlags(nil, kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly,
                                                              .privateKeyUsage, &fehler),
                let k = try? SecureEnclave.P256.Signing.PrivateKey(accessControl: zugriff),
-               speichere(Data([Self.kennzeichenEnclave]) + k.dataRepresentation) {
+               speicher.schreibe(Data([Self.kennzeichenEnclave]) + k.dataRepresentation) {
                 zwischenspeicher = .enclave(k)
                 return true
             }
         }
         let k = P256.Signing.PrivateKey()
-        guard speichere(Data([Self.kennzeichenSoftware]) + k.rawRepresentation) else { return false }
+        guard speicher.schreibe(Data([Self.kennzeichenSoftware]) + k.rawRepresentation) else { return false }
         zwischenspeicher = .software(k)
         return true
     }
@@ -146,6 +158,6 @@ nonisolated final class GeraetSchluessel: GeraetSignierer, @unchecked Sendable {
     func loeschen() {
         schloss.lock(); defer { schloss.unlock() }
         zwischenspeicher = nil
-        SecItemDelete(basis() as CFDictionary)
+        speicher.loesche()
     }
 }

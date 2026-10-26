@@ -28,6 +28,16 @@ nonisolated func unterschriftPasst(pub: [UInt8], sig: [UInt8], text: String) -> 
     return schluessel.isValidSignature(s, for: Data(text.utf8))
 }
 
+/// Ein Speicher im Arbeitsspeicher. Der Schlüsselbund geht in Tests ohne Signatur der App nicht überall.
+nonisolated final class SpeicherImArbeitsspeicher: SchluesselSpeicher, @unchecked Sendable {
+    private let schloss = NSLock()
+    private var daten: Data?
+
+    func lese() -> Data? { schloss.lock(); defer { schloss.unlock() }; return daten }
+    func schreibe(_ neu: Data) -> Bool { schloss.lock(); daten = neu; schloss.unlock(); return true }
+    func loesche() { schloss.lock(); daten = nil; schloss.unlock() }
+}
+
 /// Merkt sich, was der Client abschickt.
 nonisolated final class Aufzeichner: FamilienLeitung, @unchecked Sendable {
     struct Aufruf: Sendable {
@@ -48,6 +58,12 @@ nonisolated final class Aufzeichner: FamilienLeitung, @unchecked Sendable {
 
     // NSLock gehört in eine gewöhnliche Funktion, nicht in eine async-Funktion.
     private func merke(_ a: Aufruf) { schloss.lock(); liste.append(a); schloss.unlock() }
+}
+
+nonisolated func schluesselbundGeht() -> Bool {
+    let probe = SchluesselbundSpeicher(konto: "probe-\(UUID().uuidString)")
+    defer { probe.loesche() }
+    return probe.schreibe(Data([1, 2, 3])) && probe.lese() == Data([1, 2, 3])
 }
 
 struct FamilieKryptoTests {
@@ -77,8 +93,8 @@ struct FamilieKryptoTests {
     // MARK: Der Schlüssel dieses Geräts
 
     @Test func derGeraeteSchluesselUnterschreibtSoWieDerDienstEsPrueft() throws {
-        let konto = "test-\(UUID().uuidString)"
-        let schluessel = GeraetSchluessel(konto: konto)
+        let speicher = SpeicherImArbeitsspeicher()
+        let schluessel = GeraetSchluessel(speicher: speicher)
         defer { schluessel.loeschen() }
         #expect(!schluessel.vorhanden)
         #expect(schluessel.oeffentlich() == nil)
@@ -95,12 +111,12 @@ struct FamilieKryptoTests {
         #expect(!unterschriftPasst(pub: pub, sig: sig, text: Vektor.andereNachricht))
 
         // Der Schlüssel bleibt nach einem Neustart derselbe (ein neues Objekt liest ihn aus dem Schlüsselbund)
-        let nochmal = GeraetSchluessel(konto: konto)
+        let nochmal = GeraetSchluessel(speicher: speicher)
         #expect(nochmal.oeffentlich() == pub)
     }
 
     @Test func einNeuerSchluesselIstEinAnderer() throws {
-        let schluessel = GeraetSchluessel(konto: "test-\(UUID().uuidString)")
+        let schluessel = GeraetSchluessel(speicher: SpeicherImArbeitsspeicher())
         defer { schluessel.loeschen() }
         #expect(schluessel.neuErzeugen())
         let eins = try #require(schluessel.oeffentlich())
@@ -110,17 +126,32 @@ struct FamilieKryptoTests {
     }
 
     @Test func nachDemLoeschenIstKeinSchluesselMehrDa() {
-        let schluessel = GeraetSchluessel(konto: "test-\(UUID().uuidString)")
+        let schluessel = GeraetSchluessel(speicher: SpeicherImArbeitsspeicher())
         #expect(schluessel.neuErzeugen())
         schluessel.loeschen()
         #expect(!schluessel.vorhanden)
         #expect(schluessel.signieren([1]) == nil)
     }
 
+    /// Der echte Schlüsselbund. In der Prüfung auf GitHub läuft die App ohne Signatur, dort geht er nicht.
+    /// Auf dem Gerät und in Xcode läuft dieser Test mit.
+    @Test(.enabled(if: schluesselbundGeht()))
+    func derSchluesselbundBehaeltDenSchluessel() throws {
+        let konto = "test-\(UUID().uuidString)"
+        let schluessel = GeraetSchluessel(konto: konto)
+        defer { schluessel.loeschen() }
+        #expect(schluessel.neuErzeugen())
+        let pub = try #require(schluessel.oeffentlich())
+        let nochmal = GeraetSchluessel(konto: konto)
+        #expect(nochmal.oeffentlich() == pub)
+        schluessel.loeschen()
+        #expect(GeraetSchluessel(konto: konto).oeffentlich() == nil)
+    }
+
     // MARK: Client und Schlüssel zusammen
 
     @Test func dieAnfrageDesClientsTragtEineGueltigeUnterschrift() async throws {
-        let schluessel = GeraetSchluessel(konto: "test-\(UUID().uuidString)")
+        let schluessel = GeraetSchluessel(speicher: SpeicherImArbeitsspeicher())
         defer { schluessel.loeschen() }
         #expect(schluessel.neuErzeugen())
         let pub = try #require(schluessel.oeffentlich())
