@@ -1,7 +1,8 @@
 # YEM1N: Arbeitsregeln
 
 Übungs-App für Cems Kinder (Yemin, Klasse 3, und Evîn, Vorschule).
-SwiftUI mit SwiftData lokal, CloudKit für Ergebnisse, Joker und Aufgabenpakete.
+SwiftUI mit SwiftData lokal. Familien laufen über den eigenen Familien-Dienst (Cloudflare, EU, Protokoll 2),
+CloudKit gibt es nur noch für Aufgabenpakete der Klasse (lesen, Unterschrift prüfen).
 
 ## Aufgabenteilung
 
@@ -50,8 +51,10 @@ Vorlage:
 3. **Datenschutz.** Wenn neue Daten erhoben oder übertragen werden, müssen
    `DatenschutzView` in `Datenschutz.swift`, `docs/index.html` und die Angaben
    in App Store Connect zusammenpassen.
-4. **CloudKit.** Neue Felder oder Record-Typen müssen in `cloudkit/schema.ckdb`
-   stehen, und Cem muss sie in die Produktionsumgebung ausrollen.
+4. **Familien-Dienst und CloudKit.** Neue Einträge der Familie brauchen einen Typ im Worker
+   (`server/src/v2/typen.js` im Repo `cembot90/yem1n-android`, Tabelle in `cloud/PROTOKOLL-V2.md`) und in
+   `FamilienProtokoll.swift`. Cem muss den Worker danach mit `npx wrangler@latest deploy` neu veröffentlichen.
+   Felder oder Record-Typen für Klassenpakete stehen weiter in `cloudkit/schema.ckdb`.
 5. **Vorstellungsseite.** `docs/vorstellung.html` stellt YEM1N Eltern und
    Lehrkräften vor (läuft ohne Internet, Beispiele zum Ausprobieren). Neue
    Funktionen, die für sie zählen, kommen dort mit hinein. Danach die Seite als
@@ -80,3 +83,23 @@ Oberflächentexte und Kommentare auf Deutsch, kindgerecht und ohne Fachjargon.
 
 Eine Datei je Themenbereich in `YEM1N/`, siehe Dateinamen. Der Ordner ist im
 Projekt synchronisiert, neue Dateien werden ohne Zutun mitgebaut.
+
+## Familien-Dienst (Protokoll 2)
+
+Entscheidung 25.10.2026 (Cem): ein abgetrenntes Fach je Familie bei Cloudflare (Worker mit Durable Object, EU),
+ein Schlüssel je Gerät (Secure Enclave, im Simulator ein Software-Schlüssel), neue Geräte nur per QR-Code
+(`yem1n://koppeln?f=...&t=...`, 10 Minuten, einmal) mit Freigabe durch ein Eltern-Gerät, auch bei Kindern.
+Der alte Familiencode (CloudKit, öffentlich lesbar) ist abgelöst. Alte Einträge räumt `AlterFamilienweg` einmal auf.
+
+- `Sha256.swift`, `FamilienProtokoll.swift`, `FamilienClient.swift`, `ElternPin.swift`: reine Logik, läuft unter Linux (`pruefen/linux-tests.sh`).
+- `GeraetSchluessel.swift` (Secure Enclave), `FamilienNetz.swift` (URLSession), `FamilienModell.swift` (Zustand, `@Observable`).
+- `Cloud.swift` (Joker, Ergebnisse, Sync, Mitteilungen), `CloudPakete.swift` (Pakete der Familie und der Klasse), `DuellCloud.swift`, `HaustierCloud.swift`.
+- Oberfläche: `FamilieAnsicht.swift` (Einstellungen > Familie), `PinTor.swift` (PIN für den Elternbereich), Familien-Schritt in `ProfilAssistent.swift`.
+- Tests: `FamilieTests.swift` (Logik, falscher Dienst), `FamilieKryptoTests.swift` (CryptoKit gegen die Prüfwerte in `cloud/testvektoren-v2.json` im Android-Repo).
+- Einträge lassen sich im Dienst nicht einzeln löschen. Das Haustier wird mit `{}` überschrieben, Pakete und alles andere verfallen nach der Frist.
+
+## Prüfen mit GitHub
+
+Es gibt keinen Mac für Claude. `logik.yml` (Linux) und `ios-bauen.yml` (macOS, baut die App im Simulator und lässt alle Tests laufen)
+laufen bei jedem Push auf `entwicklung`. Fehler stehen als Hinweise im Lauf (`gh api repos/cembot90/yem1n/check-runs/<id>/annotations`).
+Die Log-Dateien selbst lassen sich vom Arbeitsplatz aus nicht laden.

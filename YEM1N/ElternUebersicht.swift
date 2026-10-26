@@ -121,10 +121,20 @@ struct ElternDashboardView: View {
         kindFilter.isEmpty ? runden : runden.filter { Kinder.gleich($0.kind, kindFilter) }
     }
 
+    /// Kinder-Geräte, die die Eltern erlaubt haben, stehen schon vor der ersten Runde in der Liste.
+    private var angemeldeteKinder: [(name: String, zeitpunkt: Date)] {
+        let ausGeraeten = familie.geraete
+            .filter { $0.rolle == "kind" && $0.status == "aktiv" }
+            .map { (name: $0.name, zeitpunkt: Date(timeIntervalSince1970: Double($0.erstellt) / 1000)) }
+            .filter { !Kinder.istEntfernt($0.name, zeitpunkt: $0.zeitpunkt) }
+        let alt = alleErgebnisse.filter { $0.istAnmeldung }.map { (name: $0.kind, zeitpunkt: $0.zeitpunkt) }
+        return ausGeraeten + alt
+    }
+
     private var kinderListe: [KindEintrag] {
         Kinder.liste(
             aus: runden.map { (name: $0.kind, zeitpunkt: $0.zeitpunkt) },
-            angemeldet: alleErgebnisse.filter { $0.istAnmeldung }.map { (name: $0.kind, zeitpunkt: $0.zeitpunkt) })
+            angemeldet: angemeldeteKinder)
     }
 
     private var kinder: [String] { kinderListe.map { $0.name } }

@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 // ============================================================
 // MARK: - Familie: verbinden, Geräte, Einladung
@@ -66,6 +67,7 @@ struct FamilieAnsicht: View {
     @State private var loeschenOffen = false
     @State private var entfernenZiel: FamilienGeraet?
     @State private var geladen = false
+    @State private var kopiert = false
 
     private var eltern: Bool { modus == "eltern" }
 
@@ -226,6 +228,13 @@ struct FamilieAnsicht: View {
                 verlassenOffen = true
             }
             if z.istEltern {
+                FamilienKnopf(titel: kopiert ? "Kennung kopiert" : "Familien-Kennung kopieren", gelb: false) {
+                    UIPasteboard.general.string = z.familie
+                    kopiert = true
+                }
+                Text("Die Kennung brauchst du nur, wenn du mir wegen einer Löschung schreibst und kein Eltern-Gerät mehr hast. Gib sie sonst niemandem.")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.textSanft)
                 FamilienKnopf(titel: "Ganze Familie löschen", gelb: false, aktiv: !familie.beschaeftigt) {
                     loeschenOffen = true
                 }

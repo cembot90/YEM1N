@@ -181,7 +181,8 @@ des Kindes übt das Kind Klassenarbeiten, Deutsch, Sprachen und
 Vorschulaufgaben. Auf dem Gerät der Eltern sehen die Eltern den
 Fortschritt, bekommen Mitteilungen und helfen über den Joker.</p>
 <p>Die App läuft auf iPhone und iPad. Sie arbeitet ohne Werbung und ohne
-Konto. Die Verbindung zwischen den Geräten entsteht nur über Codes.</p>
+Konto. Die Verbindung zwischen den Geräten entsteht nur mit einem QR-Code und der
+Freigabe der Eltern.</p>
 <p><strong>Die drei Rollen</strong></p>
 <table>
 <colgroup>
@@ -210,7 +211,7 @@ bereitstellen</td>
 </tr>
 </tbody>
 </table>
-<p><strong>Die zwei Codes</strong></p>
+<p><strong>Familie und Klassencode</strong></p>
 <table>
 <colgroup>
 <col style="width: 33%" />
@@ -219,16 +220,18 @@ bereitstellen</td>
 </colgroup>
 <thead>
 <tr class="header">
-<th>Code</th>
+<th>Was</th>
 <th>Wofür</th>
 <th>Wer sieht was</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td>Familiencode</td>
-<td>Ergebnisse, Joker und Aufgaben innerhalb der Familie</td>
-<td>Nur Geräte mit demselben Code</td>
+<td>Familie</td>
+<td>Ergebnisse, Joker, Duelle, Haustier und Aufgaben innerhalb der
+Familie</td>
+<td>Nur Geräte, die per QR-Code verbunden und von den Eltern erlaubt
+wurden</td>
 </tr>
 <tr class="even">
 <td>Klassencode</td>
@@ -238,9 +241,12 @@ bleiben in der Familie</td>
 </tr>
 </tbody>
 </table>
-<p>Der Familiencode ist wie ein Passwort. Gib ihn nur an
-Familienmitglieder weiter. Den Klassencode darfst du an die Klasse
-weitergeben.</p>
+<p>Jede Familie hat ein eigenes, abgetrenntes Fach im Internet (in der
+EU). Es gibt keinen Familiencode mehr, den man abtippen oder weitergeben
+müsste. Jedes Gerät hat stattdessen einen eigenen Schlüssel, der im
+Gerät bleibt. Ein neues Gerät kommt nur mit einem QR-Code dazu, der 10
+Minuten und nur einmal gilt, und die Eltern müssen es danach erlauben.
+Den Klassencode darfst du an die Klasse weitergeben.</p>
 <h1 id="app-installieren-testflight">2. App installieren
 (TestFlight)</h1>
 <p>Solange die App noch nicht im App Store ist, kommt sie über Apples
@@ -274,38 +280,44 @@ Datenschutzerklärung inhaltlich, fragt die App noch einmal. Das gilt
 auch für Geräte, die schon eingerichtet sind.</p>
 <h2 id="eltern-gerät-einrichten">3.1 Eltern-Gerät einrichten</h2>
 <ol type="1">
-<li>Tippe auf <strong>Eltern</strong>.</li>
-<li>Die App zeigt deinen neuen <strong>Familiencode</strong> (zum
-Beispiel <code>ABCDE-FGHIJ</code>).</li>
-<li>Tippe auf <strong>Code teilen</strong>, um den Code per Nachricht an
-das Kind-Gerät oder das zweite Elternteil zu senden.</li>
-<li>Tippe auf <strong>Fertig</strong>.</li>
-<li>Ein Einrichtungsassistent fragt dich, wer du bist. Wähle deinen
-Namen aus der Liste der Familienmitglieder.</li>
+<li>Tippe auf <strong>Eltern</strong> und bestätige die Einwilligung.</li>
+<li>Der Einrichtungsassistent fragt dich, wer du bist. Wähle deinen
+Namen aus der Liste der Familienmitglieder. So heißt du in den Antworten
+auf Joker-Fragen.</li>
+<li>Im zweiten Schritt <strong>Mit der Familie verbinden</strong> gibst
+du diesem Gerät einen Namen (zum Beispiel Mama oder Papa) und tippst auf
+<strong>Neue Familie anlegen</strong>. Dieses Gerät ist jetzt das erste
+Eltern-Gerät. Du kannst den Schritt auch später unter Einstellungen
+&gt; Familie machen.</li>
+<li>Tippe auf <strong>Los geht’s</strong>.</li>
+<li>Beim ersten Öffnen des Elternbereichs legst du eine
+<strong>PIN</strong> fest (4 bis 8 Ziffern, nicht 1234 oder 0000). Sie
+bleibt nur auf dem Gerät und hält Kinder aus dem Bereich der Eltern
+heraus. Nach der Eingabe bleibt der Bereich fünf Minuten offen. Wer die
+PIN vergisst, trennt das Gerät von der Familie und verbindet es mit dem
+QR-Code eines anderen Eltern-Geräts neu.</li>
 </ol>
-<p><strong>QR-Code statt Abtippen:</strong> In den Einstellungen des
-Eltern-Geräts zeigt <strong>QR-Code für das Kind zeigen</strong> den
-Familiencode als QR-Code. Auf dem anderen Gerät tippst du bei der
-Einrichtung auf <strong>QR-Code scannen</strong> und hältst die Kamera
-darauf. Die App fragt dabei einmal nach der Kamera-Erlaubnis. Zeige den
-QR-Code nur dem Kind oder dem anderen Elternteil, denn wer ihn scannt,
-sieht die Ergebnisse der Familie.</p>
-<p><strong>Zweites Elternteil:</strong> Wähle auf dem zweiten
-Eltern-Gerät ebenfalls <strong>Eltern</strong>, tippe auf <strong>Ich
-habe schon einen Code</strong> und gib den Familiencode vom ersten
-Eltern-Gerät ein (oder scanne den QR-Code). Tippe auf
-<strong>Verbinden</strong>. Dann sieht auch dieses Gerät dieselben
-Ergebnisse.</p>
+<p><strong>Weitere Geräte hinzufügen:</strong> Öffne auf dem
+Eltern-Gerät Einstellungen &gt; Familie und tippe unter <strong>Gerät
+hinzufügen</strong> auf <strong>Kind-Gerät</strong> oder
+<strong>Eltern-Gerät</strong>. Die App zeigt einen QR-Code. Er gilt 10
+Minuten und nur für ein Gerät. Zeige ihn nur, wenn das neue Gerät direkt
+vor dir ist. Das neue Gerät scannt ihn und zeigt einen kurzen
+<strong>Prüfcode</strong> mit sechs Zeichen. Auf dem Eltern-Gerät steht
+das neue Gerät oben in der Geräteliste mit demselben Prüfcode und dem
+Hinweis “Wartet auf deine Freigabe”. Sind die Codes gleich, tippst du
+auf <strong>Erlauben</strong>. Erst dann gehört das Gerät zur Familie.
+Sind sie verschieden, tippst du auf <strong>Ablehnen</strong>.</p>
+<p><strong>Zweites Elternteil:</strong> Wähle auf dem zweiten Gerät
+<strong>Eltern</strong> und im Schritt <strong>Mit der Familie
+verbinden</strong> einen Namen und <strong>QR-Code scannen</strong>.
+Danach erlaubt das erste Eltern-Gerät das neue Gerät. Die Kamera-Erlaubnis
+fragt die App dabei einmal.</p>
 <h2 id="kind-gerät-einrichten">3.2 Kind-Gerät einrichten</h2>
 <ol type="1">
-<li>Tippe auf <strong>Kind</strong>.</li>
-<li>Gib im Feld <strong>Familiencode</strong> den Code vom Eltern-Gerät
-ein, im Feld <strong>Klassencode</strong> den Klassencode oder beide.
-Mit <strong>QR-Code scannen</strong> füllt die App das passende Feld
-selbst aus. Ein Code reicht. Beide Felder sind optional, über
-<strong>Ohne Code starten</strong> geht es auch ganz ohne.</li>
-<li>Tippe auf <strong>Weiter</strong>.</li>
-<li>Der Einrichtungsassistent führt durch vier Schritte:
+<li>Tippe auf <strong>Kind</strong> und lass ein Elternteil die
+Einwilligung bestätigen.</li>
+<li>Der Einrichtungsassistent führt durch fünf Schritte:
 <ul>
 <li><strong>Name:</strong> Vorname oder Spitzname des Kindes. Der Name
 erscheint bei den Eltern.</li>
@@ -317,17 +329,29 @@ ein Versuch und deshalb zuerst aus. Das lässt sich später unter
 Einstellungen &gt; Bereiche ändern.</li>
 <li><strong>Farben und Ziel:</strong> Farbwelt (Blau und Gelb oder Rosa)
 und Tagesziel (Runden pro Tag).</li>
+<li><strong>Mit der Familie verbinden:</strong> Die Eltern zeigen auf
+ihrem Gerät einen QR-Code (siehe oben), das Kind tippt auf
+<strong>QR-Code scannen</strong>. Das Gerät zeigt einen Prüfcode und
+wartet, bis die Eltern es erlaubt haben. Üben geht schon vorher. Dieser
+Schritt ist freiwillig, er lässt sich später unter Einstellungen &gt;
+Familie nachholen.</li>
 </ul></li>
 <li>Tippe auf <strong>Los geht’s</strong>. Mit <strong>Später
 einrichten</strong> überspringst du den Assistenten, du kannst alles
 später in den Einstellungen ändern.</li>
 </ol>
-<p><strong>Nur Klassencode, keine Familie:</strong> Das Gerät kann üben
-und Aufgaben der Klasse laden. Ohne Familiencode gibt es keine
-Ergebnisse an Eltern und keine Joker-Antworten. Im Reiter Ich erscheint
-dazu ein Hinweis. Den Familiencode trägst du jederzeit in den
-Einstellungen nach, danach lädt die App bisher geübte Ergebnisse
+<p><strong>Ohne Familie:</strong> Das Gerät kann üben und, mit
+Klassencode (Einstellungen &gt; Klassencode), Aufgaben der Klasse laden.
+Ohne Familie gibt es keine Ergebnisse an Eltern und keine
+Joker-Antworten. Im Reiter Ich erscheint dazu ein Hinweis. Wer sich
+später verbindet, dessen bisher geübte Ergebnisse lädt die App
 automatisch nach.</p>
+<p><strong>Alter Familiencode:</strong> Wer YEM1N schon vor der
+Umstellung benutzt hat, sieht beim ersten Start einen Hinweis. Der alte
+Familiencode gilt nicht mehr. Die App räumt seine Einträge auf, die
+Eltern legen eine neue Familie an und verbinden die Geräte mit dem
+QR-Code. Alle Arbeiten und der Fortschritt auf den Geräten bleiben
+erhalten.</p>
 <h1 id="die-tabs-im-überblick">4. Die Tabs im Überblick</h1>
 <p>Unten gibt es höchstens fünf Reiter. So bleibt alles mit einem Tipp
 erreichbar und nichts verschwindet im iOS-Menü “Mehr”. Jede Seite
@@ -578,7 +602,7 @@ ausgeblendet. Dort zählt nur das eigene Können.</p>
 <h2 id="sterne-und-ergebnisse">5.5 Sterne und Ergebnisse</h2>
 <p>Am Ende einer Runde zeigt die App, wie viele Aufgaben gleich richtig
 waren, und vergibt bis zu drei Sterne. Das Ergebnis wird automatisch an
-die Eltern gesendet, wenn ein Familiencode eingetragen ist.</p>
+die Eltern gesendet, wenn das Gerät zur Familie gehört.</p>
 <h2 id="lernwelt">5.6 Die Lernwelt</h2>
 <p>Ganz oben im Tab <strong>Schule</strong> steht die
 <strong>Lernwelt</strong>. Dort gibt es fertige Aufgaben für Klasse 1
@@ -743,8 +767,8 @@ Abzeichen (Eltern)</h2>
 <li><strong>Abzeichen:</strong> Welche Abzeichen das Kind schon
 hat.</li>
 <li><strong>Kinder in der Familie:</strong> Alle Kinder, von denen
-Ergebnisse angekommen sind, mit der Zahl der Runden. Ein Kind auf einem
-Android-Gerät steht schon nach der Anmeldung mit dem Familiencode in der
+Ergebnisse angekommen sind, mit der Zahl der Runden. Ein Kind steht
+schon nach der Freigabe durch die Eltern in der
 Liste (“angemeldet, noch keine Runde”) und der letzten
 Aktivität (“zuletzt gestern”, “zuletzt vor 3 Wochen”). Wer 30 Tage oder
 länger nichts gemacht hat, ist grau markiert. Mit dem
@@ -949,9 +973,9 @@ Auf dem Home-Bildschirm gibt es eine kleine Karte. Das Widget zeigt,
 wann das Tier Hunger bekommt, und blendet die Serie aus, wenn sie nicht
 mehr gilt. Es liest nur Name und Zustand, die die App auf dem Gerät
 ablegt, und sendet nichts.</p>
-<p><strong>Gemeinsames Haustier:</strong> Mit Familiencode geht der
-Stand des Tieres (Name, Art, Wachstum, Hunger, Laune, Hüte) in die
-Cloud. Auf dem <strong>Eltern-Gerät</strong> zeigt der Tab
+<p><strong>Gemeinsames Haustier:</strong> Gehört das Gerät zur Familie,
+geht der Stand des Tieres (Name, Art, Wachstum, Hunger, Laune, Hüte) in
+das Familien-Fach. Auf dem <strong>Eltern-Gerät</strong> zeigt der Tab
 <strong>Haustier</strong> dann das Tier des Kindes. Eltern können ihm je
 Tag <strong>ein Leckerli</strong> und <strong>ein Spiel</strong>
 schenken, gratis. Das Kind-Gerät wendet beides an, sobald die App
@@ -959,10 +983,10 @@ geöffnet wird, und zeigt eine Mitteilung. Auch hier erklärt Olli beim
 ersten Besuch, was Eltern beitragen können, und erinnert an ein noch
 freies Leckerli oder Spiel. Hüte, Name und Tierart ändert
 nur das Kind. Zum Aktualisieren im Tab nach unten ziehen.</p>
-<p><strong>Datenschutz:</strong> Ohne Familiencode bleiben Name, Art und
-Zustand des Tieres <strong>nur auf dem Gerät</strong>. Mit Familiencode
-liegen sie in der Cloud, damit die Eltern das Tier sehen. Dazu kommt der
-kleine Eintrag, wenn Eltern es füttern (Tag, Art, Name des Elternteils).
+<p><strong>Datenschutz:</strong> Ohne Familie bleiben Name, Art und
+Zustand des Tieres <strong>nur auf dem Gerät</strong>. In der Familie
+liegen sie im Familien-Fach, damit die Eltern das Tier sehen. Dazu kommt der
+kleine Eintrag, wenn Eltern es füttern (Tag und Art).
 Über <strong>Anderes Haustier aussuchen</strong> am Ende des Tabs kann
 das Kind ein neues Tier wählen. Das alte und seine Hüte sind dann
 weg.</p>
@@ -986,7 +1010,7 @@ euch, eine Hälfte steht auf dem Kopf für die Person gegenüber. Auf dem
 iPad quer liegen die Hälften nebeneinander. Nach dem Countdown rechnen
 beide gleichzeitig. Am Ende gibt es den Sieger mit Konfetti und den
 Knopf <strong>Revanche</strong> mit neuen Aufgaben.</li>
-<li><strong>Herausforderung an die Familie:</strong> Mit Familiencode
+<li><strong>Herausforderung an die Familie:</strong> In der Familie
 wählst du deine Stufe und die Stufe der anderen und tippst auf
 <strong>Vorrechnen und abschicken</strong>. Du rechnest zuerst, dann
 bekommen alle anderen Geräte der Familie eine Mitteilung. Wer annimmt,
@@ -1010,7 +1034,7 @@ tippen. Die Eltern geben dann Nachschub frei.</li>
 <li>Im Reiter Ich kann das Kind mit <strong>Hat geholfen</strong>
 zurückmelden, dass die Antwort geholfen hat.</li>
 </ol>
-<p>Ohne Familiencode öffnet der Joker stattdessen das Teilen-Fenster.
+<p>Ohne Familie öffnet der Joker stattdessen das Teilen-Fenster.
 Das Kind kann die Frage dann per Nachricht an jemanden senden.</p>
 <h2 id="auf-dem-eltern-gerät">8.2 Auf dem Eltern-Gerät</h2>
 <ul>
@@ -1175,8 +1199,8 @@ tippen:</p>
 </table>
 <p>Die App fragt auf dem Eltern-Gerät, wohin die Arbeit soll:</p>
 <ul>
-<li><strong>An meine Familie veröffentlichen:</strong> Kind-Geräte mit
-demselben Familiencode laden sie automatisch.</li>
+<li><strong>An meine Familie veröffentlichen:</strong> Die Kind-Geräte der
+Familie laden sie automatisch.</li>
 <li><strong>An die Klasse veröffentlichen:</strong> Alle Geräte mit dem
 Klassencode laden sie (nur für den Admin der Klasse).</li>
 <li><strong>Nur auf diesem Gerät importieren:</strong> Bleibt
@@ -1360,9 +1384,10 @@ Eltern-Gerät über den eigenen Reiter.</p>
 </tr>
 <tr class="even">
 <td>Familie und Klasse</td>
-<td><strong>Familiencode:</strong> anzeigen, teilen, als QR-Code zeigen,
-neu erzeugen oder übernehmen. Auf dem Kind-Gerät eintragen oder per
-QR-Code scannen. <strong>Klassencode:</strong> siehe Kapitel 12</td>
+<td><strong>Familie:</strong> Familie anlegen oder per QR-Code
+verbinden, Geräte hinzufügen, erlauben und entfernen, Gerät aus der
+Familie nehmen, ganze Familie löschen, Familien-Kennung kopieren.
+<strong>Klassencode:</strong> siehe Kapitel 12</td>
 </tr>
 <tr class="odd">
 <td>Lernen und Spielen</td>
@@ -1405,13 +1430,13 @@ Glas-Effekte, Antworten mit dem Stift schreiben</td>
 <td><strong>Anleitung, Info und Feedback:</strong> diese Anleitung,
 Version und Build, Feedback per E-Mail. <strong>Datenschutz:</strong>
 Datenschutztext, Impressum, Beta und Haftung, Datum der Einwilligung,
-<strong>Meine Cloud-Daten löschen</strong>, <strong>Einwilligung
+<strong>Gerät aus der Familie nehmen</strong>, <strong>Einwilligung
 widerrufen</strong></td>
 </tr>
 <tr class="odd">
 <td>Für Fortgeschrittene: Technik</td>
-<td>Cloud-Diagnose (Status, Verbindungstest, Mitteilungen prüfen,
-Cloud neu einrichten), noch nicht gesendete Ergebnisse (Kind),
+<td>Cloud-Diagnose (Status, Verbindungstest, Mitteilungen prüfen),
+noch nicht gesendete Ergebnisse (Kind),
 <strong>Einrichtung noch einmal ansehen</strong>, <strong>Gerätemodus
 ändern</strong> (Warnung beachten), Version. Das braucht man im Alltag
 nicht</td>
@@ -1443,48 +1468,70 @@ verloren</td>
 löschen</strong></td>
 </tr>
 <tr class="odd">
-<td>Paket in der Cloud (Eltern)</td>
+<td>Paket der Klasse in der Cloud (Admin)</td>
 <td>Menü Plus &gt; Cloud-Pakete, Eintrag nach links wischen und
-bestätigen</td>
+bestätigen. Pakete der Familie verschwinden nach einem Jahr von
+selbst</td>
 </tr>
 <tr class="even">
-<td>Eigene Cloud-Daten</td>
-<td>Einstellungen &gt; Datenschutz &gt; <strong>Meine Cloud-Daten
-löschen</strong></td>
+<td>Eigene Einträge in der Familie (Kind-Gerät)</td>
+<td>Einstellungen &gt; Datenschutz &gt; <strong>Familie verlassen und
+meine Einträge löschen</strong></td>
+</tr>
+<tr class="odd">
+<td>Ein Gerät aus der Familie nehmen</td>
+<td>Einstellungen &gt; Familie &gt; <strong>Dieses Gerät aus der Familie
+nehmen</strong>, auf dem Eltern-Gerät in der Geräteliste bei einem
+anderen Gerät <strong>Entfernen</strong></td>
+</tr>
+<tr class="even">
+<td>Die ganze Familie (Eltern)</td>
+<td>Einstellungen &gt; Familie &gt; <strong>Ganze Familie
+löschen</strong>. Alle Einträge im Familien-Fach und alle Geräte sind
+danach weg. Das geht nicht rückgängig</td>
 </tr>
 </tbody>
 </table>
 <p>Ein nur auf dem Gerät gelöschtes Paket kommt bei <strong>Neue
 Aufgaben holen</strong> wieder, solange es noch in der Cloud liegt.
-Lösche es zusätzlich dort.</p>
+Pakete der Familie verschwinden dort nach einem Jahr von selbst, Pakete
+der Klasse löscht der Admin.</p>
 <h1 id="datenschutz">15. Datenschutz</h1>
 <ul>
 <li>Kein Konto, keine Werbung, kein Tracking, keine Fremd-SDKs.</li>
 <li>Gespeichert werden: Name des Kindes (freiwillig), Ergebnisse,
-Joker-Nachrichten, Aufgabenpakete und die pseudonymen Codes. Mit
-Familiencode kommt das Haustier dazu (Name, Art, Zustand, Hüte), damit
-die Eltern es sehen und füttern können. Ohne Familiencode bleibt es nur
-auf dem Gerät. Bei einer Duell-Herausforderung liegen Name, Stufe,
-Aufgaben, Ergebnis und eine zufällige Gerätekennung in der Cloud, das
-sendende Gerät löscht sie nach 14 Tagen.</li>
+Joker-Nachrichten, Aufgabenpakete und die Schlüssel der Geräte. Gehört
+ein Gerät zur Familie, kommt das Haustier dazu (Name, Art, Zustand,
+Hüte), damit die Eltern es sehen und füttern können. Ohne Familie bleibt
+es nur auf dem Gerät. Bei einer Duell-Herausforderung liegen Name, Stufe,
+Aufgaben, Ergebnis und eine zufällige Gerätekennung im Familien-Fach, der
+Dienst löscht sie nach 14 Tagen.</li>
+<li><strong>Das Familien-Fach:</strong> Jede Familie hat ein eigenes,
+abgetrenntes Fach bei Cloudflare, gespeichert in der EU. Jedes Gerät
+unterschreibt seine Anfragen mit einem Schlüssel, der in der Secure
+Enclave des Geräts bleibt. Neue Geräte kommen nur mit einem QR-Code und
+der Freigabe der Eltern dazu. Kinder-Geräte können Ergebnisse nicht
+lesen, nur die Eltern.</li>
 <li>Was mit dem Stift geschrieben wird, liest das Gerät selbst. Die
 Schrift wird weder gespeichert noch verschickt.</li>
-<li>Die Daten liegen in Apples iCloud (CloudKit) und lokal auf dem
-Gerät.</li>
+<li>Pakete der Klasse liegen in Apples iCloud (CloudKit) und sind vom
+Admin digital unterschrieben. Alles andere liegt im Familien-Fach und
+lokal auf dem Gerät.</li>
 <li><strong>Einwilligung:</strong> Ein Elternteil bestätigt sie beim
 ersten Start. Du kannst sie unter <strong>Einstellungen &gt; Datenschutz
-&gt; Einwilligung widerrufen</strong>. Die App löscht dann die
-Cloud-Einträge, die dieses Gerät angelegt hat, trennt den Familiencode
-und fragt neu.</li>
-<li><strong>Löschfrist:</strong> Cloud-Einträge löscht jedes Gerät nach
-12 Monaten selbst, soweit es sie angelegt hat und die App geöffnet wird.
-Du kannst sie jederzeit vorher löschen (Kapitel 14).</li>
+&gt; Einwilligung widerrufen</strong>. Das Gerät verlässt dann die
+Familie (ein Kinder-Gerät nimmt seine Einträge mit) und die App fragt
+neu.</li>
+<li><strong>Löschfrist:</strong> Der Familien-Dienst löscht Einträge
+spätestens nach 12 Monaten selbst. Du kannst sie jederzeit vorher
+löschen (Kapitel 14).</li>
 <li><strong>Freitext:</strong> Namen und Joker-Tipps sind frei
 eingegeben. Schreibe dort keine Nachnamen, Adressen oder
 Telefonnummern.</li>
 <li><strong>Kinderliste:</strong> <strong>Entfernen</strong> blendet ein
 Kind nur auf dem Eltern-Gerät aus und löscht dort die Kopien seiner
-Ergebnisse. In der Cloud löscht es nichts.</li>
+Ergebnisse. Im Familien-Fach löscht es nichts, das tut “Ganze Familie
+löschen” oder das Verlassen durch das Kinder-Gerät.</li>
 <li>Impressum und <strong>Beta und Haftung</strong> findest du unter
 <strong>Info</strong>, und im Web unter
 https://cembot90.github.io/YEM1N/impressum.html und
@@ -1500,16 +1547,23 @@ Deutsch</strong>. Prüfe im Profil, ob die Klasse stimmt (nur Pakete der
 eigenen Klasse werden geholt). Nutze den Fach-Filter
 <strong>Alle</strong>.</p>
 <p><strong>Neue Aufgaben kommen nicht an.</strong> Prüfe, ob
-Familiencode oder Klassencode eingetragen ist. Tippe <strong>Neue
+das Gerät zur Familie gehört (und erlaubt wurde) oder ein Klassencode
+eingetragen ist. Tippe <strong>Neue
 Aufgaben holen</strong>. Bei Klassenpaketen: Meldung “ohne gültige
 Unterschrift”? Dann den Klassencode entfernen und neu eintragen oder den
 Admin bitten, das Paket noch einmal zu senden.</p>
 <p><strong>Ich bekomme keine Mitteilung bei einem Joker.</strong>
 iOS-Einstellungen &gt; Mitteilungen &gt; YEM1N: <strong>Mitteilungen
-erlauben</strong> aktivieren. Prüfe, dass beide Geräte denselben
-Familiencode haben. In den Einstellungen der App hilft unter
+erlauben</strong> aktivieren. Prüfe, dass beide Geräte unter
+Einstellungen &gt; Familie als “verbunden” stehen. In den Einstellungen der App hilft unter
 <strong>Für Fortgeschrittene &gt; Technik</strong> die
-<strong>Cloud-Diagnose</strong>.</p>
+<strong>Cloud-Diagnose</strong> mit dem Verbindungstest.</p>
+<p><strong>Mein neues Gerät wartet und wartet.</strong> Ein neues Gerät
+ist erst in der Familie, wenn ein Eltern-Gerät es erlaubt hat. Öffne auf
+dem Eltern-Gerät Einstellungen &gt; Familie und tippe bei dem Gerät mit
+dem gleichen Prüfcode auf <strong>Erlauben</strong>. Der QR-Code gilt nur
+10 Minuten und einmal. Meldet das neue Gerät “Das darf dieses Gerät nicht, oder
+die Einladung gilt nicht mehr”, erzeuge einen neuen QR-Code.</p>
 <p><strong>Am App-Symbol steht ein roter Punkt, aber ich sehe keine
 Mitteilung.</strong> Der Punkt zeigt, dass eine Mitteilung angekommen
 ist, während die App zu war. Sobald du die App öffnest, verschwindet er
@@ -1527,10 +1581,10 @@ gelesene Zahl im Antwortfeld, es zählt also nichts, was du nicht
 gesehen hast. Mit <strong>Lieber Tasten</strong> geht es jederzeit wie
 gewohnt.</p>
 <p><strong>Eine Duell-Herausforderung kommt nicht an.</strong> Beide
-Geräte brauchen denselben Familiencode und Internet. Auf der Duell-Seite
+Geräte müssen zur Familie gehören und Internet haben. Auf der Duell-Seite
 oben rechts aktualisieren. Hilft das nicht, unter Einstellungen,
-<strong>Für Fortgeschrittene &gt; Technik</strong> die Cloud einmal neu
-einrichten.</p>
+<strong>Für Fortgeschrittene &gt; Technik</strong> den Verbindungstest
+machen.</p>
 <p><strong>Der Joker reicht nicht.</strong> Im Reiter Ich <strong>Neue
 Joker anfragen</strong> tippen. Die Eltern bestätigen.</p>
 <p><strong>Die App ruckelt oder wird langsam.</strong> Unter
