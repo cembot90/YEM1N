@@ -262,6 +262,19 @@ pre.json .k { color: var(--himmel); } pre.json .w { color: var(--gelb); }
 .schutz div { border-top: 3px solid var(--mint); padding-top: 12px; display: grid; gap: 6px; }
 .schutz p { color: var(--sanft); font-size: 0.95rem; }
 
+/* Sicherheit */
+.chip-sicher { border-color: rgba(95, 224, 181, 0.6); background: rgba(95, 224, 181, 0.12); }
+.sicher-band { display: flex; gap: 14px; align-items: center; background: linear-gradient(135deg, rgba(95, 224, 181, 0.2), rgba(108, 196, 255, 0.12)); border: 1px solid rgba(95, 224, 181, 0.55); border-radius: var(--radius); padding: 16px 20px; color: var(--text); text-decoration: none; }
+.sicher-band svg { flex: none; width: 42px; height: 42px; color: var(--mint); }
+.sicher-band .mehr { margin-left: auto; color: var(--gelb); font-weight: 700; white-space: nowrap; }
+@media (max-width: 560px) { .sicher-band { flex-wrap: wrap; } .sicher-band .mehr { margin-left: 0; } }
+.sicher-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+@media (max-width: 900px) { .sicher-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 560px) { .sicher-grid { grid-template-columns: 1fr; } }
+.sicher-karte { background: var(--karte); border: 1px solid var(--linie); border-top: 4px solid var(--mint); border-radius: var(--radius); padding: 20px; display: grid; gap: 8px; align-content: start; }
+.sicher-karte svg { width: 36px; height: 36px; color: var(--mint); }
+.sicher-karte p { color: var(--sanft); font-size: 0.97rem; }
+
 /* Start in der App */
 .los { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
 @media (max-width: 860px) { .los { grid-template-columns: 1fr 1fr; } }
@@ -290,6 +303,7 @@ kbd { border: 1px solid var(--linie); border-bottom-width: 2px; border-radius: 6
 </style>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><symbol id="schild" viewBox="0 0 24 24"><path d="M12 2.5 4.5 5.5v6c0 4.7 3.1 8.6 7.5 10 4.4-1.4 7.5-5.3 7.5-10v-6L12 2.5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="m8.6 12.2 2.5 2.5 4.6-5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></symbol></svg>
 
 <header class="kopf">
   <div class="kopf-innen">
@@ -307,6 +321,7 @@ kbd { border: 1px solid var(--linie); border-bottom-width: 2px; border-radius: 6
       <h1>Üben, das Kinder <span>gern</span> aufmachen.</h1>
       <p class="lead">YEM1N verbindet echte Schulaufgaben, fertige Übungen nach dem Lehrplan und kleine Belohnungen. Eltern sehen, wo es hakt. Lehrkräfte können Aufgaben an eine ganze Klasse schicken.</p>
       <div class="chips">
+        <span class="chip chip-sicher">Sicher: Schlüssel je Gerät, Daten in der EU</span>
         <span class="chip">iPhone und iPad</span>
         <span class="chip">Vorschule bis <b>Klasse 4</b></span>
         <span class="chip">kostenlos, ohne Werbung</span>
@@ -315,6 +330,11 @@ kbd { border: 1px solid var(--linie); border-bottom-width: 2px; border-radius: 6
         <span class="chip">Sparmodus für ältere iPhones</span>
         <span class="chip">Beta über TestFlight</span>
       </div>
+      <a class="sicher-band" href="#datenschutz">
+        <svg aria-hidden="true"><use href="#schild"/></svg>
+        <div><b>Sicher gebaut, nicht nur versprochen.</b> Jedes Gerät hat einen eigenen Schlüssel, neue Geräte kommen nur mit Freigabe der Eltern hinein, die Daten der Familie liegen in der EU. Keine Werbung, kein Tracking.</div>
+        <span class="mehr">So funktioniert es</span>
+      </a>
       <div class="kennzahlen">
         <div class="kennzahl"><b>130</b><span>Lernwelt-Themen für Klasse 1 bis 4</span></div>
         <div class="kennzahl"><b>24</b><span>Vorschulspiele in drei Bereichen</span></div>
@@ -363,6 +383,28 @@ kbd { border: 1px solid var(--linie); border-bottom-width: 2px; border-radius: 6
         </div>
       </div>
       <div class="fluss"><b>Foto vom Arbeitsblatt</b> → <b>Aufgabenpaket</b> → <b>Kind übt</b> → <b>Eltern sehen das Ergebnis</b></div>
+    </div>
+  </section>
+
+  <section class="folie" id="datenschutz" data-titel="Sicherheit">
+    <div class="innen">
+      <div class="oberzeile">Sicherheit und Datenschutz</div>
+      <h2>Kinderdaten gehören der Familie. Dafür ist die App gebaut.</h2>
+      <p class="lead">Sicherheit ist bei YEM1N keine Zusatzfunktion, sondern die Grundlage. Das Wichtigste in sechs Punkten:</p>
+      <div class="sicher-grid">
+        <div class="sicher-karte"><svg aria-hidden="true"><use href="#schild"/></svg><h3>Ein eigenes Fach je Familie</h3><p>Jede Familie hat ihren eigenen, abgetrennten Speicherplatz. Er liegt in der EU. Die Kennung ist lang und zufällig, sie lässt sich nicht erraten und ist kein Passwort.</p></div>
+        <div class="sicher-karte"><svg aria-hidden="true"><use href="#schild"/></svg><h3>Ein Schlüssel je Gerät</h3><p>Jedes Handy und Tablet erzeugt einen eigenen Schlüssel, der das Gerät nie verlässt (iPhone: Secure Enclave, Android: Keystore). Damit ist jede Anfrage unterschrieben.</p></div>
+        <div class="sicher-karte"><svg aria-hidden="true"><use href="#schild"/></svg><h3>Neue Geräte nur mit Ihrer Freigabe</h3><p>Ein neues Gerät kommt nur per QR-Code hinein. Der Code gilt 10 Minuten und nur einmal. Danach erlauben die Eltern das Gerät mit einem Tipp, auch bei Kinder-Geräten.</p></div>
+        <div class="sicher-karte"><svg aria-hidden="true"><use href="#schild"/></svg><h3>Mitschneiden bringt nichts</h3><p>Jede Unterschrift gilt nur einmal und nur wenige Minuten. Wer eine Anfrage abfängt, kann sie nicht noch einmal abschicken.</p></div>
+        <div class="sicher-karte"><svg aria-hidden="true"><use href="#schild"/></svg><h3>Neutrale Mitteilungen</h3><p>Auf dem Sperrbildschirm steht nur „YEM1N“. Kein Name, kein Ergebnis, keine Aufgabe. Den Inhalt holt die App erst nach dem Öffnen selbst ab.</p></div>
+        <div class="sicher-karte"><svg aria-hidden="true"><use href="#schild"/></svg><h3>Eltern-PIN und Einwilligung</h3><p>Der Elternbereich ist mit einer PIN geschützt. Ohne ausdrückliche Einwilligung der Eltern geht nichts in die Cloud. Sie lässt sich jederzeit widerrufen.</p></div>
+      </div>
+      <div class="schutz">
+        <div><h3>Keine Werbung, kein Tracking</h3><p>Keine Analyse- oder Werbedienste, kein Benutzerkonto. Die App ist kostenlos.</p></div>
+        <div><h3>Fast alles auf dem Gerät</h3><p>Aufgaben, Fortschritt, Vorlesestimme und die KI-Texte laufen auf dem Gerät. Der Vorname ist freiwillig.</p></div>
+        <div><h3>Alles lässt sich löschen</h3><p>Einzelne Geräte entfernen oder die ganze Familie unwiderruflich löschen. Einträge in der Cloud verschwinden nach 12 Monaten von selbst.</p></div>
+      </div>
+      <div class="ehrlich"><b>Ehrlich gesagt:</b> YEM1N ist in der Beta. Die Übertragung ist verschlüsselt, die Inhalte im Familienfach sind aber nicht zusätzlich Ende-zu-Ende verschlüsselt. Eine unabhängige Prüfung durch Fachleute steht noch aus. Datenschutzerklärung: <a href="https://cembot90.github.io/YEM1N/" target="_blank" rel="noopener">cembot90.github.io/YEM1N</a></div>
     </div>
   </section>
 
@@ -573,19 +615,6 @@ kbd { border: 1px solid var(--linie); border-bottom-width: 2px; border-radius: 6
           <li><div><b>Kein Konto, keine Schülerliste.</b> <span>Der Klassencode ist eine zufällige Kennung, die die Lehrkraft weitergibt.</span></div></li>
         </ul>
       </div>
-    </div>
-  </section>
-
-  <section class="folie" id="datenschutz" data-titel="Datenschutz">
-    <div class="innen">
-      <div class="oberzeile">Datenschutz</div>
-      <h2>Kinderdaten bleiben in der Familie</h2>
-      <div class="schutz">
-        <div><h3>Keine Werbung, kein Tracking</h3><p>Keine Analyse- oder Werbedienste, kein Benutzerkonto. Die App ist kostenlos.</p></div>
-        <div><h3>Fast alles auf dem Gerät</h3><p>Aufgaben, Fortschritt, Vorlesestimme und die KI-Texte laufen auf dem Gerät.</p></div>
-        <div><h3>Ein eigenes Fach je Familie</h3><p>Nur Geräte, die per QR-Code verbunden und von den Eltern erlaubt wurden, gehören dazu. Jedes Gerät hat einen eigenen Schlüssel. Das Fach liegt in der EU. Vorname freiwillig, Einträge verschwinden nach 12 Monaten und lassen sich jederzeit löschen.</p></div>
-      </div>
-      <p class="klein">Die Eltern bestätigen beim Einrichten eine Einwilligung und können sie jederzeit widerrufen. Datenschutzerklärung: <a href="https://cembot90.github.io/YEM1N/" target="_blank" rel="noopener">cembot90.github.io/YEM1N</a></p>
     </div>
   </section>
 
