@@ -318,10 +318,6 @@ struct UebungInhalt: View {
     @AppStorage("tagesziel") private var tagesziel = 2
     @State private var neuePokale: [Pokal] = []
     @State private var haustierText: String?
-    /// Antworten mit Stift oder Finger auf Karopapier schreiben statt tippen
-    @AppStorage(Handschrift.key) private var stift = Handschrift.standard
-    /// Neue Zahl, neues leeres Blatt
-    @State private var schreibRunde = 0
 
     private var istProbe: Bool { uebung.arbeit?.spezial == "probe" }
 
@@ -370,8 +366,6 @@ struct UebungInhalt: View {
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { bereiteVor() }
         .onChange(of: aktuell?.persistentModelID) { bereiteVor() }
-        .onChange(of: aktivesFeld) { schreibRunde += 1 }
-        .onChange(of: mauerSchritt) { schreibRunde += 1 }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button { zeigeNotiz = true } label: {
@@ -720,15 +714,7 @@ struct UebungInhalt: View {
                 melde(a, ok: z == a.antwort, erklaerung: a.erklaerung, gegeben: z)
             }
         } else {
-            VStack(spacing: 12) {
-                EingabeUmschalter(stift: $stift)
-                if stift {
-                    SchreibFeld(text: aktuellerText, maxLaenge: laenge(a)) { pruefen(a) }
-                        .id(schreibRunde)
-                } else {
-                    ZahlenTastatur(text: aktuellerText, maxLaenge: laenge(a)) { pruefen(a) }
-                }
-            }
+            ZahlenTastatur(text: aktuellerText, maxLaenge: laenge(a)) { pruefen(a) }
         }
     }
 
@@ -885,7 +871,6 @@ struct UebungInhalt: View {
             }
         }
         notiz = PKDrawing()
-        schreibRunde += 1
         eingabe = ""
         eingabe2 = ""
         aktivesFeld = 1

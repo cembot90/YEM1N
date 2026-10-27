@@ -1,6 +1,6 @@
 #!/bin/bash
 # Prüft die Logik ohne Oberfläche unter Linux: Lernwelt, Vorschule, Stimmen,
-# Erklärbilder, Rechenweg, Duell, Handschrift, Familien-Protokoll und Eltern-PIN.
+# Erklärbilder, Rechenweg, Duell, Familien-Protokoll und Eltern-PIN.
 # SwiftUI, SwiftData und AVFoundation gibt es dort nicht. Deshalb schneidet
 # pruefen/auszug.py nur die reinen Typen aus den App-Dateien aus.
 # Braucht Swift 6.1 oder neuer (SWIFTC=/pfad/zu/swiftc) und Python 3.
@@ -66,33 +66,15 @@ ohneApp $T/LobTests.swift > "$arbeit/LobTests.swift"
   "$arbeit/VorschuleTests.swift" "$arbeit/StimmenTests.swift" "$arbeit/LobTests.swift" "$arbeit/start.swift"
 laufen "$arbeit/vor"
 
-echo "== Erklärbilder, Rechenweg, Duell, Handschrift"
+echo "== Erklärbilder, Rechenweg, Duell"
 python3 pruefen/auszug.py $Y "$arbeit/rest.swift" \
   ErklaerBild.swift:ErklaerBild,ErklaerBildPlan MatheEditor.swift:MatheRechner \
   Duell.swift:DuellStufe,DuellAufgabe,DuellStand,DuellRegeln,DuellLauf \
   DuellCloud.swift:DuellHerausforderung,DuellAntwort,DuellPost \
-  Cloud.swift:MitteilungsZiel Handschrift.swift:Handschrift
-python3 - "$arbeit" <<'PY'
-import sys
-a = sys.argv[1]
-s = open(f"{a}/rest.swift").read()
-# Texterkennung und Zeichnen gibt es unter Linux nicht
-for anfang in ["    nonisolated static func erkenne(", "    static func bild(von zeichnung: PKDrawing)"]:
-    i = s.index(anfang)
-    j = s.index("\n    }\n", i) + 7
-    s = s[:i] + s[j:]
-s += """
-final class UIDevice {
-    nonisolated(unsafe) static let current = UIDevice()
-    enum Art { case phone, pad }
-    var userInterfaceIdiom: Art { .phone }
-}
-"""
-open(f"{a}/rest.swift", "w").write(s)
-PY
-for f in ErklaerBildTests RechenwegTests DuellTests HandschriftTests; do ohneApp $T/$f.swift > "$arbeit/$f.swift"; done
+  Cloud.swift:MitteilungsZiel
+for f in ErklaerBildTests RechenwegTests DuellTests; do ohneApp $T/$f.swift > "$arbeit/$f.swift"; done
 "$SWIFTC" -parse-as-library -O -o "$arbeit/rest" "$arbeit/rest.swift" $Y/Rechenweg.swift "$arbeit/helfer.swift" \
-  "$arbeit/ErklaerBildTests.swift" "$arbeit/RechenwegTests.swift" "$arbeit/DuellTests.swift" "$arbeit/HandschriftTests.swift" "$arbeit/start.swift"
+  "$arbeit/ErklaerBildTests.swift" "$arbeit/RechenwegTests.swift" "$arbeit/DuellTests.swift" "$arbeit/start.swift"
 laufen "$arbeit/rest"
 
 echo "== Familie (Protokoll 2) und Eltern-PIN"
