@@ -524,3 +524,37 @@ struct FamilieTests {
         #expect(!ElternPin.sperreText(30).contains("\u{2014}"))
     }
 }
+
+// MARK: Bisherige Runden an die neue Familie schicken
+
+struct ErgebnisUmzugTests {
+    private func speicher() -> UserDefaults {
+        let name = "ergebnisumzug-test-" + UUID().uuidString
+        let d = UserDefaults(suiteName: name)!
+        d.removePersistentDomain(forName: name)
+        return d
+    }
+
+    @Test func nurEinmalJeFamilie() {
+        let d = speicher()
+        #expect(ErgebnisUmzug.faellig(familie: "aaa", speicher: d))
+        ErgebnisUmzug.erledigt(familie: "aaa", speicher: d)
+        #expect(!ErgebnisUmzug.faellig(familie: "aaa", speicher: d))
+        #expect(ErgebnisUmzug.faellig(familie: "bbb", speicher: d))
+    }
+
+    @Test func leereFamilieIstNichtFaellig() {
+        #expect(!ErgebnisUmzug.faellig(familie: "", speicher: speicher()))
+    }
+
+    @Test func grenzeIstEinJahr() {
+        let jetzt = Date(timeIntervalSince1970: 1_800_000_000)
+        #expect(jetzt.timeIntervalSince(ErgebnisUmzug.grenze(jetzt: jetzt)) == 365 * 86_400)
+    }
+
+    @Test func pauseNurBeiVielenRunden() {
+        #expect(ErgebnisUmzug.pause(bei: 3) == nil)
+        #expect(ErgebnisUmzug.pause(bei: ErgebnisUmzug.ab) == nil)
+        #expect(ErgebnisUmzug.pause(bei: ErgebnisUmzug.ab + 1) != nil)
+    }
+}

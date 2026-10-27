@@ -98,6 +98,6 @@ laufen "$arbeit/rest"
 echo "== Familie (Protokoll 2) und Eltern-PIN"
 ohneApp $T/FamilieTests.swift > "$arbeit/FamilieTests.swift"
 "$SWIFTC" -parse-as-library -O -o "$arbeit/fam" $Y/Sha256.swift $Y/FamilienProtokoll.swift $Y/FamilienClient.swift \
-  $Y/ElternPin.swift "$arbeit/FamilieTests.swift" "$arbeit/start.swift"
+  $Y/ElternPin.swift $Y/ErgebnisUmzug.swift "$arbeit/FamilieTests.swift" "$arbeit/start.swift"
 laufen "$arbeit/fam"
 exit $fehler

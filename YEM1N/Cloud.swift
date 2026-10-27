@@ -284,14 +284,28 @@ enum CloudSync {
 
     // Kind-Gerät: alle noch nicht gesendeten Ergebnisse hochladen
     static func sendeOffene(_ context: ModelContext) async {
-        guard modus == "kind", verbunden else { return }
+        guard modus == "kind", verbunden, let familieID = FamilienModell.shared.zugang?.familie else { return }
+        // Neue Familie: die bisherigen Runden gelten als noch nicht gesendet und gehen noch einmal hoch.
+        if ErgebnisUmzug.faellig(familie: familieID) {
+            let schon = FetchDescriptor<RundenErgebnis>(
+                predicate: #Predicate { $0.quelle == "lokal" && $0.gesendet == true })
+            if let liste = try? context.fetch(schon) {
+                let grenze = ErgebnisUmzug.grenze()
+                for e in liste where e.zeitpunkt >= grenze { e.gesendet = false }
+                try? context.save()
+            }
+            ErgebnisUmzug.erledigt(familie: familieID)
+        }
         let beschreibung = FetchDescriptor<RundenErgebnis>(
             predicate: #Predicate { $0.quelle == "lokal" && $0.gesendet == false })
-        guard let offene = try? context.fetch(beschreibung), !offene.isEmpty else { return }
+        guard let alle = try? context.fetch(beschreibung), !alle.isEmpty else { return }
+        let offene = alle.sorted { $0.zeitpunkt < $1.zeitpunkt }
+        let pause = ErgebnisUmzug.pause(bei: offene.count)
         for e in offene {
             do {
                 try await CloudDienst.sendeErgebnis(e)
                 e.gesendet = true
+                if let pause { try? await Task.sleep(for: pause) }
             } catch {
                 CloudStatus.shared.meldung = "Senden nicht möglich: \(CloudDienst.fehlertext(error))"
                 break
