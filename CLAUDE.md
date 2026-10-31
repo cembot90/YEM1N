@@ -24,6 +24,14 @@ App Store Connect, TestFlight, Tests auf echten Geräten.
 - Design: Navy und Gelb (Fenerbahçe), Rosa-Modus, Glas-Effekte standardmäßig aus, viel Abwechslung bei Rückmeldungen.
 - Sprachen bleiben experimentell und versteckt.
 
+## Gleichstand mit Android
+
+Cem hat für Android einen eigenen Chat (Repo `cembot90/yem1n-android`). Die gemeinsame Übergabe steht dort in
+`docs/ABGLEICH-IOS.md`, Abschnitt "Übergabe zwischen den Chats". Das Repo im Chat mit `add_repo` dazuholen.
+Zu Beginn jeder Sitzung die offenen Zeilen "Von Android, für iOS" lesen und mit Cem besprechen. Nach jeder
+Funktionsänderung hier eine Zeile unter "Von iOS, für Android" eintragen (Datum, Commit, was sich für Kinder und
+Eltern ändert, betroffene Dateien) und auf `main` des Android-Repos pushen. Nachgebaute Zeilen auf "fertig" setzen.
+
 ## Auslieferung
 
 `main` ist scharf. Jeder Push dorthin löst bei Xcode Cloud aus: Build, dann die
