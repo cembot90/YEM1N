@@ -412,7 +412,8 @@ nonisolated enum FamilienProtokoll {
         case 403: return "Das darf dieses Gerät nicht, oder die Einladung gilt nicht mehr."
         case 404: return "Diese Familie gibt es nicht (mehr)."
         case 409: return "Das geht gerade nicht. Vielleicht ist das Gerät schon in der Familie oder die Familie ist voll."
-        case 429: return "Das ging zu schnell. Bitte kurz warten."
+        case 429: return "Gerade kommen zu viele Anfragen. Bitte etwas später noch einmal versuchen."
+        case 503: return "Der Familien-Dienst macht gerade Pause. Bitte später noch einmal versuchen, auf dem Gerät geht nichts verloren."
         default: return "Der Dienst hat nicht geantwortet (Code \(status))."
         }
     }

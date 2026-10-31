@@ -345,12 +345,13 @@ struct FamilieTests {
     }
 
     @Test func fehlertexteSindFreundlichUndOhneGedankenstriche() {
-        for s in [0, -1, -3, 400, 401, 403, 404, 409, 429, 500] {
+        for s in [0, -1, -3, 400, 401, 403, 404, 409, 429, 500, 503] {
             let t = FamilienProtokoll.fehlertext(s)
             #expect(!t.isEmpty)
             #expect(!t.contains("\u{2013}") && !t.contains("\u{2014}"))
         }
         #expect(FamilienProtokoll.fehlertext(500).contains("500"))
+        #expect(FamilienProtokoll.fehlertext(503).contains("Pause"))
     }
 
     // MARK: Client mit falschem Dienst
