@@ -11,6 +11,19 @@ Cem macht alles, wofür Zugriff auf seinen Mac oder sein Apple-Konto nötig ist:
 Xcode-Einstellungen, neue Berechtigungen in der Info.plist, Xcode-Cloud-Workflows,
 App Store Connect, TestFlight, Tests auf echten Geräten.
 
+## Feste Regeln
+
+- Löschen immer mit Nachfrage.
+- Einstellungen kindersicher (Elternbereich hinter der PIN).
+- "Lösung zeigen" zählt nicht als richtig gelöst.
+- Keine Handschrift als Eingabe für Antworten.
+- Yemins Fortschritt darf nie verloren gehen, auch nicht bei Umbauten am Datenmodell oder beim Wechsel der Familie.
+- Die Android-Version (`cembot90/yem1n-android`) im Gleichstand halten.
+- Cloudflare-Kosten höchstens 5 $ im Monat.
+- Klassencode für Pakete getrennt vom Familiencode.
+- Design: Navy und Gelb (Fenerbahçe), Rosa-Modus, Glas-Effekte standardmäßig aus, viel Abwechslung bei Rückmeldungen.
+- Sprachen bleiben experimentell und versteckt.
+
 ## Auslieferung
 
 `main` ist scharf. Jeder Push dorthin löst bei Xcode Cloud aus: Build, dann die
