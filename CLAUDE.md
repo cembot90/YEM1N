@@ -18,7 +18,7 @@ App Store Connect, TestFlight, Tests auf echten Geräten.
 - "Lösung zeigen" zählt nicht als richtig gelöst.
 - Keine Handschrift als Eingabe für Antworten.
 - Yemins Fortschritt darf nie verloren gehen, auch nicht bei Umbauten am Datenmodell oder beim Wechsel der Familie.
-- Die Android-Version (`cembot90/yem1n-android`) im Gleichstand halten.
+- Die Android-Version (`cembot90/YEM1N-android`) im Gleichstand halten.
 - Cloudflare-Kosten höchstens 5 $ im Monat.
 - Klassencode für Pakete getrennt vom Familiencode.
 - Design: Navy und Gelb (Fenerbahçe), Rosa-Modus, Glas-Effekte standardmäßig aus, viel Abwechslung bei Rückmeldungen.
@@ -26,11 +26,15 @@ App Store Connect, TestFlight, Tests auf echten Geräten.
 
 ## Gleichstand mit Android
 
-Cem hat für Android einen eigenen Chat (Repo `cembot90/yem1n-android`). Die gemeinsame Übergabe steht dort in
-`docs/ABGLEICH-IOS.md`, Abschnitt "Übergabe zwischen den Chats". Das Repo im Chat mit `add_repo` dazuholen.
-Zu Beginn jeder Sitzung die offenen Zeilen "Von Android, für iOS" lesen und mit Cem besprechen. Nach jeder
-Funktionsänderung hier eine Zeile unter "Von iOS, für Android" eintragen (Datum, Commit, was sich für Kinder und
-Eltern ändert, betroffene Dateien) und auf `main` des Android-Repos pushen. Nachgebaute Zeilen auf "fertig" setzen.
+iOS und Android werden meistens zusammen weiterentwickelt. Eine Funktion gilt erst als fertig, wenn sie in beiden
+Apps steckt. Das Android-Repo (`cembot90/YEM1N-android`) im Chat mit `add_repo` dazuholen und die Änderung dort in
+derselben Sitzung nachbauen, mit denselben Regeln (Zweige, Tests, Anleitung). Danach Cem für beide Seiten sagen,
+was zu tun ist (TestFlight-Text, Android Studio, Worker veröffentlichen).
+
+Was nicht in derselben Sitzung fertig wird oder nur eine Seite betrifft, steht im Android-Repo in
+`docs/ABGLEICH-IOS.md`, Abschnitt "Übergabe zwischen den Chats" (Datum, Commit, was sich für Kinder und Eltern
+ändert, betroffene Dateien). Zu Beginn jeder Sitzung die offenen Zeilen dort lesen und mit Cem besprechen.
+Nachgebaute Zeilen auf "fertig" setzen.
 
 ## Auslieferung
 
@@ -73,7 +77,7 @@ Vorlage:
    `DatenschutzView` in `Datenschutz.swift`, `docs/index.html`, `YEM1N/PrivacyInfo.xcprivacy`
    und die Angaben in App Store Connect (Entwurf in `store/APPSTORE.md`) zusammenpassen.
 4. **Familien-Dienst und CloudKit.** Neue Einträge der Familie brauchen einen Typ im Worker
-   (`server/src/v2/typen.js` im Repo `cembot90/yem1n-android`, Tabelle in `cloud/PROTOKOLL-V2.md`) und in
+   (`server/src/v2/typen.js` im Repo `cembot90/YEM1N-android`, Tabelle in `cloud/PROTOKOLL-V2.md`) und in
    `FamilienProtokoll.swift`. Cem muss den Worker danach mit `npx wrangler@latest deploy` neu veröffentlichen.
    Felder oder Record-Typen für Klassenpakete stehen weiter in `cloudkit/schema.ckdb`.
 5. **Vorstellungsseite.** `docs/vorstellung.html` stellt YEM1N Eltern und
