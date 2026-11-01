@@ -1204,7 +1204,7 @@ struct UebungInhalt: View {
                     GelberKnopf(titel: "Nochmal üben") { neuStarten() }
                 }
 
-                ShareLink(item: Nachricht.ergebnisMathe(uebung)) {
+                TorTeilen(text: Nachricht.ergebnisMathe(uebung)) {
                     Label("Ergebnis an Eltern schicken", systemImage: "paperplane.fill")
                         .font(.system(.headline, design: .rounded))
                         .foregroundStyle(Theme.gelb)

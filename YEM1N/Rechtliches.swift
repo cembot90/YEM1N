@@ -183,7 +183,7 @@ struct RechtTextSeite: View {
                         .glasKarte(radius: 22)
                     }
                     if let webAdresse, let url = URL(string: webAdresse) {
-                        Link(destination: url) {
+                        TorLink(url: url) {
                             Label("Im Browser öffnen", systemImage: "safari")
                                 .font(.system(.headline, design: .rounded).weight(.heavy))
                                 .foregroundStyle(Theme.navy)

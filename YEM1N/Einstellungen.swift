@@ -19,7 +19,7 @@ struct EinstellungenView: View {
 
     var body: some View {
         NavigationStack {
-            EinstellungenInhalt(alsReiter: eingebettet)
+            ErwachsenenBereich { EinstellungenInhalt(alsReiter: eingebettet) }
                 .toolbar {
                     if !eingebettet {
                         ToolbarItem(placement: .confirmationAction) {
@@ -290,7 +290,7 @@ struct KlassenEinstellungen: View {
                         Button { zeigeQR = true } label: {
                             Label("QR-Code für die Klasse zeigen", systemImage: "qrcode")
                         }
-                        ShareLink(item: "📚 YEM1N Klassencode: \(klassenCode)\nIn der App unter Einstellungen > Klassencode eintragen, dann erscheinen die Aufgaben der Klasse automatisch.") {
+                        TorTeilen(text: "📚 YEM1N Klassencode: \(klassenCode)\nIn der App unter Einstellungen > Klassencode eintragen, dann erscheinen die Aufgaben der Klasse automatisch.") {
                             Label("Klassencode teilen", systemImage: "square.and.arrow.up")
                         }
                     }

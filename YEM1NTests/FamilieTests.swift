@@ -559,3 +559,30 @@ struct ErgebnisUmzugTests {
         #expect(ErgebnisUmzug.pause(bei: ErgebnisUmzug.ab + 1) != nil)
     }
 }
+
+// MARK: Frage für das Erwachsenen-Tor
+
+struct ElternFrageTests {
+    @Test func zahlenImBereich() {
+        for _ in 0..<200 {
+            let f = ElternFrage.neu()
+            #expect(ElternFrage.bereich.contains(f.a) && ElternFrage.bereich.contains(f.b))
+            #expect(f.ergebnis >= 144)
+        }
+    }
+
+    @Test func nurDasErgebnisStimmt() {
+        let f = ElternFrage(a: 13, b: 17)
+        #expect(f.stimmt("221"))
+        #expect(f.stimmt(" 221 "))
+        #expect(!f.stimmt("220"))
+        #expect(!f.stimmt(""))
+        #expect(!f.stimmt("abc"))
+    }
+
+    @Test func textOhneGedankenstriche() {
+        let t = ElternFrage(a: 12, b: 19).text
+        #expect(t.contains("12 · 19"))
+        #expect(!t.contains("\u{2013}") && !t.contains("\u{2014}"))
+    }
+}

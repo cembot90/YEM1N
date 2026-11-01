@@ -742,7 +742,7 @@ struct MatheEditorView: View {
                     Button { pruefeUndSpeichere() } label: {
                         Label("Prüfen und auf diesem Gerät speichern", systemImage: "checkmark.seal.fill")
                     }
-                    ShareLink(item: arbeit.jsonText()) {
+                    TorTeilen(text: arbeit.jsonText()) {
                         Label("Als JSON teilen (für das Kind-Gerät)", systemImage: "square.and.arrow.up")
                     }
                     Button(role: .destructive) { zeigeVerwerfen = true } label: {

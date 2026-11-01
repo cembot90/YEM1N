@@ -74,6 +74,8 @@ struct WebAnsicht: UIViewRepresentable {
     let url: URL
     @Binding var laedt: Bool
     @Binding var fehler: Bool
+    /// Links nach außen gehen hierhin (hinter das Erwachsenen-Tor) statt direkt in den Browser.
+    var aussen: ((URL) -> Void)? = nil
 
     func makeCoordinator() -> Koordinator { Koordinator(self) }
 
@@ -109,7 +111,7 @@ struct WebAnsicht: UIViewRepresentable {
             if navigationAction.navigationType == .linkActivated,
                let ziel = navigationAction.request.url,
                ziel.host != "cembot90.github.io" {
-                UIApplication.shared.open(ziel)
+                if let aussen = eltern.aussen { aussen(ziel) } else { UIApplication.shared.open(ziel) }
                 decisionHandler(.cancel)
                 return
             }
@@ -121,12 +123,22 @@ struct WebAnsicht: UIViewRepresentable {
 struct AnleitungView: View {
     @State private var laedt = true
     @State private var fehler = false
+    @State private var ziel: URL?
+    @State private var zeigeTor = false
+    @Environment(\.openURL) private var openURL
 
     var body: some View {
         ZStack {
             (Theme.rosa ? Color(red: 1.0, green: 0.96, blue: 0.98) : Color(red: 0.97, green: 0.98, blue: 1.0)).ignoresSafeArea()
             if let url = AppInfo.anleitungAdresse {
-                WebAnsicht(url: url, laedt: $laedt, fehler: $fehler)
+                WebAnsicht(url: url, laedt: $laedt, fehler: $fehler, aussen: { ziel in
+                    if ErwachsenenTor.shared.offen {
+                        openURL(ziel)
+                    } else {
+                        self.ziel = ziel
+                        zeigeTor = true
+                    }
+                })
                     .opacity(fehler ? 0 : 1)
             }
             if laedt && !fehler {
@@ -140,6 +152,9 @@ struct AnleitungView: View {
         }
         .navigationTitle("Anleitung")
         .navigationBarTitleDisplayMode(.inline)
+        .erwachsenenTor($zeigeTor) {
+            if let ziel { openURL(ziel) }
+        }
     }
 
     private let kurz: [(String, String)] = [
@@ -244,7 +259,7 @@ struct InfoView: View {
                             zeile("Beta und Haftung", "exclamationmark.shield")
                         }
                         if let url = AppInfo.feedbackURL(modus: modus) {
-                            Link(destination: url) {
+                            TorLink(url: url) {
                                 zeile("Feedback an den Admin", "envelope.fill")
                             }
                         }

@@ -73,3 +73,30 @@ nonisolated enum ElternPin {
         return "Bitte noch \((s + 59) / 60) Minuten warten."
     }
 }
+
+// MARK: - Frage für das Erwachsenen-Tor
+
+/// Ohne Eltern-PIN fragt das Tor eine Malaufgabe mit zwei Zahlen zwischen 12 und 19.
+/// Das rechnet ein Kind bis Klasse 4 nicht im Kopf, Erwachsene schaffen es kurz.
+nonisolated struct ElternFrage: Equatable {
+    let a: Int
+    let b: Int
+
+    var ergebnis: Int { a * b }
+    var text: String { "Wie viel ist \(a) · \(b)?" }
+
+    static let bereich = 12...19
+
+    static func neu<G: RandomNumberGenerator>(mit zufall: inout G) -> ElternFrage {
+        ElternFrage(a: Int.random(in: bereich, using: &zufall), b: Int.random(in: bereich, using: &zufall))
+    }
+
+    static func neu() -> ElternFrage {
+        var g = SystemRandomNumberGenerator()
+        return neu(mit: &g)
+    }
+
+    func stimmt(_ eingabe: String) -> Bool {
+        Int(eingabe.trimmingCharacters(in: .whitespaces)) == ergebnis
+    }
+}

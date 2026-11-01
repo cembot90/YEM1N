@@ -246,7 +246,7 @@ struct ElternBerichtView: View {
                             .foregroundStyle(Theme.textSanft)
                         ForEach(berichte, id: \.name) { b in karte(b) }
                         HStack(spacing: 18) {
-                            ShareLink(item: gesamtText) {
+                            TorTeilen(text: gesamtText) {
                                 Label("Teilen", systemImage: "square.and.arrow.up")
                             }
                             Button {

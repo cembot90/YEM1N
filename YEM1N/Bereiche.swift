@@ -69,7 +69,7 @@ struct KindIchView: View {
 
                 AbschnittsTitel("Einstellungen und Hilfe")
                 ZeilenGruppe {
-                    NavigationLink { EinstellungenInhalt() } label: {
+                    NavigationLink { ErwachsenenBereich { EinstellungenInhalt() } } label: {
                         EinstellungsZeile(symbol: "gearshape.fill", titel: "Einstellungen",
                                           text: "Profil, Familie, Farben und mehr")
                     }

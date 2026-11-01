@@ -64,7 +64,7 @@ struct DatenschutzView: View {
                         .glasKarte(radius: 22)
                     }
                     if let url = URL(string: "https://cembot90.github.io/YEM1N/") {
-                        Link(destination: url) {
+                        TorLink(url: url) {
                             Label("Im Browser öffnen", systemImage: "safari")
                                 .font(.system(.headline, design: .rounded).weight(.heavy))
                                 .foregroundStyle(Theme.navy)

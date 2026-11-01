@@ -972,7 +972,7 @@ struct SprachStartView: View {
             .accessibilityLabel(ton ? "Ton aus" : "Ton an")
             NavigationLink { SprachBerichtView() } label: { RundSymbol(symbol: "chart.bar.fill") }
                 .accessibilityLabel("Bericht")
-            NavigationLink { SprachEinstellungenView() } label: { RundSymbol(symbol: "gearshape.fill") }
+            NavigationLink { ErwachsenenBereich { SprachEinstellungenView() } } label: { RundSymbol(symbol: "gearshape.fill") }
                 .accessibilityLabel("Einstellungen Sprachen")
         }
     }
@@ -1902,7 +1902,7 @@ struct SprachErgebnisAnsicht: View {
                 .buttonStyle(TastenStil())
                 .padding(.horizontal, 24)
 
-                ShareLink(item: teilenText) {
+                TorTeilen(text: teilenText) {
                     Label("Ergebnis teilen", systemImage: "square.and.arrow.up")
                         .font(.system(.headline, design: .rounded))
                         .foregroundStyle(Theme.gelb)
@@ -2163,7 +2163,7 @@ struct SprachBerichtView: View {
                     themenKarte
                     schwerKarte
                     verlaufKarte
-                    ShareLink(item: berichtText) {
+                    TorTeilen(text: berichtText) {
                         Label("Bericht teilen", systemImage: "square.and.arrow.up")
                             .font(.system(.headline, design: .rounded))
                             .foregroundStyle(Theme.navy)

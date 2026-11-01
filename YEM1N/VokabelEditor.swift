@@ -317,7 +317,7 @@ struct SprachThemaEditorView: View {
                         Label("Speichern", systemImage: "checkmark.circle.fill")
                     }
                     .disabled(!probleme.isEmpty)
-                    ShareLink(item: entwurf.jsonText()) {
+                    TorTeilen(text: entwurf.jsonText()) {
                         Label("Als JSON teilen (für das Kind-Gerät)", systemImage: "square.and.arrow.up")
                     }
                     if istEigen {
