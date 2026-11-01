@@ -420,8 +420,9 @@ enum LehrplanKunst {
         if Lern.wahr(0.5) {
             let f = Lern.eins(["kreis", "dreieck", "quadrat", "rechteck", "oval", "stern"])
             let name = namen[f] ?? ""
-            // Ein Quadrat ist auch ein Rechteck: die beiden nie zusammen anbieten
-            let falsch = Array(namen.values).filter { f == "quadrat" ? $0 != "Rechteck" : (f == "rechteck" ? $0 != "Quadrat" : true) }
+            // Ein Quadrat ist auch ein Rechteck: die beiden nie zusammen anbieten.
+            // Als falsche Antwort kommt deshalb nur eins von beiden vor, das Rechteck nur, wenn es die Lösung ist.
+            let falsch = Array(namen.values).filter { f == "rechteck" ? $0 != "Quadrat" : $0 != "Rechteck" }
             return Lern.wahl(frage: "Wie heißt die Form?", richtig: name, falsch: falsch,
                              bild: "form:\(f)", erklaerung: "Das ist ein \(name).")
         }
