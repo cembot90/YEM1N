@@ -288,7 +288,7 @@ enum MatheGenerator {
             if b < 10 { b = 10 }
         }
         let text = Bool.random() ? "Subtrahiere von \(a) die Zahl \(b)." : "Wie heißt die Differenz der Zahlen \(a) und \(b)?"
-        return MatheAufgabe(art: "zahl", frage: "Notiere die passende Rechnung.", rechnung: text,
+        return MatheAufgabe(art: "zahl", frage: "Rechne aus.", rechnung: text,
                             antwort: String(a - b), erklaerung: "\(a) - \(b) = \(a - b)")
     }
 
@@ -300,11 +300,11 @@ enum MatheGenerator {
             let c = [2, 5, 10].randomElement() ?? 2
             let d = [2, 5].randomElement() ?? 2
             let e = 10
-            return MatheAufgabe(art: "zahl", frage: "Notiere die passende Rechnung.",
+            return MatheAufgabe(art: "zahl", frage: "Rechne aus.",
                                 rechnung: "Wie heißt das Produkt der Zahlen \(d), \(c) und \(e)?",
                                 antwort: String(d * c * e), erklaerung: "\(d) · \(c) · \(e) = \(d * c * e)")
         }
-        return MatheAufgabe(art: "zahl", frage: "Notiere die passende Rechnung.", rechnung: text,
+        return MatheAufgabe(art: "zahl", frage: "Rechne aus.", rechnung: text,
                             antwort: String(a * b), erklaerung: "\(a) · \(b) = \(a * b)")
     }
 

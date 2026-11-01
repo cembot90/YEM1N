@@ -420,17 +420,23 @@ enum LehrplanKunst {
         if Lern.wahr(0.5) {
             let f = Lern.eins(["kreis", "dreieck", "quadrat", "rechteck", "oval", "stern"])
             let name = namen[f] ?? ""
-            return Lern.wahl(frage: "Wie heißt die Form?", richtig: name, falsch: Array(namen.values),
+            // Ein Quadrat ist auch ein Rechteck: die beiden nie zusammen anbieten
+            let falsch = Array(namen.values).filter { f == "quadrat" ? $0 != "Rechteck" : (f == "rechteck" ? $0 != "Quadrat" : true) }
+            return Lern.wahl(frage: "Wie heißt die Form?", richtig: name, falsch: falsch,
                              bild: "form:\(f)", erklaerung: "Das ist ein \(name).")
         }
-        let f = Lern.eins([("Wie viele Ecken hat ein Dreieck?", 3, "dreieck"),
-                           ("Wie viele Ecken hat ein Quadrat?", 4, "quadrat"),
-                           ("Wie viele Ecken hat ein Rechteck?", 4, "rechteck"),
-                           ("Wie viele Ecken hat ein Kreis?", 0, "kreis"),
-                           ("Wie viele Seiten hat ein Dreieck?", 3, "dreieck"),
-                           ("Wie viele Seiten hat ein Quadrat?", 4, "quadrat"),
-                           ("Wie viele Zacken hat der Stern?", 5, "stern")])
-        return Lern.zahl(f.0, "", f.1, erklaerung: "Richtig sind \(f.1).").mitBild("form:\(f.2)")
+        // Frage, Antwort, Bild, Erklärung
+        let fragen: [(String, Int, String, String)] = [
+            ("Wie viele Ecken hat ein Dreieck?", 3, "dreieck", "Ein Dreieck hat 3 Ecken. Daher kommt sein Name."),
+            ("Wie viele Ecken hat ein Quadrat?", 4, "quadrat", "Ein Quadrat hat 4 Ecken."),
+            ("Wie viele Ecken hat ein Rechteck?", 4, "rechteck", "Ein Rechteck hat 4 Ecken."),
+            ("Wie viele Ecken hat ein Kreis?", 0, "kreis", "Ein Kreis ist ganz rund. Er hat keine einzige Ecke, also 0."),
+            ("Wie viele Seiten hat ein Dreieck?", 3, "dreieck", "Ein Dreieck hat 3 gerade Seiten."),
+            ("Wie viele Seiten hat ein Quadrat?", 4, "quadrat", "Ein Quadrat hat 4 gleich lange Seiten."),
+            ("Wie viele Zacken hat der Stern?", 5, "stern", "Zähl die Spitzen nacheinander: Der Stern hat 5 Zacken.")
+        ]
+        let f = Lern.eins(fragen)
+        return Lern.zahl(f.0, "", f.1, erklaerung: f.3).mitBild("form:\(f.2)")
     }
 
     static let mischungen: [(String, String, String)] = [
@@ -474,7 +480,7 @@ enum LehrplanKunst {
         ("Frottage", "Eine Struktur mit dem Stift durchreiben"),
         ("Druck", "Farbe mit einem Stempel aufs Papier bringen"),
         ("Skulptur", "Eine Figur aus Stein, Holz oder Ton"),
-        ("Porträt", "Ein Bild von einem Menschen"),
+        ("Porträt", "Ein Bild, auf dem man einen anderen Menschen malt"),
         ("Selbstporträt", "Ein Bild, auf dem man sich selbst malt"),
         ("Stillleben", "Ein Bild von Dingen wie Obst und Vasen"),
         ("Landschaftsbild", "Ein Bild von Wiesen, Bergen und Himmel")

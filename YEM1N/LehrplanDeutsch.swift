@@ -372,9 +372,16 @@ enum LehrplanDeutsch {
         return alphabet.firstIndex(of: erster) ?? 99
     }
 
+    /// Ablenker für "Ein Wort schreibt man groß": Wörter, die nie ein Nomen sein können
+    /// (Verben in der er-Form und Adjektive ohne gleichnamiges Nomen).
+    static let grossAblenker = [
+        "läuft", "spielt", "lacht", "singt", "springt", "schläft", "trinkt", "schwimmt", "tanzt", "liest",
+        "schnell", "langsam", "lustig", "traurig", "müde", "frech", "mutig", "leise", "nett", "weich"
+    ]
+
     static func gross() -> A {
         let n = Lern.eins(nomen)
-        let andere = (adjektive + verben.map { $0.infinitiv }).shuffled().prefix(2)
+        let andere = grossAblenker.shuffled().prefix(2)
         let optionen = ([n.wort.lowercased()] + andere).shuffled()
         return LernAufgabe(art: "wahl", frage: "Ein Wort schreibt man groß. Welches?",
                            antwort: n.wort.lowercased(),

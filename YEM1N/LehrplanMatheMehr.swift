@@ -314,7 +314,7 @@ enum LehrplanMatheMehr {
 
     static let koerperListe: [(String, String, String)] = [
         ("Würfel", "der", "6 gleich große Quadrate als Flächen"),
-        ("Quader", "der", "6 Rechtecke als Flächen, wie ein Schuhkarton"),
+        ("Quader", "der", "6 Rechtecke als Flächen, nicht alle gleich groß, wie ein Schuhkarton"),
         ("Kugel", "die", "ganz rund, ohne Ecken und Kanten"),
         ("Zylinder", "der", "2 Kreise als Flächen, wie eine Dose"),
         ("Kegel", "der", "unten ein Kreis, oben eine Spitze, wie eine Eiswaffel"),
@@ -323,11 +323,18 @@ enum LehrplanMatheMehr {
 
     static func koerper() -> A {
         if Lern.wahr(0.4) {
-            let f = Lern.eins([("Wie viele Ecken hat ein Würfel?", 8), ("Wie viele Kanten hat ein Würfel?", 12),
-                               ("Wie viele Flächen hat ein Würfel?", 6), ("Wie viele Ecken hat ein Quader?", 8),
-                               ("Wie viele Flächen hat ein Quader?", 6), ("Wie viele Ecken hat eine Kugel?", 0),
-                               ("Wie viele Ecken hat eine Pyramide mit quadratischem Boden?", 5)])
-            return Lern.zahl(f.0, "", f.1, erklaerung: "Richtig sind \(f.1).")
+            let fragen: [(String, Int, String)] = [
+                ("Wie viele Ecken hat ein Würfel?", 8, "Ein Würfel hat 4 Ecken unten und 4 Ecken oben: 8 Ecken."),
+                ("Wie viele Kanten hat ein Würfel?", 12, "Ein Würfel hat 4 Kanten unten, 4 oben und 4 an den Seiten: 12 Kanten."),
+                ("Wie viele Flächen hat ein Würfel?", 6, "Ein Würfel hat 6 Flächen: unten, oben, vorne, hinten, links und rechts."),
+                ("Wie viele Ecken hat ein Quader?", 8, "Ein Quader hat 4 Ecken unten und 4 Ecken oben: 8 Ecken."),
+                ("Wie viele Flächen hat ein Quader?", 6, "Ein Quader hat 6 Flächen: unten, oben, vorne, hinten, links und rechts."),
+                ("Wie viele Ecken hat eine Kugel?", 0, "Eine Kugel ist ganz rund. Sie hat keine einzige Ecke, also 0."),
+                ("Wie viele Ecken hat eine Pyramide mit quadratischem Boden?", 5,
+                 "Unten hat sie 4 Ecken, dazu kommt die Spitze oben: 5 Ecken.")
+            ]
+            let f = Lern.eins(fragen)
+            return Lern.zahl(f.0, "", f.1, erklaerung: f.2)
         }
         let (name, artikel, text) = Lern.eins(koerperListe)
         return Lern.wahl(frage: "Welcher Körper ist das?", rechnung: text, richtig: name,
@@ -352,9 +359,15 @@ enum LehrplanMatheMehr {
     static func kombinieren2() -> A {
         let a = Lern.z(2...4)
         let b = Lern.z(2...4)
-        let f = Lern.eins([("T-Shirts", "Hosen", "anziehen"), ("Sorten Eis", "Waffeln", "aussuchen"),
-                           ("Mützen", "Schals", "anziehen")])
-        return Lern.zahl(lies, "Im Schrank liegen \(a) \(f.0) und \(b) \(f.1). Wie viele verschiedene Paare kannst du \(f.2)?",
+        // Satzanfang, erste Sache, zweite Sache, Frage
+        let faelle: [(String, String, String, String)] = [
+            ("Im Schrank liegen", "T-Shirts", "Hosen", "Wie viele verschiedene Paare kannst du anziehen?"),
+            ("In der Eisdiele gibt es", "Sorten Eis", "Sorten Waffeln",
+             "Du nimmst eine Kugel Eis in einer Waffel. Wie viele verschiedene Eistüten kannst du aussuchen?"),
+            ("Im Schrank liegen", "Mützen", "Schals", "Wie viele verschiedene Paare kannst du anziehen?")
+        ]
+        let f = Lern.eins(faelle)
+        return Lern.zahl(lies, "\(f.0) \(a) \(f.1) und \(b) \(f.2). \(f.3)",
                          a * b, erklaerung: "Zu jedem der \(a) passen alle \(b): \(a) · \(b) = \(a * b)")
     }
 

@@ -211,6 +211,32 @@ struct LehrplanTests {
         #expect(gehen.map { LehrplanDeutsch.wirPraeteritum($0) } == "gingen")
     }
 
+    @Test func beimGrossschreibenIstNurEinWortEinNomen() {
+        let nomen = Set(LehrplanDeutsch.nomen.map { $0.wort.lowercased() })
+        for w in LehrplanDeutsch.grossAblenker {
+            #expect(!nomen.contains(w), "\(w) ist ein Nomen")
+        }
+        for _ in 0..<Self.runden {
+            let a = LehrplanDeutsch.gross()
+            #expect(a.optionen.count == 3)
+            #expect(a.optionen.filter { nomen.contains($0) } == [a.antwort], "\(a.optionen)")
+        }
+    }
+
+    @Test func grossesIUndKleinesLStehenNieZusammen() {
+        for _ in 0..<200 {
+            let a = LehrplanDeutschMehr.buchstabenPaare()
+            let alle = [a.rechnung] + a.optionen
+            #expect(!(alle.contains("I") && alle.contains("l")), "\(alle)")
+        }
+    }
+
+    @Test func satzzeichenAmEndeSindEindeutig() {
+        for (satz, zeichen) in LehrplanDeutschMehr.saetzeOhneZeichen where zeichen == "!" {
+            #expect(!satz.contains("bitte"), "\(satz): hier ginge auch ein Punkt")
+        }
+    }
+
     // MARK: Musik und Kunst
 
     @Test func jedeNoteHatNamenUndTon() {
@@ -225,6 +251,14 @@ struct LehrplanTests {
         #expect(m["blau+gelb"] == "Grün")
         #expect(m["rot+gelb"] == "Orange")
         #expect(m["rot+blau"] == "Violett")
+    }
+
+    @Test func quadratUndRechteckNieZusammenBeiDenFormen() {
+        for _ in 0..<100 {
+            let a = LehrplanKunst.formen()
+            #expect(!(a.optionen.contains("Quadrat") && a.optionen.contains("Rechteck")), "\(a.optionen)")
+            #expect(!a.erklaerung.hasPrefix("Richtig sind"), "\(a.erklaerung)")
+        }
     }
 
     // MARK: Weitere Themen

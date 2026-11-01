@@ -105,7 +105,7 @@ enum LehrplanDeutschMehr {
     /// Buchstaben, die leicht verwechselt werden
     static let aehnlich: [String: [String]] = [
         "a": ["o", "e"], "b": ["d", "p"], "c": ["e", "o"], "d": ["b", "q"], "e": ["a", "c"], "f": ["t", "k"],
-        "g": ["q", "j"], "h": ["n", "k"], "i": ["l", "j"], "j": ["i", "g"], "k": ["h", "x"], "l": ["i", "t"],
+        "g": ["q", "j"], "h": ["n", "k"], "i": ["j", "t"], "j": ["i", "g"], "k": ["h", "x"], "l": ["t", "k"],
         "m": ["n", "w"], "n": ["m", "h"], "o": ["a", "c"], "p": ["q", "b"], "q": ["p", "g"], "r": ["n", "v"],
         "s": ["z", "c"], "t": ["f", "l"], "u": ["n", "v"], "v": ["w", "u"], "w": ["m", "v"], "x": ["k", "z"],
         "y": ["v", "j"], "z": ["s", "x"]
@@ -129,10 +129,10 @@ enum LehrplanDeutschMehr {
     static let saetzeOhneZeichen: [(String, String)] = [
         ("Wie heißt du", "?"), ("Ich gehe in die Schule", "."), ("Pass auf", "!"), ("Hast du einen Hund", "?"),
         ("Der Ball ist rot", "."), ("Komm schnell her", "!"), ("Wo wohnst du", "?"), ("Heute scheint die Sonne", "."),
-        ("Magst du Eis", "?"), ("Mia malt ein Bild", "."), ("Sei bitte leise", "!"), ("Wann beginnt die Pause", "?"),
+        ("Magst du Eis", "?"), ("Mia malt ein Bild", "."), ("Hilfe, ich falle", "!"), ("Wann beginnt die Pause", "?"),
         ("Mein Bruder ist sieben Jahre alt", "."), ("Kannst du schwimmen", "?"), ("Wir spielen im Garten", "."),
-        ("Räum bitte dein Zimmer auf", "!"), ("Was isst du gern", "?"), ("Die Katze schläft auf dem Sofa", "."),
-        ("Halt, stopp", "!"), ("Gib mir bitte den Stift", "!")
+        ("Achtung, ein Auto", "!"), ("Was isst du gern", "?"), ("Die Katze schläft auf dem Sofa", "."),
+        ("Halt, stopp", "!"), ("Hurra, wir haben gewonnen", "!")
     ]
 
     static func satzzeichen() -> A {
