@@ -27,7 +27,7 @@ zusätzlich im Android-Repo in `docs/ABGLEICH-IOS.md`.
 
 ## Lernen (nach Nutzen pro Aufwand)
 
-1. **Zweiter Versuch vor der Lösung:** Beim ersten Fehler nur ein Hinweis, dann noch ein Versuch, erst dann die Erklärung.
+1. [x] **Zweiter Versuch vor der Lösung** (04.11., beide Apps auf `entwicklung`): Beim ersten Fehler nur ein Hinweis, dann noch ein Versuch, erst dann die Erklärung.
    Die Lobsätze `Lob.nachFehler` gibt es schon. Münzen nur für "gleich richtig".
 2. **Fehler aus der Lernwelt ins Fehlerheft:** Bisher filtert das Fehlerheft auf Arbeiten ohne `spezial`, und ein neu
    gestartetes Thema löscht die alten Fehler. Vorsicht beim Datenmodell, Yemins Fortschritt darf nicht verloren gehen.

@@ -293,6 +293,8 @@ struct UebungInhalt: View {
     @State private var mauerWerte: [[Int?]] = []
     @State private var mauerSchritt = 0
     @State private var kurzerHinweis: String?
+    /// Nach dem ersten Fehler darf das Kind es noch einmal probieren (siehe `ZweiterVersuch`).
+    @State private var zweiterVersuch = false
     /// Rechenweg in Schritten für die aktuelle Aufgabe
     @State private var rechenWeg: RechenWeg?
     @AppStorage(VorleseText.automatischSchluessel) private var automatischVorlesen = false
@@ -639,10 +641,10 @@ struct UebungInhalt: View {
         } else if let k = kurzerHinweis {
             Text(k)
                 .font(.system(.headline, design: .rounded))
-                .foregroundStyle(Theme.mint)
+                .foregroundStyle(zweiterVersuch ? Theme.gelb : Theme.mint)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(14)
-                .background(Color.green.opacity(0.20),
+                .background((zweiterVersuch ? Theme.gelb : Color.green).opacity(0.20),
                             in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         }
     }
@@ -876,6 +878,7 @@ struct UebungInhalt: View {
         aktivesFeld = 1
         mauerSchritt = 0
         kurzerHinweis = nil
+        zweiterVersuch = false
         if let a = aktuell, a.art == "mauer" {
             var start: [[Int?]] = []
             for (i, r) in a.reihen.enumerated() {
@@ -950,17 +953,38 @@ struct UebungInhalt: View {
     }
 
     private func melde(_ a: Aufgabe, ok: Bool, erklaerung: String, gegeben: String, soll: String = "") {
+        // Erster Fehler: nur ein Hinweis, dann noch ein Versuch. Die Lösung kommt erst danach.
+        if !ok, !zweiterVersuch,
+           ZweiterVersuch.erlaubt(art: a.art, optionen: a.optionenListe.count, probe: istProbe) {
+            zweiterVersuch = true
+            Spezial.falschBeantwortet(a)
+            serie = 0
+            kurzerHinweis = ZweiterVersuch.text(eigenerTipp: a.hinweis, nr: Int.random(in: 0..<1000))
+            eingabe = ""
+            eingabe2 = ""
+            aktivesFeld = 1
+            Haptik.fehler()
+            withAnimation(.default) { wackeln += 1 }
+            return
+        }
+        let nachFehler = zweiterVersuch
+        zweiterVersuch = false
         a.richtig = ok
         a.gegeben = gegeben
         a.gegebenSoll = soll
-        if ok { Spezial.gemeistert(a, in: context) } else { Spezial.falschBeantwortet(a) }
+        // Erst im zweiten Versuch richtig zählt nicht als gemeistert, die Aufgabe kommt im Fehlerheft wieder.
+        if ok {
+            if !nachFehler { Spezial.gemeistert(a, in: context) }
+        } else if !nachFehler {
+            Spezial.falschBeantwortet(a)
+        }
         bewertet = a
         bewertung = ok ? .richtig : .falsch
         kurzerHinweis = nil
         let name = UserDefaults.standard.string(forKey: "kindName") ?? ""
         if ok {
             serie += 1
-            lobWort = Lob.fuerRichtig(serie: serie, nachFehler: false, name: name).de
+            lobWort = Lob.fuerRichtig(serie: serie, nachFehler: nachFehler, name: name).de
             // Bei einer schönen Serie sagt es die Stimme auch laut, nicht bei jeder Aufgabe
             if Lob.serienLob(serie) != nil, !uebung.istFertig, !istProbe {
                 Sprecher.shared.sprich(lobWort, code: "de-DE", stimmung: .froh)
@@ -988,6 +1012,7 @@ struct UebungInhalt: View {
 
     private func zeigeLoesung(_ a: Aufgabe) {
         a.angesehen = true          // richtig bleibt bewusst leer
+        zweiterVersuch = false
         a.gegeben = ""
         a.gegebenSoll = ""
         bewertet = a

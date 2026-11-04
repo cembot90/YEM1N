@@ -108,3 +108,40 @@ struct LobTests {
         }
     }
 }
+
+// MARK: Zweiter Versuch
+
+struct ZweiterVersuchTests {
+    @Test func nichtInDerProbearbeit() {
+        #expect(!ZweiterVersuch.erlaubt(art: "zahl", optionen: 0, probe: true))
+        #expect(ZweiterVersuch.erlaubt(art: "zahl", optionen: 0, probe: false))
+    }
+
+    @Test func nichtBeiMauerUndVergleich() {
+        #expect(!ZweiterVersuch.erlaubt(art: "mauer", optionen: 0, probe: false))
+        #expect(!ZweiterVersuch.erlaubt(art: "vergleich", optionen: 3, probe: false))
+    }
+
+    @Test func auswahlErstAbVierKnoepfen() {
+        #expect(!ZweiterVersuch.erlaubt(art: "wahl", optionen: 2, probe: false))
+        #expect(!ZweiterVersuch.erlaubt(art: "wahl", optionen: 3, probe: false))
+        #expect(ZweiterVersuch.erlaubt(art: "wahl", optionen: 4, probe: false))
+    }
+
+    @Test func textUndRestDuerfen() {
+        #expect(ZweiterVersuch.erlaubt(art: "text", optionen: 0, probe: false))
+        #expect(ZweiterVersuch.erlaubt(art: "rest", optionen: 0, probe: false))
+    }
+
+    @Test func eigenerTippKommtDazu() {
+        let t = ZweiterVersuch.text(eigenerTipp: " Denk an die Zehner. ", nr: 0)
+        #expect(t.hasSuffix("Tipp: Denk an die Zehner."))
+        #expect(ZweiterVersuch.text(eigenerTipp: "", nr: 7) == ZweiterVersuch.saetze[7 % ZweiterVersuch.saetze.count])
+        #expect(ZweiterVersuch.text(eigenerTipp: "", nr: -3).count > 0)
+    }
+
+    @Test func saetzeOhneGedankenstriche() {
+        for s in ZweiterVersuch.saetze { #expect(!s.contains("\u{2013}") && !s.contains("\u{2014}")) }
+        #expect(Set(ZweiterVersuch.saetze).count == ZweiterVersuch.saetze.count)
+    }
+}

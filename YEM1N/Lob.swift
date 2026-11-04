@@ -224,3 +224,37 @@ enum Abwechslung {
         zuletzt.removeAll()
     }
 }
+
+// MARK: - Zweiter Versuch
+
+/// Nach dem ersten Fehler bekommt das Kind einen Hinweis und darf es noch einmal probieren.
+/// Erst danach kommt die Lösung mit Erklärung. So schreibt das Kind die richtige Antwort selbst.
+/// Reine Logik, gleich wie auf Android (logik/ZweiterVersuch.kt).
+nonisolated enum ZweiterVersuch {
+    /// Nicht in der Probearbeit (wie in der Schule), nicht bei der Zahlenmauer (sie zeigt die richtige Zahl sofort)
+    /// und nicht bei Auswahl mit weniger als vier Knöpfen oder beim Vergleichen (dann wäre der zweite Versuch nur Raten).
+    static func erlaubt(art: String, optionen: Int, probe: Bool) -> Bool {
+        if probe { return false }
+        switch art {
+        case "mauer", "vergleich": return false
+        case "wahl": return optionen >= 4
+        default: return true
+        }
+    }
+
+    static let saetze: [String] = [
+        "Fast! Schau noch einmal genau hin und probier es nochmal.",
+        "Noch nicht ganz. Rechne in Ruhe noch einmal.",
+        "Das passt noch nicht. Du hast noch einen Versuch.",
+        "Kleiner Fehler. Lies die Aufgabe noch einmal und versuch es nochmal.",
+        "Nicht schlimm! Probier es gleich noch einmal.",
+        "Hmm, knapp daneben. Noch ein Versuch, du schaffst das.",
+    ]
+
+    /// Der Satz nach dem ersten Fehler. Hat die Aufgabe einen eigenen Tipp, kommt er dazu.
+    static func text(eigenerTipp: String, nr: Int) -> String {
+        let satz = saetze[abs(nr) % saetze.count]
+        let tipp = eigenerTipp.trimmingCharacters(in: .whitespacesAndNewlines)
+        return tipp.isEmpty ? satz : satz + " Tipp: " + tipp
+    }
+}
