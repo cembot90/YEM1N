@@ -43,7 +43,7 @@ struct HeroKopf<Aktionen: View>: View {
                 Text(kicker.uppercased())
                     .font(Schrift.kicker)
                     .tracking(1.2)
-                    .foregroundStyle(Theme.gelb)
+                    .foregroundStyle(Theme.akzentAufKopf)
                 Spacer(minLength: 8)
                 // borderless: Auch in einer Liste reagiert jeder Knopf für sich.
                 aktionen()

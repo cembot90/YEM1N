@@ -32,6 +32,8 @@ enum Theme {
     static var himmel: Color {
         rosa ? Color(red: 0.80, green: 0.68, blue: 1.0) : Color(red: 0.45, green: 0.78, blue: 1.0)
     }
+    /// Akzent für Schrift auf der farbigen Kopfkarte. In der Rosa-Welt ist Rosa auf Rosa nicht lesbar, deshalb Weiß.
+    static var akzentAufKopf: Color { rosa ? Color.white : gelb }
     static let koralle = Color(red: 1.0, green: 0.42, blue: 0.42)
     static let mint = Color(red: 0.45, green: 0.95, blue: 0.62)
     /// Zweitrangiger Text. Etwas heller als früher, damit Kinder ihn gut lesen können.

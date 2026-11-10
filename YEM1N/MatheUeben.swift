@@ -197,13 +197,16 @@ struct ZahlenTastatur: View {
 
     private let tasten = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "⌫", "0", "✓"]
     private let spalten = Array(repeating: GridItem(.flexible(), spacing: 12), count: 3)
+    /// Auf dem iPad ist viel Platz, dort sind die Tasten höher und die Ziffern größer
+    @Environment(\.horizontalSizeClass) private var breite
+    private var gross: Bool { breite == .regular }
 
     var body: some View {
         LazyVGrid(columns: spalten, spacing: 12) {
             ForEach(tasten, id: \.self) { taste in
                 Button { tippen(taste) } label: {
                     inhalt(taste)
-                        .frame(maxWidth: .infinity, minHeight: 58)
+                        .frame(maxWidth: .infinity, minHeight: gross ? 76 : 58)
                         .foregroundStyle(taste == "✓" ? Theme.navy : Color.white)
                         .background(farbe(taste),
                                     in: RoundedRectangle(cornerRadius: 20, style: .continuous))
@@ -222,11 +225,11 @@ struct ZahlenTastatur: View {
     private func inhalt(_ taste: String) -> some View {
         switch taste {
         case "⌫":
-            Image(systemName: "delete.left.fill").font(.system(size: 22, weight: .bold))
+            Image(systemName: "delete.left.fill").font(.system(size: gross ? 28 : 22, weight: .bold))
         case "✓":
-            Image(systemName: "checkmark").font(.system(size: 26, weight: .black))
+            Image(systemName: "checkmark").font(.system(size: gross ? 32 : 26, weight: .black))
         default:
-            Text(taste).font(.system(size: 30, weight: .bold, design: .rounded))
+            Text(taste).font(.system(size: gross ? 38 : 30, weight: .bold, design: .rounded))
         }
     }
 
@@ -322,6 +325,9 @@ struct UebungInhalt: View {
     @State private var haustierText: String?
 
     private var istProbe: Bool { uebung.arbeit?.spezial == "probe" }
+    /// Auf dem iPad ist viel Platz, dort sind Anweisung, Rechnung und Antwortfeld größer
+    @Environment(\.horizontalSizeClass) private var breitenKlasse
+    private var gross: Bool { breitenKlasse == .regular }
 
     private func pruefePokale() {
         guard modus == "kind" else { return }
@@ -451,7 +457,7 @@ struct UebungInhalt: View {
         VStack(spacing: 16) {
             // Die Arbeitsanweisung: gut lesbar und mit Platz für den Vorlese-Knopf oben rechts
             Text(a.frage)
-                .font(.system(.title3, design: .rounded).weight(.semibold))
+                .font(.system(gross ? .title : .title3, design: .rounded).weight(.semibold))
                 .foregroundStyle(Color.white)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
@@ -471,8 +477,8 @@ struct UebungInhalt: View {
                 if !a.rechnung.isEmpty {
                     Text(angezeigteRechnung(a))
                         .font(grosseSchrift(a)
-                              ? Font.system(size: 42, weight: .heavy, design: .rounded)
-                              : Font.system(.title3, design: .rounded).weight(.semibold))
+                              ? Font.system(size: gross ? 60 : 42, weight: .heavy, design: .rounded)
+                              : Font.system(gross ? .title : .title3, design: .rounded).weight(.semibold))
                         .foregroundStyle(Color.white)
                         .multilineTextAlignment(.center)
                         .minimumScaleFactor(0.6)
@@ -565,13 +571,13 @@ struct UebungInhalt: View {
     private func feldPaar(titel: String, wert: String, aktiv: Bool, nummer: Int) -> some View {
         VStack(spacing: 6) {
             Text(wert.isEmpty ? "?" : wert)
-                .font(.system(size: 38, weight: .heavy, design: .rounded))
+                .font(.system(size: gross ? 48 : 38, weight: .heavy, design: .rounded))
                 .lineLimit(1)
                 .minimumScaleFactor(0.4)
                 .padding(.horizontal, 12)
                 .foregroundStyle(wert.isEmpty ? Color.white.opacity(0.35)
                                               : (loesungAngezeigt ? Theme.himmel : Color.white))
-                .frame(minWidth: 104, minHeight: 62)
+                .frame(minWidth: gross ? 140 : 104, minHeight: gross ? 78 : 62)
                 .background(Color.white.opacity(0.08),
                             in: RoundedRectangle(cornerRadius: 20, style: .continuous))
                 .overlay(

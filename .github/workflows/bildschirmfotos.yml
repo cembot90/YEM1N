@@ -1,0 +1,132 @@
+name: Bildschirmfotos
+
+# Nur für die Design-Arbeit auf design-fable: baut die App für den Simulator, öffnet einige Bildschirme
+# über die Start-Option -bildschirmfoto (gibt es nur im Debug-Build, siehe YEM1N/Bildschirmfoto.swift)
+# und lädt die Fotos als Artefakt hoch. "vorher" baut den Stand vor der Design-Arbeit zum Vergleichen.
+
+on:
+  push:
+    branches: [design-fable]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bildschirmfotos-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fotos:
+    runs-on: macos-26
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        stand: [nachher, vorher]
+    env:
+      VORHER: "9560931"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Alten Stand der App holen
+        if: matrix.stand == 'vorher'
+        run: |
+          git rm -rq YEM1N
+          git checkout "$VORHER" -- YEM1N
+          git checkout "$GITHUB_SHA" -- YEM1N/Bildschirmfoto.swift YEM1N/AppEinstieg.swift
+
+      - name: Bauen
+        run: |
+          set +e
+          sdk=$(xcrun --sdk iphonesimulator --show-sdk-version)
+          xcodebuild build \
+            -project YEM1N.xcodeproj -scheme YEM1N \
+            -destination "generic/platform=iOS Simulator" \
+            -configuration Debug -derivedDataPath dd \
+            IPHONEOS_DEPLOYMENT_TARGET="$sdk" \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGN_IDENTITY="" ONLY_ACTIVE_ARCH=YES ARCHS=arm64 \
+            > bau.txt 2>&1
+          rc=$?
+          tail -n 30 bau.txt
+          if [ $rc -ne 0 ]; then
+            fehler=$(grep -E "error:|BUILD FAILED" bau.txt | awk '!gesehen[$0]++' | head -30 | cut -c1-400 | sed ':a;N;$!ba;s/%/%25/g;s/\n/%0A/g')
+            echo "::error title=Bildschirmfotos::${fehler}"
+          fi
+          exit $rc
+
+      - name: Fotos machen
+        run: |
+          set +e
+          app=$(find dd/Build/Products -maxdepth 2 -name "YEM1N.app" | head -1)
+          echo "App: $app"
+          mkdir -p fotos
+          geraet() {
+            xcrun simctl list devices available -j | python3 -c "
+          import json, sys
+          art = sys.argv[1]
+          d = json.load(sys.stdin)['devices']
+          for system, liste in sorted(d.items(), reverse=True):
+              if 'iOS' not in system: continue
+              for g in liste:
+                  n = g['name']
+                  if art == 'iphone' and n.startswith('iPhone') and 'Pro' not in n and 'Max' not in n:
+                      print(g['udid']); raise SystemExit
+                  if art == 'ipad' and n.startswith('iPad') and 'mini' not in n:
+                      print(g['udid']); raise SystemExit
+          " "$1"
+          }
+          foto() {
+            # foto <gerät> <dateiname> <bildschirm> [weitere Start-Optionen]
+            local udid=$1 name=$2 ziel=$3; shift 3
+            xcrun simctl terminate "$udid" de.cemaras.yem1n > /dev/null 2>&1
+            xcrun simctl launch "$udid" de.cemaras.yem1n -bildschirmfoto "$ziel" \
+              -modus kind -profilFertig YES -kindName Yemin -einwilligungVersion 99 "$@" || echo "::warning::Start fehlgeschlagen: $name"
+            sleep 7
+            xcrun simctl io "$udid" screenshot "fotos/$name.png" > /dev/null 2>&1 || echo "::warning::Kein Foto: $name"
+            sips -Z 1400 "fotos/$name.png" > /dev/null 2>&1
+          }
+          for art in iphone ipad; do
+            udid=$(geraet $art)
+            [ -n "$udid" ] || { echo "::warning::Kein Simulator für $art"; continue; }
+            echo "Simulator $art: $udid"
+            xcrun simctl boot "$udid"
+            xcrun simctl bootstatus "$udid" -b > /dev/null
+            xcrun simctl install "$udid" "$app" || echo "::error::Installieren fehlgeschlagen ($art)"
+            # Der erste Start dauert länger, das Foto davon zählt nicht
+            foto "$udid" "$art-00-aufwaermen" ueben
+            sleep 8
+            rm -f "fotos/$art-00-aufwaermen.png"
+            foto "$udid" "$art-01-ueben" ueben
+            foto "$udid" "$art-02-ueben-lang" ueben-lang
+            foto "$udid" "$art-03-ergebnis" ergebnis
+            foto "$udid" "$art-04-start" start
+            foto "$udid" "$art-05-vorschule" vorschule
+            foto "$udid" "$art-06-lernwelt" lernwelt
+            if [ $art = iphone ]; then
+              foto "$udid" "$art-07-ueben-vergleich" ueben-vergleich
+              foto "$udid" "$art-08-ueben-text" ueben-text
+              foto "$udid" "$art-09-vorschulrunde" vorschulrunde
+              foto "$udid" "$art-10-haustier" haustier
+              foto "$udid" "$art-11-einstellungen" einstellungen
+              foto "$udid" "$art-12-ueben-rosa" ueben -farbwelt rosa
+              foto "$udid" "$art-13-start-rosa" start -farbwelt rosa
+              xcrun simctl ui "$udid" content_size accessibility-large
+              foto "$udid" "$art-14-ueben-grosse-schrift" ueben
+              foto "$udid" "$art-15-ueben-lang-grosse-schrift" ueben-lang
+              foto "$udid" "$art-16-ergebnis-grosse-schrift" ergebnis
+              xcrun simctl ui "$udid" content_size large
+            fi
+            xcrun simctl shutdown "$udid"
+          done
+          ls -la fotos
+
+      - name: Fotos hochladen
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fotos-${{ matrix.stand }}
+          path: fotos/
+          if-no-files-found: warn

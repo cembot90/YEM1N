@@ -6,7 +6,7 @@ name: iPhone-App bauen und testen
 
 on:
   push:
-    branches: [entwicklung]
+    branches: [entwicklung, design-fable]
     paths:
       - "YEM1N/**"
       - "YEM1NTests/**"
