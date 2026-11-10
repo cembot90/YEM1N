@@ -5,8 +5,6 @@ name: Bildschirmfotos
 # und lädt die Fotos als Artefakt hoch. "vorher" baut den Stand vor der Design-Arbeit zum Vergleichen.
 
 on:
-  push:
-    branches: [design-fable]
   workflow_dispatch:
 
 permissions:

@@ -1005,8 +1005,10 @@ struct UebungInhalt: View {
             withAnimation(.default) { wackeln += 1 }
         }
         if erklaerung.isEmpty {
+            // Nur eine Rechnung mit "=" lässt sich mit der Antwort fortsetzen, sonst stünde dort "67 60".
+            let rechnung = a.rechnung.replacingOccurrences(of: "\n", with: " ").trimmingCharacters(in: .whitespaces)
             erklaerungText = a.art == "zahl"
-                ? a.rechnung.replacingOccurrences(of: "\n", with: " ") + " " + a.antwort
+                ? (rechnung.hasSuffix("=") ? rechnung + " " + a.antwort : "Richtig: \(a.antwort)")
                 : (a.art == "text" ? "Richtig: \(a.antwort)" : "")
         } else {
             erklaerungText = erklaerung

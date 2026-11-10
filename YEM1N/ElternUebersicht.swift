@@ -296,7 +296,7 @@ struct ElternDashboardView: View {
 
     private func radarZeile(_ e: SchwaecheEintrag) -> String {
         var t = "\(e.runden) \(e.runden == 1 ? "Runde" : "Runden")"
-        if e.angesehen > 0 { t += ", \(e.angesehen) Lösungen angeschaut" }
+        if e.angesehen > 0 { t += e.angesehen == 1 ? ", 1 Lösung angeschaut" : ", \(e.angesehen) Lösungen angeschaut" }
         if e.trend > 0 { t += ", wird besser" }
         if e.trend < 0 { t += ", zuletzt schlechter" }
         return t
