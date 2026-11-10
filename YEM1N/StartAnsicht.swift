@@ -143,11 +143,20 @@ struct StartView: View {
                 HintergrundView()
                 // Die Kopfkarte scrollt mit, damit auf kleinen iPhones mehr Platz für die Übungen bleibt.
                 if normale.isEmpty {
-                    VStack(spacing: 0) {
-                        kopf
-                        lernweltKnopf
-                            .padding(.horizontal, 20)
-                        leer
+                    // Scrollt nur, wenn der Platz nicht reicht (große Schrift, kleines iPhone).
+                    // Sonst füllt die Seite genau den Bildschirm und der Hinweis steht in der Mitte.
+                    GeometryReader { platz in
+                        ScrollView {
+                            VStack(spacing: 0) {
+                                kopf
+                                lernweltKnopf
+                                    .padding(.horizontal, 20)
+                                leer
+                            }
+                            .frame(minHeight: platz.size.height)
+                        }
+                        .scrollBounceBehavior(.basedOnSize)
+                        .scrollIndicators(.hidden)
                     }
                 } else {
                     liste
@@ -303,6 +312,9 @@ struct StartView: View {
             Text("Noch keine Klassenarbeit")
                 .font(.system(.title2, design: .rounded).weight(.bold))
                 .foregroundStyle(Color.white)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, 24)
             Text(modus == "kind"
                  ? "Eigene Klassenarbeiten kommen automatisch von deinen Eltern. Bis dahin wartet die Lernwelt auf dich."
                  : "Tippe auf das Plus und füge das JSON von Claude ein. Fertige Aufgaben gibt es oben in der Lernwelt.")
