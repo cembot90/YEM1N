@@ -1272,16 +1272,9 @@ struct SprachThemaView: View {
         let e = stand.eintrag(w, sprache)
         let fremd = w.texte[sprache] ?? ""
         return HStack(spacing: 12) {
-            Button {
+            RundKnopf(symbol: "speaker.wave.2.fill", name: "Anhören") {
                 Sprecher.shared.sprich(fremd, code: info.sprachcode)
-            } label: {
-                Image(systemName: "speaker.wave.2.fill")
-                    .font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(Theme.navy)
-                    .frame(width: 38, height: 38)
-                    .background(Theme.gelb, in: Circle())
             }
-            .buttonStyle(TastenStil())
             VStack(alignment: .leading, spacing: 2) {
                 Text(fremd)
                     .font(.system(.body, design: .rounded).weight(.bold))
@@ -1634,17 +1627,10 @@ struct SprachFragenView: View {
         .padding(.horizontal, 24)
     }
 
-    private func lautsprecher(_ text: String, groesse: CGFloat = 44) -> some View {
-        Button {
+    private func lautsprecher(_ text: String, groesse: CGFloat = Tippziel.mindest) -> some View {
+        RundKnopf(symbol: "speaker.wave.2.fill", name: "Anhören", groesse: max(groesse, Tippziel.mindest)) {
             Sprecher.shared.sprich(text, code: info.sprachcode)
-        } label: {
-            Image(systemName: "speaker.wave.2.fill")
-                .font(.system(size: groesse * 0.45, weight: .bold))
-                .foregroundStyle(Theme.navy)
-                .frame(width: groesse, height: groesse)
-                .background(Theme.gelb, in: Circle())
         }
-        .buttonStyle(TastenStil())
     }
 
     private func hilfe(_ text: String) -> some View {

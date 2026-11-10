@@ -162,14 +162,7 @@ private struct BlattKopf: View {
                     .foregroundStyle(Theme.textSanft)
             }
             Spacer()
-            Button(action: schliessen) {
-                Image(systemName: "xmark")
-                    .font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(Theme.navy)
-                    .frame(width: 36, height: 36)
-                    .background(Theme.gelb, in: Circle())
-            }
-            .accessibilityLabel("Schließen")
+            RundKnopf(symbol: "xmark", name: "Schließen", aktion: schliessen)
         }
     }
 }

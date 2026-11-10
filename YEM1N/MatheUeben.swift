@@ -449,10 +449,14 @@ struct UebungInhalt: View {
 
     private func karte(_ a: Aufgabe) -> some View {
         VStack(spacing: 16) {
+            // Die Arbeitsanweisung: gut lesbar und mit Platz für den Vorlese-Knopf oben rechts
             Text(a.frage)
-                .font(.system(.subheadline, design: .rounded).weight(.medium))
-                .foregroundStyle(Theme.textSanft)
+                .font(.system(.title3, design: .rounded).weight(.semibold))
+                .foregroundStyle(Color.white)
                 .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(minHeight: VorleseText.vorlesbar(art: a.art) ? 30 : 0)
+                .padding(.horizontal, VorleseText.vorlesbar(art: a.art) ? 30 : 0)
 
             if !a.bild.isEmpty {
                 AufgabenBild(code: a.bild)
@@ -506,17 +510,10 @@ struct UebungInhalt: View {
     @ViewBuilder
     private func vorlesenKnopf(_ a: Aufgabe) -> some View {
         if VorleseText.vorlesbar(art: a.art) {
-            Button {
+            RundKnopf(symbol: "speaker.wave.2.fill", name: "Vorlesen") {
                 Sprecher.shared.sprich(sprechText(a), code: "de-DE")
-            } label: {
-                Image(systemName: "speaker.wave.2.fill")
-                    .font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(Theme.navy)
-                    .frame(width: 36, height: 36)
-                    .background(Theme.gelb, in: Circle())
             }
-            .padding(14)
-            .accessibilityLabel("Vorlesen")
+            .padding(6)
         }
     }
 
@@ -604,12 +601,13 @@ struct UebungInhalt: View {
                     }
                     Text(rueckTitel)
                 }
-                .font(.system(.headline, design: .rounded))
+                .font(.system(.title3, design: .rounded).weight(.heavy))
                 .foregroundStyle(rueckFarbe)
                 if !erklaerungText.isEmpty {
                     Text(erklaerungText)
-                        .font(.subheadline)
+                        .font(.system(.body, design: .rounded))
                         .foregroundStyle(Color.white)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 // Olli zeigt die Rechnung als Bild, nach einem Fehler oder beim Lösung zeigen
                 if bewertung != .richtig, !istProbe, let a = bewertet,
@@ -757,8 +755,8 @@ struct UebungInhalt: View {
             Label("Lösung zeigen", systemImage: "eye")
                 .font(.system(.subheadline, design: .rounded).weight(.bold))
                 .foregroundStyle(Theme.himmel)
-                .padding(.vertical, 10)
                 .padding(.horizontal, 18)
+                .frame(minHeight: Tippziel.mindest)
                 .background(Theme.himmel.opacity(0.14), in: Capsule())
         }
         .buttonStyle(TastenStil())
@@ -1167,7 +1165,8 @@ struct UebungInhalt: View {
                 }
                 Text(lob(n))
                     .font(.system(.title3, design: .rounded).weight(.semibold))
-                    .foregroundStyle(Theme.textSanft)
+                    .foregroundStyle(Color.white)
+                    .padding(.horizontal, 24)
                     .multilineTextAlignment(.center)
 
                 if let haustierText {

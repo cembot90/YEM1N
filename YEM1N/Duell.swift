@@ -254,15 +254,8 @@ struct DuellView: View {
         }
         .overlay(alignment: .topTrailing) {
             if zeigeSchliessen {
-                Button { dismiss() } label: {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(Theme.navy)
-                        .frame(width: 40, height: 40)
-                        .background(Theme.gelb, in: Circle())
-                }
-                .padding(16)
-                .accessibilityLabel("Schließen")
+                RundKnopf(symbol: "xmark", name: "Schließen") { dismiss() }
+                    .padding(14)
             }
         }
         .onAppear(perform: vorbereiten)
@@ -468,7 +461,7 @@ struct DuellGeraetView: View {
                     Spacer()
                     Text("⚔️").font(.system(size: 22))
                     Spacer()
-                    Color.clear.frame(width: 36, height: 36)
+                    Color.clear.frame(width: Tippziel.mindest, height: Tippziel.mindest)
                 }
                 .padding(.horizontal, 16)
                 .frame(height: 44)
@@ -478,14 +471,8 @@ struct DuellGeraetView: View {
     }
 
     private var schliessen: some View {
-        Button { dismiss() } label: {
-            Image(systemName: "xmark")
-                .font(.system(size: 13, weight: .bold))
-                .foregroundStyle(Theme.navy)
-                .frame(width: 36, height: 36)
-                .background(Theme.gelb, in: Circle())
-        }
-        .accessibilityLabel("Duell beenden")
+        // In der schmalen Leiste zwischen den beiden Hälften bleibt der Kreis klein, die Tippfläche nicht
+        RundKnopf(symbol: "xmark", name: "Duell beenden", groesse: 36) { dismiss() }
     }
 
     private func starten() async {
@@ -762,14 +749,7 @@ struct DuellSoloView: View {
             HintergrundView()
             VStack(spacing: 0) {
                 HStack {
-                    Button { dismiss() } label: {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundStyle(Theme.navy)
-                            .frame(width: 38, height: 38)
-                            .background(Theme.gelb, in: Circle())
-                    }
-                    .accessibilityLabel("Beenden")
+                    RundKnopf(symbol: "xmark", name: "Beenden") { dismiss() }
                     Spacer()
                     if let gegner {
                         Text("Gegen \(gegner.name): \(gegner.stand.richtig) richtig, \(DuellRegeln.zeitText(gegner.stand.sekunden))")

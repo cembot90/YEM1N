@@ -319,28 +319,12 @@ struct SprechBlase: View {
                 .lineLimit(1)
             Spacer(minLength: 0)
             if vorlesen {
-                Button {
+                RundKnopf(symbol: "speaker.wave.2.fill", name: "Vorlesen") {
                     Sprecher.shared.sprich(Eule.sprechbar(text), code: "de-DE", tonhoehe: tonhoehe)
-                } label: {
-                    Image(systemName: "speaker.wave.2.fill")
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundStyle(Theme.navy)
-                        .frame(width: 34, height: 34)
-                        .background(Theme.gelb, in: Circle())
                 }
-                .buttonStyle(TastenStil())
-                .accessibilityLabel("Vorlesen")
             }
             if let schliessen {
-                Button(action: schliessen) {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 13, weight: .heavy))
-                        .foregroundStyle(Color.white)
-                        .frame(width: 34, height: 34)
-                        .background(Color.white.opacity(0.16), in: Circle())
-                }
-                .buttonStyle(TastenStil())
-                .accessibilityLabel("Schließen")
+                RundKnopf(symbol: "xmark", name: "Schließen", gelb: false, aktion: schliessen)
             }
         }
     }
