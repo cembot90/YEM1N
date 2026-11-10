@@ -184,8 +184,8 @@ struct JokerKnopf: View {
             Label("Joker (\(uebrig))", systemImage: "suit.spade.fill")
                 .font(.system(.subheadline, design: .rounded).weight(.bold))
                 .foregroundStyle(Theme.gelb)
-                .padding(.vertical, 10)
                 .padding(.horizontal, 18)
+                .frame(minHeight: Tippziel.mindest)
                 .background(Theme.gelb.opacity(0.14), in: Capsule())
         }
         .buttonStyle(TastenStil())
