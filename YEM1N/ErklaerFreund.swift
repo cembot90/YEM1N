@@ -62,9 +62,8 @@ struct ErklaerFreund: View {
                                 Sprecher.shared.sprich(text, code: "de-DE")
                             } label: {
                                 Label("Vorlesen", systemImage: "speaker.wave.2.fill")
-                                    .font(.footnote.weight(.bold))
+                                    .font(.caption.weight(.bold))
                                     .foregroundStyle(Theme.gelb)
-                                    .tippziel()
                             }
                             if vonKI {
                                 Text("✨ von der KI auf diesem Gerät")

@@ -389,16 +389,17 @@ struct ErklaerBildView: View {
                         Button {
                             Sprecher.shared.sprich(sprechText, code: "de-DE")
                         } label: {
-                            Label("Vorlesen", systemImage: "speaker.wave.2.fill").tippziel()
+                            Label("Vorlesen", systemImage: "speaker.wave.2.fill")
                         }
                         Button {
                             Task { await abspielen() }
                         } label: {
-                            Label("Nochmal", systemImage: "arrow.counterclockwise").tippziel()
+                            Label("Nochmal", systemImage: "arrow.counterclockwise")
                         }
                     }
-                    .font(.footnote.weight(.bold))
+                    .font(.caption.weight(.bold))
                     .foregroundStyle(Theme.gelb)
+                    .padding(.top, 2)
                 }
             }
         }

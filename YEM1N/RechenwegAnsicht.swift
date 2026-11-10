@@ -15,8 +15,8 @@ struct RechenwegKnopf: View {
             Label("In Schritten", systemImage: "list.number")
                 .font(.system(.subheadline, design: .rounded).weight(.bold))
                 .foregroundStyle(Theme.mint)
+                .padding(.vertical, 10)
                 .padding(.horizontal, 18)
-                .frame(minHeight: Tippziel.mindest)
                 .background(Theme.mint.opacity(0.14), in: Capsule())
         }
         .buttonStyle(TastenStil())
@@ -99,7 +99,7 @@ struct RechenwegSheet: View {
                     .foregroundStyle(Theme.gelb)
                 Spacer()
                 Button { sprich() } label: {
-                    Image(systemName: "speaker.wave.2.fill").foregroundStyle(Theme.gelb).tippziel()
+                    Image(systemName: "speaker.wave.2.fill").foregroundStyle(Theme.gelb)
                 }
                 .accessibilityLabel("Vorlesen")
             }

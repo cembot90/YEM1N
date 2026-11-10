@@ -154,57 +154,12 @@ struct GelberKnopf: View {
             Text(titel)
                 .font(.system(.title3, design: .rounded).weight(.heavy))
                 .foregroundStyle(Theme.navy)
-                // Lange Titel und große Schrift: lieber zwei Zeilen oder etwas kleiner als abgeschnitten
-                .multilineTextAlignment(.center)
-                .lineLimit(2)
-                .minimumScaleFactor(0.7)
-                .padding(.horizontal, 18)
-                .padding(.vertical, 6)
                 .frame(maxWidth: .infinity, minHeight: 58)
                 .background(Theme.gelb, in: Capsule())
                 .shadow(color: Theme.gelb.opacity(0.35), radius: 12, y: 5)
         }
         .buttonStyle(TastenStil())
         .padding(.horizontal, 24)
-    }
-}
-
-/// Kleinste Tippfläche: 44 Punkte, wie Apple es empfiehlt. Kinderfinger treffen kleine Knöpfe schlecht.
-enum Tippziel {
-    static let mindest: CGFloat = 44
-}
-
-extension View {
-    /// Macht die Tippfläche mindestens 44 Punkte groß, auch wenn der Inhalt kleiner aussieht.
-    func tippziel() -> some View {
-        self
-            .frame(minWidth: Tippziel.mindest, minHeight: Tippziel.mindest)
-            .contentShape(Rectangle())
-    }
-}
-
-/// Runder Knopf mit einem Symbol (Vorlesen, Schließen). Die Tippfläche ist immer mindestens 44 Punkte groß.
-struct RundKnopf: View {
-    let symbol: String
-    /// Name für VoiceOver, zum Beispiel "Vorlesen"
-    let name: String
-    /// Gelb fällt auf, sonst ist der Knopf zurückhaltend hell
-    var gelb = true
-    var groesse: CGFloat = Tippziel.mindest
-    let aktion: () -> Void
-
-    var body: some View {
-        Button(action: aktion) {
-            Image(systemName: symbol)
-                .font(.system(size: groesse * 0.4, weight: .bold))
-                .foregroundStyle(gelb ? Theme.navy : Color.white)
-                .frame(width: groesse, height: groesse)
-                .background(gelb ? Theme.gelb : Color.white.opacity(0.16), in: Circle())
-                // Auch ein kleiner gezeichneter Kreis lässt sich auf 44 Punkten treffen
-                .tippziel()
-        }
-        .buttonStyle(TastenStil())
-        .accessibilityLabel(name)
     }
 }
 
