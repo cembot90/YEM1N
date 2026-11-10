@@ -37,7 +37,14 @@ struct MatheApp: App {
         // iCloud-Datenbank spiegeln.
         // Ausdrücklich im normalen App-Ordner. Seit es die App Group fürs Widget gibt, würde SwiftData
         // sonst von selbst in den Gruppen-Ordner wechseln und die vorhandenen Daten wären weg.
-        let konfiguration = ModelConfiguration(schema: schema, groupContainer: .none, cloudKitDatabase: .none)
+        var konfiguration = ModelConfiguration(schema: schema, groupContainer: .none, cloudKitDatabase: .none)
+        #if DEBUG
+        // Nur für Bildschirmfotos beim Prüfen: Die Daten bleiben im Arbeitsspeicher (siehe Bildschirmfoto.swift)
+        if Bildschirmfoto.ziel != nil {
+            konfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true,
+                                               groupContainer: .none, cloudKitDatabase: .none)
+        }
+        #endif
         do {
             container = try ModelContainer(for: schema, configurations: konfiguration)
         } catch {
@@ -47,9 +54,19 @@ struct MatheApp: App {
 
     var body: some Scene {
         WindowGroup {
+            #if DEBUG
+            if let ziel = Bildschirmfoto.ziel {
+                BildschirmfotoView(ziel: ziel)
+            } else {
+                WurzelView()
+                    .tint(Theme.gelb)
+                    .preferredColorScheme(.dark)
+            }
+            #else
             WurzelView()
                 .tint(Theme.gelb)
                 .preferredColorScheme(.dark)
+            #endif
         }
         .modelContainer(container)
     }

@@ -5,7 +5,7 @@ name: Logik prüfen
 
 on:
   push:
-    branches: [entwicklung]
+    branches: [entwicklung, design-fable]
     paths:
       - "YEM1N/**"
       - "YEM1NTests/**"
