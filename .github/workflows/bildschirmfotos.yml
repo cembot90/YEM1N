@@ -45,7 +45,7 @@ jobs:
           xcodebuild build \
             -project YEM1N.xcodeproj -scheme YEM1N \
             -destination "generic/platform=iOS Simulator" \
-            -derivedDataPath dd \
+            -configuration Debug -derivedDataPath dd \
             IPHONEOS_DEPLOYMENT_TARGET="$sdk" \
             CODE_SIGNING_ALLOWED=NO CODE_SIGN_IDENTITY="" ONLY_ACTIVE_ARCH=YES ARCHS=arm64 \
             > bau.txt 2>&1
